@@ -1,0 +1,241 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for the VAST Info lambdas.
+
+Parameters:
+  #
+  # URI of the ECR repository.
+  #
+  ImageRepoUri:
+    Type: String
+    Description: URI of the ECR repository.
+  #
+  # ECR image tag.
+  #
+  ImageTag:
+    Type: String
+    Description: ECR image tag.
+  #
+  # ARN of the lambda execution role used to execute the lambda.
+  #
+  # Used during deployment.
+  #
+  ExecRoleArn:
+    Type: String
+    Description: ARN of the IAM role used for lambda execution.
+    AllowedPattern: 'arn:(aws[a-zA-Z-]*)?:iam::\d{12}:role/?[a-zA-Z_0-9+=,.@\-_/]+'
+  #
+  # Name of the lambda function.
+  #
+  # Used during deployment.
+  #
+  FunctionName:
+    Type: String
+    Description: Name of the lambda function.
+  #
+  # Timeout (in seconds) for the lambda function.
+  #
+  # Used during deployment.
+  #
+  FunctionTimeout:
+    Type: Number
+    Description: Timeout (in seconds) for the lambda function.
+    MinValue: 1
+    MaxValue: 900
+    Default: 60
+  #
+  # Memory size for the lambda function.
+  #
+  # Used during deployment.
+  #
+  FunctionMemorySize:
+    Type: Number
+    Description: Memory size for the lambda function.
+    MinValue: 128
+    MaxValue: 10240
+    Default: 256
+  #
+  # New Relic account ID.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  #
+  NRAccountId:
+    Type: String
+    Description: Your New Relic account ID; necessary for distributed tracing.
+    AllowedPattern: '[0-9]+'
+  #
+  # New Relic license key. Defaults to empty but either this or the
+  # NRLicenseKeySecret parameter should be specified.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # NOTE: It is not recommended to use this. Instead, specify a secret ARN via
+  # the NRLicenseKeySecret parameter.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  #
+  NRLicenseKey:
+    Type: String
+    Description: Your New Relic license key.
+    AllowedPattern: '[a-zA-Z0-9\-_]*'
+    Default: ''
+  #
+  # Name of an AWS Secrets Manager secret containing your New Relic license key.
+  # The secret must contain a 'LicenseKey' property for the license key.
+  # Defaults to empty but either this or the NRLicenseKey should be specified.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  #
+  NRLicenseKeySecret:
+    Type: String
+    Description: ID (name or ARN) of an AWS Secrets Manager secret containing your New Relic license key.
+    AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]*'
+    Default: ''
+  #
+  # Log level for the New Relic AWS lambda extension. Defaults to 'INFO'.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  # 
+  NRLogLevel:
+    Type: String
+    Description: Log level for the New Relic Lamba extension.
+    Default: INFO
+    AllowedValues:
+      - ERROR
+      - WARN
+      - INFO
+      - DEBUG
+  #
+  # Region used for AWS API calls to RDS, S3, and Secrets Manager. Defaults to
+  # 'us-east-1'.
+  #
+  #AwsRegion:
+  #  Type: String
+  #  Description: AWS region used for AWS API calls (RDS/S3/Secretmanager).
+  #  AllowedPattern: '[a-zA-Z0-9._\-]*'
+  #  Default: 'us-east-1'
+  
+  #
+  # New Relic User API key used for GraphQL Nerdstorage queries and mutations.
+  #
+  # NOTE: It is not recommended to use this. Instead, specify a secret ARN via
+  # the UserApiKeySecret parameter.
+  #
+  UserApiKey:
+    Type: String
+    Description: The New Relic User API key to use.
+    AllowedPattern: '[a-zA-Z0-9._\-]*'
+    Default: ''
+  #
+  # Name of an AWS Secrets Manager secret containing a New Relic User API key
+  # used for GraphQL Nerdstorage queries and mutations. By default, the secret
+  # must contain a 'UserApiKey' property for the API key. A different key can
+  # be specified by the UserApiKeySecretKey parameter.
+  #
+  UserApiKeySecret:
+    Type: String
+    Description: ID (name or ARN) of a Secret containing the New Relic User API key.
+    AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]*'
+    Default: ''
+  #
+  # Key to be used for looking up the User API key in the secret specified by
+  # the UserApiKeySecret parameter. Defaults to 'UserApiKey'.
+  #
+  UserApiKeySecretKey:
+    Type: String
+    Description: Key of key/value pair containing the User API key.
+    AllowedPattern: '[a-zA-Z0-9/!\-_.*()]+'
+    Default: 'UserApiKey'
+  #
+  # Log level for the lambda functions. Note that this is separate from the
+  # NRLogLevel which specifies the level for the New Relic lambda extension.
+  # Defaults to 'INFO'.
+  #
+  LogLevel:
+    Type: String
+    Description: Log level for the lambda (not the extension).
+    Default: INFO
+    AllowedValues:
+      - INFO
+      - VERBOSE
+      - DEBUG
+  #
+  # S3 bucket containing report templates.
+  #
+  S3SourceBucket:
+    Type: String
+    Description: S3 bucket name containing report templates.
+    AllowedPattern: '([a-z0-9][a-z0-9.\-]+[a-z0-9])?'
+  #
+  # S3 bucket key for the default template input path.
+  #
+  S3SourcePathKey:
+    Type: String
+    Description: S3 bucket key for the default template input path.
+    AllowedPattern: '[a-zA-Z0-9/!\-_.*()]*'
+    Default: 'template.html'
+  #
+  # S3 bucket to be used as the destination for rendered reports.
+  #
+  S3DestBucket:
+    Type: String
+    Description: S3 bucket to be used as the destination for rendered reports.
+    AllowedPattern: '([a-z0-9][a-z0-9.\-]+[a-z0-9])?'
+  #
+  # S3 bucket key for the default report output path.
+  #
+  S3DestPathKey:
+    Type: String
+    Description: S3 bucket key for the default report output path.
+    AllowedPattern: '[a-zA-Z0-9/!\-_.*()]*'
+    Default: 'report.pdf'
+
+Resources:
+
+  #
+  # The report runner.
+  #
+
+  NrReportRunner:
+    Type: AWS::Lambda::Function
+    Properties:
+      PackageType: Image
+      Code:
+        ImageUri: !Sub ${ImageRepoUri}:${ImageTag}
+      Role: !Sub ${ExecRoleArn}
+      Description: A lambda for generating custom New Relic reports. 
+      FunctionName: !Sub ${FunctionName}
+      Timeout: !Sub ${FunctionTimeout}
+      MemorySize: !Sub ${FunctionMemorySize}
+      Environment:
+        Variables:
+          # New Relic Lambda Extension variables
+          # https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+          NEW_RELIC_LAMBDA_HANDLER: lambda.handler
+          NEW_RELIC_LAMBDA_EXTENSION_ENABLED: true
+          NEW_RELIC_EXTENSION_SEND_FUNCTION_LOGS: true
+          NEW_RELIC_EXTENSION_LOG_LEVEL: !Sub ${NRLogLevel}
+          NEW_RELIC_ACCOUNT_ID: !Sub ${NRAccountId}
+          #
+          # By default the extension will read the license key from a secret
+          # named NEW_RELIC_LICENSE_KEY which is setup when you install the
+          # Lambda integration using the newrelic-lamda CLI. Alternately...
+          #
+          # Uncomment to specify your license key manually (not recommended)
+          #NEW_RELIC_LICENSE_KEY: !Sub ${NRLicenseKey}
+          #
+          # Name of an AWS Secrets Manager secret containing your New Relic
+          # license key. The extension will read from a secret named
+          # NEW_RELIC_LICENSE_KEY by default.
+          NEW_RELIC_LICENSE_KEY_SECRET: !Sub ${NRLicenseKeySecret}
+          
+          # VAST Lambda variables
+          #AWS_REGION: !Sub ${AwsRegion}
+          USER_API_KEY: !Sub ${UserApiKey}
+          USER_API_KEY_SECRET: !Sub ${UserApiKeySecret}
+          USER_API_KEY_SECRET_KEY: !Sub ${UserApiKeySecretKey}
+          LOG_LEVEL: !Sub ${LogLevel}
+          S3_SOURCE_BUCKET: !Sub ${S3SourceBucket}
+          S3_SOURCE_PATH_KEY: !Sub ${S3SourcePathKey}
+          S3_DEST_BUCKET: !Sub ${S3DestBucket}
+          S3_DEST_PATH_KEY: !Sub ${S3DestPathKey}

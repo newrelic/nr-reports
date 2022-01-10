@@ -1,0 +1,32 @@
+{
+  "parserOptions": {
+    "ecmaVersion": 2018
+  },
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "extends": [
+    "eslint"
+  ],
+  "plugins": [ "disable" ],
+  "rules": {
+    "quotes": ["error", "single"],
+    "indent": ["error", 2],
+    "semi": ["error", "never"],
+    "comma-dangle": ["error", "always-multiline"],
+    "class-methods-use-this": "off",
+    "node/no-unpublished-require": ["error", {
+      "allowModules": ["js-yaml", "yaml-cfn"]
+    }]
+  },
+  "processor": "disable/disable",
+  "overrides": [
+    {
+      "files": [".js", "**/*.js"],
+      "settings": {
+        "disable/plugins": ["jsdoc"]
+      }
+    }
+  ]
+}
