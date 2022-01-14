@@ -1,6 +1,7 @@
 'use strict'
 
-const os = require('os'),
+const fs = require('fs'),
+  os = require('os'),
   path = require('path')
 
 const ENDPOINTS = {
@@ -79,6 +80,46 @@ function getTempFile() {
   )
 }
 
+function parseManifest(manifestFile) {
+  const contents = fs.readFileSync(manifestFile, { encoding: 'utf-8' }),
+    data = JSON.parse(contents)
+
+  if (!Array.isArray(data)) {
+    throw new Error(`${manifestFile} must start with an array`)
+  }
+
+  return data.map(report => {
+    if (!report.template) {
+      report.template = 'template.html'
+    }
+
+    if (!report.parameters) {
+      report.parameters = {}
+    }
+
+    if (!report.output) {
+      report.output = 'report.pdf'
+    }
+
+    if (!report.channels) {
+      report.channels = ['email']
+    }
+
+    return {
+      template: report.template || 'report.html',
+      parameters: report.parameters || {},
+      output: report.output || 'report.pdf',
+      channels: report.channels || [],
+    }
+  })
+}
+
+function parseParams(paramFile) {
+  const contents = fs.readFileSync(paramFile, { encoding: 'utf-8' })
+
+  return JSON.parse(contents)
+}
+
 module.exports = {
   ENDPOINTS,
   HttpError,
@@ -87,4 +128,6 @@ module.exports = {
   nonDestructiveMerge,
   getApiKey,
   getTempFile,
+  parseManifest,
+  parseParams,
 }

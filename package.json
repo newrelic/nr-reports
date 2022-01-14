@@ -11,6 +11,10 @@
   "scripts": {
     "lint": "npx eslint .",
     "pkg-name": "node -e \"console.log(require('./package.json').name);\"",
+    "aws-lambda-build": "./aws/scripts/build.sh",
+    "aws-lambda-deploy": "./aws/scripts/deploy.sh",
+    "aws-lambda-update": "./aws/scripts/update.sh",
+    "aws-lambda-delete": "./aws/scripts/delete.sh",
     "aws-lambda-function-name": "node -e \"console.log(require('./aws/cf-params.json').find(v => v.ParameterKey==='FunctionName').ParameterValue)\"",
     "aws-lambda-image-repo-uri": "node -e \"console.log(require('./aws/cf-params.json').find(v => v.ParameterKey==='ImageRepoUri').ParameterValue)\"",
     "aws-lambda-image-tag": "node -e \"console.log(require('./aws/cf-params.json').find(v => v.ParameterKey==='ImageTag').ParameterValue)\"",

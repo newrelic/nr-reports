@@ -10,7 +10,7 @@ ADD /aws/newrelic-lambda-extension-layer.tgz /opt
 # Copy function code
 COPY package-lock.json package.json lambda.js ${LAMBDA_TASK_ROOT}
 COPY templates ${LAMBDA_TASK_ROOT}/templates
-COPY lib ${LAMBDA_TASK_ROOT}/lib
+COPY core ${LAMBDA_TASK_ROOT}/core
 
 # Install production dependencies
 RUN cd ${LAMBDA_TASK_ROOT} && npm install --production

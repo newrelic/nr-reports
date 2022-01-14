@@ -124,4 +124,5 @@ aws/cf-params.json
 aws/*.tgz
 aws/*.zip
 
-example.pdf
+# Output reports
+report.pdf

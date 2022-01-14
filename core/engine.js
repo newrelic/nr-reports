@@ -1,7 +1,7 @@
 'use strict'
 
-const fs = require('fs'),
-  nunjucks = require('nunjucks'),
+const nunjucks = require('nunjucks'),
+  { createLogger } = require('./logger'),
   NrqlExtension = require('./extensions/nrql-extension'),
   ChartExtension = require('./extensions/chart-extension'),
   DumpContextExtension = require('./extensions/dump-context-extension')
@@ -61,11 +61,13 @@ class Engine {
 
     this.env = env
     this.browser = options.browser
+    this.logger = createLogger('engine')
   }
 
-  async runReport(templatePath, valuesPath, outputPath) {
-    const data = fs.readFileSync(valuesPath, { encoding: 'utf-8' }),
-      values = JSON.parse(data)
+  async runReport(templatePath, values, outputPath) {
+    this.logger.verbose((log, format) => {
+      log(format(`Rendering ${templatePath} to ${outputPath}`))
+    })
 
     await renderReport(
       this.browser,
@@ -75,6 +77,10 @@ class Engine {
   }
 
   async runReportFromString(template, values, outputPath) {
+    this.logger.verbose((log, format) => {
+      log(format(`Rendering string template to ${outputPath}`))
+    })
+
     await renderReport(
       this.browser,
       await renderTemplateFromString(template, values),

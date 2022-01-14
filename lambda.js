@@ -2,17 +2,17 @@
 
 const fs = require('fs'),
   chromium = require('chrome-aws-lambda'),
-  { rootLogger, FileHandler } = require('./lib/logger'),
+  { rootLogger, FileHandler } = require('./core/logger'),
   {
     getTempFile,
-  } = require('./lib/util'),
+  } = require('./core/util'),
   {
     readS3ObjectAsString,
     writeS3ObjectFromString,
     getApiKey,
     lambdaResponse,
-  } = require('./lib/aws-util'),
-  Engine = require('./lib/engine')
+  } = require('./core/aws-util'),
+  Engine = require('./core/engine')
 
 async function handler(event) {
   const log = rootLogger,
