@@ -1,42 +1,24 @@
 {
-  "name": "nr-herald",
+  "name": "nr-storybook",
   "version": "1.0.0",
   "author": "sdewitt@newrelic.com",
-  "description": "The New Relic Herald tool allows customers to develop customized reports with a simple templating language.",
+  "description": "New Relic Storybook provides tools to let you build, generate, and deliver custom New Relic reports.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/newrelic-experimental/nr-herald"
+    "url": "https://github.com/newrelic-experimental/nr-storybook"
   },
   "main": "index.js",
   "scripts": {
     "lint": "npx eslint .",
-    "pkg-name": "node -e \"console.log(require('./package.json').name);\"",
-    "aws-lambda-build": "./aws/scripts/build.sh",
-    "aws-lambda-deploy": "./aws/scripts/deploy.sh",
-    "aws-lambda-update": "./aws/scripts/update.sh",
-    "aws-lambda-delete": "./aws/scripts/delete.sh",
-    "aws-lambda-function-name": "node -e \"console.log(require('./aws/cf-params.json').find(v => v.ParameterKey==='FunctionName').ParameterValue)\"",
-    "aws-lambda-image-repo-uri": "node -e \"console.log(require('./aws/cf-params.json').find(v => v.ParameterKey==='ImageRepoUri').ParameterValue)\"",
-    "aws-lambda-image-tag": "node -e \"console.log(require('./aws/cf-params.json').find(v => v.ParameterKey==='ImageTag').ParameterValue)\"",
-    "aws-params-to-env-args": "node ./aws/scripts/params-to-env-args.js ./aws/cf-template.yaml ./aws/cf-params.json"
+    "preinstall": "cd nr-storybook-core && npm install && cd ../nr-storybook-cli && npm install && cd ../nr-storybook-lambda && npm install",
   },
   "license": "Apache-2.0",
-  "dependencies": {
-    "chrome-aws-lambda": "^10.1.0",
-    "node-fetch": "^2.6.6",
-    "nunjucks": "^3.2.3",
-    "puppeteer-core": "^12.0.1",
-    "yargs": "^17.3.0"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "change-case": "^4.1.2",
     "eslint": "^8.3.0",
     "eslint-config-eslint": "^7.0.0",
     "eslint-plugin-disable": "^2.0.3",
     "eslint-plugin-jsdoc": "^37.1.0",
-    "eslint-plugin-node": "^11.1.0",
-    "js-yaml": "^4.1.0",
-    "puppeteer": "^13.0.1",
-    "yaml-cfn": "^0.3.1"
+    "eslint-plugin-node": "^11.1.0"
   }
 }

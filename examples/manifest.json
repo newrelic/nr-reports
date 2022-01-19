@@ -1,6 +1,6 @@
 [
   {
-    "template": "./examples/golden-signals.html",
+    "template": "golden-signals.html",
     "parameters": {
       "title": "New Relic Golden Signals Weekly Report for Billing Service",
       "author": "Alice Reli",

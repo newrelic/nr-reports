@@ -119,10 +119,5 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# Local lambda params
-aws/cf-params.json
-aws/*.tgz
-aws/*.zip
-
 # Output reports
-report.pdf
+*.pdf

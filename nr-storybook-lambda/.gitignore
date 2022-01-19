@@ -1,0 +1,4 @@
+# Local lambda params
+cf-params.json
+*.tgz
+*.zip

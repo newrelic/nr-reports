@@ -124,7 +124,7 @@ class Logger {
   }
 }
 
-const rootLogger = new Logger('nr-herald')
+const rootLogger = new Logger('nr-storybook')
 
 module.exports = {
   rootLogger,

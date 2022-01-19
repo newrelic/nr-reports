@@ -1,0 +1,24 @@
+{
+  "name": "nr-storybook-core",
+  "version": "1.0.0",
+  "author": "sdewitt@newrelic.com",
+  "description": "The New Relic Storybook core engine.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/newrelic-experimental/nr-storybook"
+  },
+  "main": "index.js",
+  "scripts": {},
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=8.3.0"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.6",
+    "nunjucks": "^3.2.3",
+    "puppeteer-core": "^12.0.1"
+  },
+  "devDependencies": {
+    "puppeteer": "^13.0.1"
+  }
+}

@@ -5,7 +5,7 @@ if [ "$SCRIPT_DIR" == "" ]; then
 fi
 
 ROOT_DIR="$(dirname $(dirname ${SCRIPT_DIR}))"
-AWS_DIR=$ROOT_DIR/aws
+AWS_DIR=$ROOT_DIR/nr-storybook-lambda
 
 PARAMS=""
 PACKAGE_NAME=""
@@ -52,9 +52,9 @@ fi
 AWS_LAMBDA_VER=${AWS_LAMBDA_VER:-14}
 NEW_RELIC_LAYER_NAME=${NEW_RELIC_LAYER_NAME:-NewRelicNodeJS14X}
 NEW_RELIC_LAYER_VER=${NEW_RELIC_LAYER_VER:-33}
-FUNCTION_NAME=$(npm run --silent aws-lambda-function-name)
-ECR_REPO_URI=$(npm run --silent aws-lambda-image-repo-uri)
-ECR_IMAGE_TAG=$(npm run --silent aws-lambda-image-tag)
+FUNCTION_NAME=$(npm run --silent function-name)
+ECR_REPO_URI=$(npm run --silent image-repo-uri)
+ECR_IMAGE_TAG=$(npm run --silent image-tag)
 
 echo "------------------------------------"
 echo "Root directory: $ROOT_DIR"

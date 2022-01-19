@@ -76,7 +76,7 @@ function getApiKey() {
 function getTempFile() {
   return path.join(
     os.tmpdir(),
-    `herald-${new Date().getTime()}`,
+    `storybook-${new Date().getTime()}`,
   )
 }
 
@@ -120,6 +120,10 @@ function parseParams(paramFile) {
   return JSON.parse(contents)
 }
 
+function splitPaths(paths) {
+  return paths.split(path.delimiter)
+}
+
 module.exports = {
   ENDPOINTS,
   HttpError,
@@ -130,4 +134,5 @@ module.exports = {
   getTempFile,
   parseManifest,
   parseParams,
+  splitPaths,
 }

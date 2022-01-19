@@ -9,10 +9,10 @@ docker tag $PACKAGE_NAME:$ECR_IMAGE_TAG $ECR_REPO_URI:$ECR_IMAGE_TAG && \
 echo "Deploying stack $PACKAGE_NAME..."
 aws cloudformation deploy \
     --stack-name $PACKAGE_NAME \
-    --template-file $ROOT_DIR/aws/cf-template.yaml \
+    --template-file $ROOT_DIR/nr-storybook-lambda/cf-template.yaml \
     --output table \
     --no-cli-pager \
     --color on \
-    --parameter-overrides file://$ROOT_DIR/aws/cf-params.json
+    --parameter-overrides file://$ROOT_DIR/nr-storybook-lambda/cf-params.json
 
 echo "Done."

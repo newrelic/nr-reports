@@ -173,7 +173,7 @@ Parameters:
     Type: String
     Description: S3 bucket key for the default template input path.
     AllowedPattern: '[a-zA-Z0-9/!\-_.*()]*'
-    Default: 'template.html'
+    Default: 'report.html'
   #
   # S3 bucket to be used as the destination for rendered reports.
   #
@@ -211,7 +211,7 @@ Resources:
         Variables:
           # New Relic Lambda Extension variables
           # https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
-          NEW_RELIC_LAMBDA_HANDLER: lambda.handler
+          NEW_RELIC_LAMBDA_HANDLER: nr-storybook-lambda/lambda.handler
           NEW_RELIC_LAMBDA_EXTENSION_ENABLED: true
           NEW_RELIC_EXTENSION_SEND_FUNCTION_LOGS: true
           NEW_RELIC_EXTENSION_LOG_LEVEL: !Sub ${NRLogLevel}

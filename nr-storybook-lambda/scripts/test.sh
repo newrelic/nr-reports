@@ -4,7 +4,7 @@ source $(dirname "$0")/vars.sh
 
 AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
 AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
-ENV_ARGS=$(npm run --silent aws-params-to-env-args)
+ENV_ARGS=$(npm run --silent params-to-env-args)
 TMP_DIR=$(mktemp -d)
 
 echo "Created temp dir: $TMP_DIR"
@@ -17,7 +17,7 @@ bash -c "docker run -a stdout -t --name lambda --rm \
     -e AWS_SECRET_ACCESS_KEY=\"$AWS_SECRET_ACCESS_KEY\" \
     -e NEW_RELIC_EXTENSION_LOG_LEVEL=DEBUG \
     -e NEW_RELIC_LOG_SERVER_HOST=localhost \
-    -e NEW_RELIC_LAMBDA_HANDLER=lambda.handler \
+    -e NEW_RELIC_LAMBDA_HANDLER=nr-storybook-lambda/lambda.handler \
     $ENV_ARGS \
     -e LOG_LEVEL=DEBUG \
     $PACKAGE_NAME:$ECR_IMAGE_TAG | tr -s \"\r\" \"\n\""

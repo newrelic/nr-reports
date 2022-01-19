@@ -49,7 +49,7 @@
     },
     {
         "ParameterKey": "S3SourcePathKey",
-        "ParameterValue": "template.html"
+        "ParameterValue": "report.html"
     },
     {
         "ParameterKey": "S3DestBucket",
