@@ -14,6 +14,7 @@
     "node": ">=8.3.0"
   },
   "dependencies": {
+    "easy-pdf-merge": "^0.2.6",
     "node-fetch": "^2.6.6",
     "nunjucks": "^3.2.3",
     "puppeteer-core": "^12.0.1",

@@ -107,15 +107,21 @@ async function main() {
 
     const paths = templatePath ? splitPaths(templatePath) : [],
       engine = new Engine({
-        apiKey: getApiKey(),
+        apiKey: process.env['NEW_RELIC_API_KEY'], //getApiKey(),
         templatesPath: ['.'].concat(paths).concat(['templates']),
         browser,
       })
 
     for (let index = 0; index < reports.length; index += 1) {
-      const { template, parameters, output, channels } = reports[index]
+      if (reports[index].type === 'report') {
+        const { template, parameters, output, channels } = reports[index]
 
-      await engine.runReport(template, parameters, output)
+        await engine.runReport(template, parameters, output)
+      } else if (reports[index].type === 'dashboard') {
+        await engine.getDashboards(reports[index].dashboards)
+      } else {
+        throw new Error(reports[index].type)
+      }
     }
   } catch (err) {
     log.error(err)

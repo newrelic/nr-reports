@@ -1,6 +1,12 @@
+/* eslint-disable padding-line-between-statements */
 'use strict'
 
 const fetch = require('node-fetch'),
+  path = require('path'),
+  { createWriteStream } = require('fs'),
+  // eslint-disable-next-line node/no-unsupported-features/node-builtins
+  { pipeline } = require('stream'),
+  { promisify } = require('util'),
   { createLogger } = require('./logger'),
   {
     ENDPOINTS,
@@ -256,6 +262,46 @@ class NerdgraphClient {
     })
 
     return entities
+  }
+
+  async downloadPdf(dashboardUrl, dashboardPdfFileName) {
+    const streamPipeline = promisify(pipeline)
+    const response = await fetch(dashboardUrl)
+    if (!response.ok) {
+      throw new Error(`Error: fetch failed to read the file: ${response.statusText}`)
+    }
+    await streamPipeline(response.body, createWriteStream(dashboardPdfFileName))
+  }
+
+  async runMutation(apiKey, dashboards, downloadDir) {
+    const dashboardPdfs = []
+    try {
+      const query = `{
+                      dashboardCreateSnapshotUrl(guid: $guid)
+                    }`
+      const options = {
+        nextCursonPath: null,
+        mutation: true,
+        headers: {},
+      }
+      dashboards.forEach(async dashboard => {
+        const variables = {
+          guid: ['EntityGuid!', dashboard],
+        }
+        const results = await this.query(
+          apiKey,
+          query,
+          variables,
+          options,
+        )
+        const dashboardPdfFileName = path.join(downloadDir, `dashboard_${dashboard}.pdf`)
+        dashboardPdfs.push(dashboardPdfFileName)
+        await this.downloadPdf(results[0].dashboardCreateSnapshotUrl, dashboardPdfFileName)
+      })
+    } catch (err) {
+      this.logger.error(err)
+    }
+    return dashboardPdfs
   }
 }
 

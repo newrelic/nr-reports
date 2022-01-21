@@ -1,10 +1,15 @@
 'use strict'
 
 const nunjucks = require('nunjucks'),
+  // eslint-disable-next-line node/no-extraneous-require
+  merge = require('easy-pdf-merge'),
+  fs = require('fs'),
+  path = require('path'),
   { createLogger } = require('./logger'),
   NrqlExtension = require('./extensions/nrql-extension'),
   ChartExtension = require('./extensions/chart-extension'),
-  DumpContextExtension = require('./extensions/dump-context-extension')
+  DumpContextExtension = require('./extensions/dump-context-extension'),
+  { NerdgraphClient } = require('./nerdgraph')
 
 async function renderReport(browser, content, file) {
   const page = await browser.newPage()
@@ -62,6 +67,7 @@ class Engine {
     this.env = env
     this.browser = options.browser
     this.logger = createLogger('engine')
+    this.apiKey = options.apiKey
   }
 
   async runReport(templatePath, values, outputPath) {
@@ -86,6 +92,35 @@ class Engine {
       await renderTemplateFromString(template, values),
       outputPath,
     )
+  }
+
+  mergePdfs(dashboardPdfs, consolidatedPdf) {
+    merge(dashboardPdfs, consolidatedPdf, err => {
+      if (err) {
+        this.logger.error(
+          `failed to consolidate dashboards: ${err}`,
+        )
+      }
+    })
+  }
+
+  async getDashboards(dashboards) {
+    const nerdgraph = new NerdgraphClient()
+    const downloadDir = path.join('.', 'dashboards', `${new Date().getTime().toString()}`)
+
+    fs.mkdir(downloadDir, { recursive: true }, err => {
+      if (err) {
+        throw err
+      }
+    })
+    this.logger.log(`: dashboard report directory: ${downloadDir}`)
+    const dashboardPdfs = await nerdgraph.runMutation(this.apiKey, dashboards, downloadDir)
+    const consolidatedPdf = path.join(downloadDir, 'consolidated_dashboards.pdf')
+
+    setTimeout(() => {
+      this.mergePdfs(dashboardPdfs, consolidatedPdf)
+    },
+    dashboards.length * 5000)
   }
 }
 
