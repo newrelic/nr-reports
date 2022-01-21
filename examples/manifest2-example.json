@@ -1,0 +1,26 @@
+[
+    {
+      "type": "report",
+      "template": "golden-signals.html",
+      "parameters": {
+        "title": "New Relic Golden Signals Weekly Report for Billing Service",
+        "author": "Alice Reli",
+        "authorTitle": "SRE",
+        "accountId": 1966971,
+        "accountName": "Demotron Sandbox",
+        "appName": "Billing Service (Sandbox)"
+      },
+      "output": "example.pdf",
+      "channels": [ "email" ]
+    },
+    {
+        "type": "dashboard",
+        "dashboards": [
+          "dashboard1-guid",
+          "dashboard2-guid",
+          "dashboard3-guid",
+          "..."
+        ]
+      }
+  ]
+  

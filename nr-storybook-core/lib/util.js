@@ -2,7 +2,20 @@
 
 const fs = require('fs'),
   os = require('os'),
-  path = require('path')
+  path = require('path'),
+  showdown = require('showdown')
+
+const converter = new showdown.Converter({
+  ghCompatibleHeaderId: true,
+  strikethrough: true,
+  tables: true,
+  tablesHeaderId: true,
+  tasklists: true,
+  openLinksInNewWindow: true,
+  backslashEscapesHTMLTags: true,
+})
+
+converter.setFlavor('github')
 
 const ENDPOINTS = {
   GRAPHQL: {
@@ -80,6 +93,24 @@ function getTempFile() {
   )
 }
 
+function convertToHtml(templateFile) {
+  const htmlFileName = `${templateFile}.html`
+
+  fs.readFile(templateFile, 'utf8', (err, markdown) => {
+    if (!err) {
+      /* eslint-disable-next-line prefer-template */
+      const finalHtml = '{% extends "report.md.html" %} {% block content %}' + converter.makeHtml(markdown) + '{% endblock %}'
+
+      fs.writeFile(htmlFileName, finalHtml, err2 => {
+        if (err2) {
+          throw new Error(`Failed to write ${htmlFileName}`)
+        }
+      })
+    }
+  })
+  return htmlFileName
+}
+
 function parseManifest(manifestFile) {
   const contents = fs.readFileSync(manifestFile, { encoding: 'utf-8' }),
     data = JSON.parse(contents)
@@ -89,27 +120,54 @@ function parseManifest(manifestFile) {
   }
 
   return data.map(report => {
-    if (!report.template) {
-      report.template = 'template.html'
-    }
+    // eslint-disable-next-line default-case
+    switch (report.type) {
+    case 'report':
+      if (report.template) {
+        // eslint-disable-next-line require-unicode-regexp
+        if (report.template.toLowerCase().match(/\.md$/g)) {
+          report.template = convertToHtml(report.template)
+        }
+      } else {
+        report.template = 'template.html'
+      }
 
-    if (!report.parameters) {
-      report.parameters = {}
-    }
+      if (!report.parameters) {
+        report.parameters = {}
+      }
 
-    if (!report.output) {
-      report.output = 'report.pdf'
-    }
+      if (!report.output) {
+        report.output = 'report.pdf'
+      }
 
-    if (!report.channels) {
-      report.channels = ['email']
-    }
+      if (!report.channels) {
+        report.channels = ['email']
+      }
 
-    return {
-      template: report.template || 'report.html',
-      parameters: report.parameters || {},
-      output: report.output || 'report.pdf',
-      channels: report.channels || [],
+      return {
+        type: 'report',
+        template: report.template || 'report.html',
+        parameters: report.parameters || {},
+        output: report.output || 'report.pdf',
+        channels: report.channels || [],
+      }
+      // eslint-disable-next-line no-unreachable
+      break
+
+    case 'dashboard':
+      if (!report.dashboards && typeof report.dashboards !== 'object') {
+        throw new Error('invalid data in dashboard template')
+      } else {
+        return {
+          type: 'dashboard',
+          dashboards: report.dashboards,
+        }
+      }
+      // eslint-disable-next-line no-unreachable
+      break
+
+    default:
+      return { type: `invalid template type ${report.type}` }
     }
   })
 }
