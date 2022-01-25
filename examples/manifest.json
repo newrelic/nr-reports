@@ -9,7 +9,16 @@
       "accountName": "Demotron Sandbox",
       "appName": "Billing Service (Sandbox)"
     },
-    "output": "example.pdf",
-    "channels": [ "email" ]
+    "output": "golden-signals.pdf",
+    "channels": [ {
+      "type": "email",
+      "from": "me@nowhere.local",
+      "to": "you@nowhere.local",
+      "subject": "{{ title }}",
+      "template": "email-template.html"
+    }, {
+      "type": "s3",
+      "bucket": "sdewitt"
+    }]
   }
 ]

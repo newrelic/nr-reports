@@ -1,23 +1,23 @@
 {% extends "report.html" %}
 
 {% block content %}
-<div class="row">
-  <div class="col-12">
-    <h1 class="pt-3">{{title}}</h1>
-    <p class="lead">
+<div class="columns is-multiline">
+  <div class="column is-full">
+    <h1 class="title is-1">{{title}}</h1>
+    <p>
       This is a sample New Relic Monitoring Report for <strong>{{accountName}}</strong>, account id
       <strong>{{accountId}}</strong>.
     </p>
   </div>
 
-  <div class="col-12">
-    <h2 class="border-bottom pb-3 my-3">4 Golden Signals</h2>
+  <div class="column is-full">
+    <h2 class="title is-2">4 Golden Signals</h2>
     The four golden signals of monitoring are latency, traffic, errors, and saturation.
     If you can only measure four metrics of your user-facing system, focus on these four.
   </div>
 
-  <div class="col-12">
-    <h3 class="mt-3">Latency</h3>
+  <div class="column is-full">
+    <h3 class="title is-3">Latency</h3>
     <p>
       The time it takes to service a request. It's important to distinguish between the latency of successful requests
       and the latency of failed requests. For example, an HTTP 500 error triggered due to loss of connection to a
@@ -27,12 +27,12 @@
       latency, as opposed to just filtering out errors.
     </p>
     {% chart "FROM Transaction SELECT average(duration) WHERE appName = '{{appName}}' SINCE last week UNTIL this week TIMESERIES",
-        class="d-block mx-auto"
+        class="has-text-centered"
     %}{% endchart %}
   </div>
 
-  <div class="col-12">
-    <h3 class="mt-3">Traffic</h3>
+  <div class="column is-full">
+    <h3 class="title is-3">Traffic</h3>
     <p>
       A measure of how much demand is being placed on your system, measured in a high-level system-specific metric.
       For a web service, this measurement is usually HTTP requests per second, perhaps broken out by the nature of the
@@ -42,12 +42,12 @@
     </p>
     {% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = '{{appName}}' SINCE last week UNTIL this week TIMESERIES",
         chartType="AREA",
-        class="d-block mx-auto" 
+        class="has-text-centered" 
     %}{% endchart %}
   </div>
 
-  <div class="col-12">
-    <h3 class="mt-3">Errors</h3>
+  <div class="column is-full">
+    <h3 class="title is-3">Errors</h3>
     <p>
       The rate of requests that fail, either explicitly (e.g., HTTP 500s), implicitly (for example, an HTTP 200
       success response, but coupled with the wrong content), or by policy (for example, "If you committed to
@@ -58,7 +58,7 @@
       tests can detect that you're serving the wrong content.
     </p>
     {% chart "from Transaction SELECT percentage(count(*), WHERE error IS true) as 'Error Percentage' WHERE appName='{{appName}}' SINCE last week UNTIL this week TIMESERIES",
-        class="d-block mx-auto"
+        class="has-text-centered"
     %}{% endchart %}
   </div>
 </div>  

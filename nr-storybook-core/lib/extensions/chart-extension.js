@@ -77,26 +77,31 @@ function ChartExtension(apiKey) {
     context.setVariable('error', null)
 
     try {
-      const result = await nerdgraph.runNrql(
-        this.apiKey,
-        accountId,
-        env.renderString(query, vars),
-        {
-          timeout: 5,
-          chart: {
-            type: options.type,
-            format: options.format,
-            width: options.width ? parseInt(options.width, 10) : null,
-            height: options.height ? parseInt(options.height, 10) : null,
-          },
+      const chartOptions = {
+          type: options.type,
+          format: options.format,
+          width: options.width ? parseInt(options.width, 10) : 640,
+          height: options.height ? parseInt(options.height, 10) : 480,
         },
-      )
+        result = await nerdgraph.runNrql(
+          this.apiKey,
+          accountId,
+          env.renderString(query, vars),
+          {
+            timeout: 5,
+            chart: chartOptions,
+          },
+        ),
+        imageStr = `
+          <img ${options.class ? `class="${options.class}"` : ''} src="${result}"
+            width="${chartOptions.width}"
+            height="${chartOptions.height}"
+          />
+        `
 
       callback(
         null,
-        new nunjucks.runtime.SafeString(
-          `<img ${options.class ? `class="${options.class}"` : ''} src="${result}" />`,
-        ),
+        new nunjucks.runtime.SafeString(imageStr),
       )
       return
     } catch (err) {

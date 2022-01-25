@@ -7,11 +7,52 @@ const fs = require('fs'),
     FileHandler,
     getTempFile,
     Engine,
-    readS3ObjectAsString,
-    writeS3ObjectFromString,
-    getApiKey,
-    lambdaResponse,
+    getS3ObjectAsString,
+    putS3Object,
+    getSecretValue,
   } = require('nr-storybook-core')
+
+async function getApiKey() {
+  const apiKey = process.env.USER_API_KEY,
+    apiKeySecret = process.env.USER_API_KEY_SECRET,
+    apiKeySecretKey = process.env.USER_API_KEY_SECRET_KEY || 'UserApiKey'
+
+  if (!apiKeySecret) {
+    return apiKey
+  }
+
+  const secret = await getSecretValue(apiKeySecret, apiKeySecretKey)
+
+  if (!secret) {
+    return apiKey
+  }
+
+  return secret
+}
+
+function lambdaResponse(
+  statusCode,
+  success = false,
+  payload = null,
+  message = '',
+  mimeType = 'application/json',
+) {
+  const body = { success }
+
+  if (!success) {
+    body.message = message
+  } else if (payload) {
+    body.payload = payload
+  }
+
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': mimeType,
+    },
+    body: JSON.stringify(body),
+  }
+}
 
 async function handler(event) {
   const log = rootLogger,
@@ -73,7 +114,7 @@ async function handler(event) {
       reportPath = (
         (values && values.reportPath) || process.env.S3_DEST_PATH_KEY || 'report.pdf'
       ),
-      template = await readS3ObjectAsString(templateBucket, templatePath)
+      template = await getS3ObjectAsString(templateBucket, templatePath)
 
 
     tempFile = await getTempFile()
@@ -84,7 +125,7 @@ async function handler(event) {
       tempFile,
     )
 
-    const data = await writeS3ObjectFromString(
+    const data = await putS3Object(
       reportBucket,
       reportPath,
       fs.createReadStream(tempFile),
