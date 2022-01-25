@@ -83,7 +83,9 @@ async function main() {
       template: templateName,
       parameters,
       output: outputFile || 'report.pdf',
-      channels: channels ? channels.split(/[\s]*,[\s]*/u) : [],
+      channels: channels ? channels.split(/[\s]*,[\s]*/u).map(
+        channel => ({ type: channel }),
+      ) : [{ type: 'email' }],
     }]
   }
 
@@ -100,7 +102,7 @@ async function main() {
     browser = (
       await puppeteer.launch({
         args: ['--disable-dev-shm-usage'],
-        headless: true,
+        headless: !debug,
         ignoreHTTPSErrors: true,
       })
     )
@@ -113,14 +115,14 @@ async function main() {
       })
 
     for (let index = 0; index < reports.length; index += 1) {
-      const { template, parameters, output, channels } = reports[index]
+      const { template, parameters, output, channels: channelConfigs } = reports[index]
 
-      await engine.runReport(template, parameters, output)
+      await engine.runReport(template, parameters, output, channelConfigs)
     }
   } catch (err) {
     log.error(err)
   } finally {
-    if (browser) {
+    if (browser && !debug) {
       await browser.close()
     }
   }

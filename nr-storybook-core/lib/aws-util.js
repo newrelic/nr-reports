@@ -45,7 +45,7 @@ function getSecretValue(secretName, secretKey) {
   })
 }
 
-function readS3ObjectAsString(bucket, key) {
+function getS3Object(bucket, key) {
   const getParams = {
     Bucket: bucket, // your bucket name,
     Key: key, // path to the object you're looking for
@@ -60,16 +60,19 @@ function readS3ObjectAsString(bucket, key) {
         return
       }
 
-      // No error happened
-      // Convert Body from a Buffer to a String
-      const objectData = data.Body.toString('utf-8') // Use the encoding necessary
-
-      resolve(objectData)
+      resolve(data)
     })
   })
 }
 
-function writeS3ObjectFromString(bucket, key, content) {
+async function getS3ObjectAsString(bucket, key) {
+  const data = await getS3Object(bucket, key)
+
+  // Convert Body from a Buffer to a String
+  return data.Body.toString('utf-8')
+}
+
+function putS3Object(bucket, key, content) {
   const putParams = {
     Body: content,
     Bucket: bucket,
@@ -90,52 +93,9 @@ function writeS3ObjectFromString(bucket, key, content) {
   })
 }
 
-function lambdaResponse(
-  statusCode,
-  success = false,
-  payload = null,
-  message = '',
-  mimeType = 'application/json',
-) {
-  const body = { success }
-
-  if (!success) {
-    body.message = message
-  } else if (payload) {
-    body.payload = payload
-  }
-
-  return {
-    statusCode,
-    headers: {
-      'Content-Type': mimeType,
-    },
-    body: JSON.stringify(body),
-  }
-}
-
-async function getApiKey() {
-  const apiKey = process.env.USER_API_KEY,
-    apiKeySecret = process.env.USER_API_KEY_SECRET,
-    apiKeySecretKey = process.env.USER_API_KEY_SECRET_KEY || 'UserApiKey'
-
-  if (!apiKeySecret) {
-    return apiKey
-  }
-
-  const secret = await getSecretValue(apiKeySecret, apiKeySecretKey)
-
-  if (!secret) {
-    return apiKey
-  }
-
-  return secret
-}
-
 module.exports = {
   getSecretValue,
-  readS3ObjectAsString,
-  writeS3ObjectFromString,
-  lambdaResponse,
-  getApiKey,
+  getS3Object,
+  getS3ObjectAsString,
+  putS3Object,
 }

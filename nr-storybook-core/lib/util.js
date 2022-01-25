@@ -90,7 +90,7 @@ function parseManifest(manifestFile) {
 
   return data.map(report => {
     if (!report.template) {
-      report.template = 'template.html'
+      report.template = 'report.html'
     }
 
     if (!report.parameters) {
@@ -102,14 +102,14 @@ function parseManifest(manifestFile) {
     }
 
     if (!report.channels) {
-      report.channels = ['email']
+      report.channels = [{ type: 'email' }]
     }
 
     return {
-      template: report.template || 'report.html',
-      parameters: report.parameters || {},
-      output: report.output || 'report.pdf',
-      channels: report.channels || [],
+      template: report.template,
+      parameters: report.parameters,
+      output: report.output,
+      channels: report.channels,
     }
   })
 }

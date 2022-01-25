@@ -1,6 +1,7 @@
 'use strict'
 
 const nunjucks = require('nunjucks'),
+  publish = require('./channels'),
   { createLogger } = require('./logger'),
   NrqlExtension = require('./extensions/nrql-extension'),
   ChartExtension = require('./extensions/chart-extension'),
@@ -10,6 +11,7 @@ async function renderReport(browser, content, file) {
   const page = await browser.newPage()
 
   /*
+  @todo
   page
     .on('console', message =>
       console.log(`${message.type().substr(0, 3).toUpperCase()} ${message.text()}`))
@@ -20,9 +22,23 @@ async function renderReport(browser, content, file) {
       console.log(`${request.failure()} ${request.url()}`))
   */
 
-  await page.setContent(content)
-  await page.pdf({ path: file, format: 'Letter' })
-  await browser.close()
+  await page.setContent(
+    content,
+    {
+      waitUntil: ['load', 'domcontentloaded', 'networkidle0'],
+    },
+  )
+
+  await page.pdf({
+    path: file,
+    format: 'Letter',
+    margin: {
+      top: '20px',
+      left: '40px',
+      bottom: '20px',
+      right: '40px',
+    },
+  })
 }
 
 function renderTemplateFromFile(file, context = {}) {
@@ -64,7 +80,7 @@ class Engine {
     this.logger = createLogger('engine')
   }
 
-  async runReport(templatePath, values, outputPath) {
+  async runReport(templatePath, values, outputPath, channels) {
     this.logger.verbose((log, format) => {
       log(format(`Rendering ${templatePath} to ${outputPath}`))
     })
@@ -74,6 +90,8 @@ class Engine {
       await renderTemplateFromFile(templatePath, values),
       outputPath,
     )
+
+    channels.forEach(channel => publish(channel, [outputPath], values))
   }
 
   async runReportFromString(template, values, outputPath) {

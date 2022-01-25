@@ -10,7 +10,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "npx eslint .",
-    "preinstall": "cd nr-storybook-core && npm install && cd ../nr-storybook-cli && npm install && cd ../nr-storybook-lambda && npm install",
+    "preinstall": "cd nr-storybook-core && npm install && cd ../nr-storybook-cli && npm install && cd ../nr-storybook-lambda && npm install"
   },
   "license": "Apache-2.0",
   "dependencies": {},
