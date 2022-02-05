@@ -5,20 +5,35 @@
       "title": "New Relic Golden Signals Weekly Report for Billing Service",
       "author": "Alice Reli",
       "authorTitle": "SRE",
-      "accountId": 1966971,
-      "accountName": "Demotron Sandbox",
-      "appName": "Billing Service (Sandbox)"
+      "accountId": 9999999,
+      "accountName": "newrelic account name",
+      "appName": "application name in new relic",
     },
     "output": "golden-signals.pdf",
-    "channels": [ {
+    "channels": [{
       "type": "email",
       "from": "me@nowhere.local",
       "to": "you@nowhere.local",
-      "subject": "{{ title }}",
+      "subject": "New Relic Monitoring Report",
       "template": "email-template.html"
     }, {
       "type": "s3",
       "bucket": "sdewitt"
+    }]
+  },
+  {
+    "dashboards": [
+      "dashboard guid #1",
+      "dashboard guid #2",
+      "dashboard guid #3"
+    ],
+    "combinedPdf": false,
+    "channels": [{
+      "type": "email",
+      "from": "me@nowhere.local",
+      "to": "you@nowhere.local",
+      "subject": "New Relic Monitoring Report",
+      "template": "email-template.html"
     }]
   }
 ]

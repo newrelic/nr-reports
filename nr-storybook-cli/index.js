@@ -115,9 +115,18 @@ async function main() {
       })
 
     for (let index = 0; index < reports.length; index += 1) {
-      const { template, parameters, output, channels: channelConfigs } = reports[index]
+      if (reports[index].template) {
+        const { template, parameters, output, channels: channelConfigs } = reports[index]
 
-      await engine.runReport(template, parameters, output, channelConfigs)
+        await engine.runReport(template, parameters, output, channelConfigs)
+
+      } else if (reports[index].dashboards) {
+
+        await engine.getDashboards(reports[index])
+      } else {
+        throw new Error('invalid template entry')
+      }
+
     }
   } catch (err) {
     log.error(err)
