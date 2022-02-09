@@ -14,8 +14,8 @@ usage() {
 
 MANIFEST_FILE="manifest.json"
 TEMPLATE_DIR="templates"
-CRON_ENTRY="00   *   *   *   *"
-IMAGE_REPO="nr-storybook-cron"
+CRON_ENTRY=""
+IMAGE_REPO=""
 IMAGE_TAG="latest"
 PARAMS=""
 
@@ -84,10 +84,6 @@ done
 
 # set positional arguments in their proper place
 eval set -- "$PARAMS"
-
-if [ -z "$IMAGE_REPO" ]; then
-  usage
-fi
 
 echo "------------------------------------"
 echo "Root directory: $ROOT_DIR"
