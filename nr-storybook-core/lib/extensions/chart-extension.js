@@ -98,7 +98,7 @@ function ChartExtension(apiKey) {
             height="${chartOptions.height}"
           />
         `
-        console.log("### SK DEBUG >>> IN chart-extension -- vars.isMarkdown", vars.isMarkdown)
+
       callback(
         null,
         new nunjucks.runtime.SafeString(imageStr),
