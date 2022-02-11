@@ -6,8 +6,6 @@ const nunjucks = require('nunjucks'),
   showdown = require('showdown'),
   fs = require('fs'),
   { createWriteStream } = require('fs'),
-  // eslint-disable-next-line node/no-unsupported-features/node-builtins
-  fsPromise = require('fs').promises,
   path = require('path'),
   // eslint-disable-next-line node/no-unsupported-features/node-builtins
   { pipeline } = require('stream'),
@@ -116,33 +114,25 @@ class Engine {
     this.apiKey = options.apiKey
   }
 
-  async convertToHtml(templateFile) {
-    const templatePath = this.templatesPath.find(dir => fs.existsSync(path.join(dir, templateFile)))
-
-    if (!templatePath) {
-      throw new Error(`Error: failed to find markdown template ${templateFile}`)
-    } else {
-      const markdown = await fsPromise.readFile(path.join(templatePath, templateFile), 'utf8')
-
-      return (`{% extends "report.html" %} {% block content %}${converter.makeHtml(markdown)}{% endblock %}`)
-    }
-  }
-
   async runReport(templatePath, values, outputPath, channels) {
-    if (templatePath.toLowerCase().match(/\.md$/u)) {
-      const template = await this.convertToHtml(templatePath)
 
-      await this.runReportFromString(template, values, outputPath)
-    } else {
-      this.logger.verbose((log, format) => {
-        log(format(`Rendering ${templatePath} to ${outputPath}`))
-      })
-      await renderReport(
-        this.browser,
-        await renderTemplateFromFile(templatePath, values),
-        outputPath,
-      )
+    this.logger.verbose((log, format) => {
+      log(format(`Rendering ${templatePath} to ${outputPath}`))
+    })
+
+    values.isMarkdown = (path.extname(templatePath.toLowerCase()) === '.md')
+    let content = await renderTemplateFromFile(templatePath, values)
+
+    if (values.isMarkdown) {
+      content = await renderTemplateFromString(`{% extends "report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`, values)
     }
+
+    await renderReport(
+      this.browser,
+      content,
+      outputPath,
+    )
+
     channels.forEach(channel => publish(channel, [outputPath], values))
   }
 
@@ -153,7 +143,9 @@ class Engine {
 
     await renderReport(
       this.browser,
-      await renderTemplateFromString(template, values),
+      template.match(/\{%\s*extends\s*.*\s*%\}/giu) // find match for '{% extends "report.html" %}' === html template
+        ? template
+        : await renderTemplateFromString(`{% extends "report.md.html" %} {% block content %}${converter.makeHtml(template)}{% endblock %}`, values),
       outputPath,
     )
   }
