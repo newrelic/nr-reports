@@ -92,13 +92,13 @@ function ChartExtension(apiKey) {
             chart: chartOptions,
           },
         ),
-        imageStr = `
+        imageStr = vars.isMarkdown ? `![](${result})` : `
           <img ${options.class ? `class="${options.class}"` : ''} src="${result}"
             width="${chartOptions.width}"
             height="${chartOptions.height}"
           />
         `
-
+        console.log("### SK DEBUG >>> IN chart-extension -- vars.isMarkdown", vars.isMarkdown)
       callback(
         null,
         new nunjucks.runtime.SafeString(imageStr),
