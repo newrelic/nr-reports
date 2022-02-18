@@ -4,19 +4,29 @@ const yargs = require('yargs/yargs'),
   puppeteer = require('puppeteer'),
   {
     rootLogger,
-    getApiKey,
     parseManifest,
     parseParams,
     splitPaths,
     Engine,
   } = require('nr-storybook-core')
 
+function getApiKey() {
+  // eslint-disable-next-line dot-notation
+  const apiKey = process.env.NEW_RELIC_API_KEY
+
+  if (!apiKey) {
+    throw Error('No api key found in NEW_RELIC_API_KEY')
+  }
+
+  return apiKey
+}
+
 async function main() {
   const args = process.argv.slice(2),
     log = rootLogger
 
   const yarggles = yargs(args)
-      .usage('Usage: [-f manifest-file] | [-n name -v values-file -o output-file -c channels] [-p template-path] [--verbose] [--debug])')
+      .usage('Usage: [-f manifest-file] | [-n name -v values-file -o output-file -c channels] [-p template-path] [--verbose] [--debug] [--no-headless])')
       .option('n', {
         alias: 'template-name',
         type: 'string',
@@ -53,7 +63,10 @@ async function main() {
       .describe('verbose', 'Enable verbose mode')
       .boolean('debug')
       .default('debug', false)
-      .describe('debug', 'Enable debug mode (be very verbose)'),
+      .describe('debug', 'Enable debug mode (be very verbose)')
+      .boolean('no-headless')
+      .default('no-headless', false)
+      .describe('no-headless', 'Don\'t launch Chromium in headless mode (useful for testing templates)'),
     argv = yarggles.argv,
     templateName = argv.n,
     valuesFile = argv.v,
@@ -62,7 +75,8 @@ async function main() {
     templatePath = argv.p,
     manifestFile = argv.f,
     verbose = argv.verbose,
-    debug = argv.debug
+    debug = argv.debug,
+    noHeadless = argv.noHeadless
   let reports
 
   log.isVerbose = verbose
@@ -102,7 +116,7 @@ async function main() {
     browser = (
       await puppeteer.launch({
         args: ['--disable-dev-shm-usage'],
-        headless: !debug,
+        headless: !noHeadless,
         ignoreHTTPSErrors: true,
       })
     )
@@ -128,7 +142,7 @@ async function main() {
   } catch (err) {
     log.error(err)
   } finally {
-    if (browser && !debug) {
+    if (browser && !noHeadless) {
       await browser.close()
     }
   }

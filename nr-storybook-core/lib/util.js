@@ -62,17 +62,6 @@ function nonDestructiveMerge(target, source) {
   return target
 }
 
-function getApiKey() {
-  // eslint-disable-next-line dot-notation
-  const apiKey = process.env['NEW_RELIC_API_KEY']
-
-  if (!apiKey) {
-    throw Error('No api key found in NEW_RELIC_API_KEY')
-  }
-
-  return apiKey
-}
-
 function getTempFile() {
   return path.join(
     os.tmpdir(),
@@ -133,7 +122,6 @@ module.exports = {
   getNested,
   raiseForStatus,
   nonDestructiveMerge,
-  getApiKey,
   getTempFile,
   parseManifest,
   parseParams,
