@@ -13,7 +13,6 @@
     "preinstall": "cd nr-storybook-core && npm install && cd ../nr-storybook-cli && npm install && cd ../nr-storybook-lambda && npm install"
   },
   "license": "Apache-2.0",
-  "dependencies": {},
   "devDependencies": {
     "eslint": "^8.3.0",
     "eslint-config-eslint": "^7.0.0",

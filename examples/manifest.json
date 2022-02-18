@@ -2,19 +2,19 @@
   {
     "template": "golden-signals.html",
     "parameters": {
-      "title": "New Relic Golden Signals Weekly Report for Billing Service",
+      "title": "New Relic Golden Signals Weekly Report",
       "author": "Alice Reli",
       "authorTitle": "SRE",
       "accountId": 9999999,
-      "accountName": "newrelic account name",
-      "appName": "application name in new relic",
+      "accountName": "NEWRELIC_ACCOUNT_NAME",
+      "appName": "NEWRELIC_APPLICATION_NAME"
     },
     "output": "golden-signals.pdf",
     "channels": [{
       "type": "email",
       "from": "me@nowhere.local",
       "to": "you@nowhere.local",
-      "subject": "New Relic Monitoring Report",
+      "subject": "{{ title }}",
       "template": "email-template.html"
     }, {
       "type": "s3",
@@ -23,16 +23,19 @@
   },
   {
     "dashboards": [
-      "dashboard guid #1",
-      "dashboard guid #2",
-      "dashboard guid #3"
+      "DASHBOARD_ENTITY_GUID_1",
+      "DASHBOARD_ENTITY_GUID_1",
+      "DASHBOARD_ENTITY_GUID_1"
     ],
-    "combinedPdf": false,
+    "combinePdfs": false,
+    "parameters": {
+      "title": "New Relic Weekly Dashboards"
+    },
     "channels": [{
       "type": "email",
       "from": "me@nowhere.local",
       "to": "you@nowhere.local",
-      "subject": "New Relic Monitoring Report",
+      "subject": "{{ title }}",
       "template": "email-template.html"
     }]
   }

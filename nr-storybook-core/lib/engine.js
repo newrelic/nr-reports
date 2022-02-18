@@ -2,12 +2,11 @@
 
 const nunjucks = require('nunjucks'),
   fetch = require('node-fetch'),
-  merge = require('easy-pdf-merge'),
+  PDFMerger = require('pdf-merger-js'),
   showdown = require('showdown'),
   fs = require('fs'),
   { createWriteStream } = require('fs'),
   path = require('path'),
-  // eslint-disable-next-line node/no-unsupported-features/node-builtins
   { pipeline } = require('stream'),
   { promisify } = require('util'),
   publish = require('./channels'),
@@ -17,27 +16,19 @@ const nunjucks = require('nunjucks'),
   DumpContextExtension = require('./extensions/dump-context-extension'),
   { NerdgraphClient } = require('./nerdgraph')
 
-const converter = new showdown.Converter({
-  ghCompatibleHeaderId: true,
-  strikethrough: true,
-  tables: true,
-  tablesHeaderId: true,
-  tasklists: true,
-  openLinksInNewWindow: true,
-  backslashEscapesHTMLTags: true,
-})
+const logger = createLogger('engine'),
+  converter = new showdown.Converter({
+    ghCompatibleHeaderId: true,
+    strikethrough: true,
+    tables: true,
+    tablesHeaderId: true,
+    tasklists: true,
+    openLinksInNewWindow: true,
+    backslashEscapesHTMLTags: true,
+  }),
+  streamPipeline = promisify(pipeline)
 
 converter.setFlavor('github')
-const streamPipeline = promisify(pipeline)
-
-const steps = {
-  notStarted: 0,
-  mergePdfs: 1,
-  publishChannels: 2,
-  cleanupDownloadDir: 3,
-  completed: 4,
-}
-let currentStep = steps.notStarted
 
 async function renderReport(browser, content, file) {
   const page = await browser.newPage()
@@ -99,6 +90,59 @@ function renderTemplateFromString(template, context = {}) {
   })
 }
 
+async function downloadDashboardPdf(apiKey, dashboard, downloadDir) {
+  const query = `{
+      dashboardCreateSnapshotUrl(guid: $guid)
+    }`,
+    options = {
+      nextCursonPath: null,
+      mutation: true,
+      headers: {},
+    },
+    nerdgraph = new NerdgraphClient(),
+    results = await nerdgraph.query(
+      apiKey,
+      query,
+      { guid: ['EntityGuid!', dashboard] },
+      options,
+    ),
+    dashboardPdfFileName = path.join(
+      downloadDir,
+      `dashboard_${dashboard}.pdf`,
+    ),
+    dashboardUrl = results[0].dashboardCreateSnapshotUrl
+
+  // todo: check for errors
+
+  logger.verbose(`Fetching dashboard ${dashboardUrl}...`)
+
+  const response = await fetch(dashboardUrl)
+
+  if (!response.ok) {
+    throw new Error(`Download PDF at ${dashboardUrl} failed: status=${response.status}`)
+  }
+
+  logger.verbose(`Writing PDF to ${dashboardPdfFileName}...`)
+  await streamPipeline(response.body, createWriteStream(dashboardPdfFileName))
+  logger.verbose(`Wrote PDF to ${dashboardPdfFileName}...`)
+
+  return dashboardPdfFileName
+}
+
+async function mergePdfs(dashboardPdfs, consolidatedPdf) {
+  const merger = new PDFMerger()
+
+  logger.verbose((log, format) => {
+    log(format(`Merging ${dashboardPdfs.length} PDFs to ${consolidatedPdf}...`))
+    dashboardPdfs.forEach(pdf => log(format(pdf)))
+  })
+
+  dashboardPdfs.forEach(dashboard => merger.add(dashboard))
+
+  logger.verbose(`Creating consolidated PDF ${consolidatedPdf}...`)
+  await merger.save(consolidatedPdf)
+}
+
 class Engine {
   constructor(options) {
     const env = nunjucks.configure(options.templatesPath || null)
@@ -107,37 +151,45 @@ class Engine {
     env.addExtension('ChartExtension', new ChartExtension(options.apiKey))
     env.addExtension('DumpContextExtension', new DumpContextExtension())
 
+    this.apiKey = options.apiKey
     this.env = env
     this.browser = options.browser
-    this.logger = createLogger('engine')
-    this.templatesPath = options.templatesPath
-    this.apiKey = options.apiKey
   }
 
-  async runReport(templatePath, values, outputPath, channels) {
+  async runReport(report) {
+    const {
+      template,
+      parameters,
+      output,
+      channels,
+    } = report
 
-    this.logger.verbose((log, format) => {
-      log(format(`Rendering ${templatePath} to ${outputPath}`))
+
+    logger.verbose((log, format) => {
+      log(format(`Rendering ${template} to ${output}`))
     })
 
-    values.isMarkdown = (path.extname(templatePath.toLowerCase()) === '.md')
-    let content = await renderTemplateFromFile(templatePath, values)
+    parameters.isMarkdown = (path.extname(template.toLowerCase()) === '.md')
+    let content = await renderTemplateFromFile(template, parameters)
 
-    if (values.isMarkdown) {
-      content = await renderTemplateFromString(`{% extends "report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`, values)
+    if (parameters.isMarkdown) {
+      content = await renderTemplateFromString(
+        `{% extends "report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
+        parameters,
+      )
     }
 
     await renderReport(
       this.browser,
       content,
-      outputPath,
+      output,
     )
 
-    channels.forEach(channel => publish(channel, [outputPath], values))
+    await publish(channels, [output], parameters)
   }
 
   async runReportFromString(template, values, outputPath) {
-    this.logger.verbose((log, format) => {
+    logger.verbose((log, format) => {
       log(format(`Rendering string template to ${outputPath}`))
     })
 
@@ -150,148 +202,48 @@ class Engine {
     )
   }
 
-  mergePdfs(dashboardPdfs, consolidatedPdf) {
-    this.logger.verbose('mergePdfs()')
-    this.logger.verbose(`dashboardPdfs: ${dashboardPdfs}`)
-    this.logger.verbose(`consolidatedPdf: ${consolidatedPdf}`)
-    merge(dashboardPdfs, consolidatedPdf, err => {
-      if (err) {
-        this.logger.error(`failed to consolidate dashboards: ${err}`)
-      }
-    })
-  }
-
-  async downloadPdf(dashboardUrl, dashboardPdfFileName) {
-    this.logger.verbose(`dashboard url: ${dashboardUrl}`)
-
-    const response = await fetch(dashboardUrl)
-
-    if (!response.ok) {
-      throw new Error(`Error: fetch failed to read the file: ${response.statusText}`)
-    }
-    await streamPipeline(response.body, createWriteStream(dashboardPdfFileName))
-  }
-
-  async runMutation(apiKey, dashboards, downloadDir) {
-    const nerdgraph = new NerdgraphClient()
-    const dashboardPdfs = []
+  async runDashboardReport(report) {
+    let downloadDir, consolidatedPdf
 
     try {
-      const query = `{
-                      dashboardCreateSnapshotUrl(guid: $guid)
-                    }`
-      const options = {
-        nextCursonPath: null,
-        mutation: true,
-        headers: {},
-      }
+      downloadDir = fs.mkdtempSync('dashboards-')
+      logger.verbose(`Created temporary directory ${downloadDir}`)
 
-      dashboards.forEach(async dashboard => {
-        const variables = { guid: ['EntityGuid!', dashboard] }
-        const results = await nerdgraph.query(
-          apiKey,
-          query,
-          variables,
-          options,
-        )
-        const dashboardPdfFileName = path.join(downloadDir, `dashboard_${dashboard}.pdf`)
+      const {
+          dashboards,
+          parameters,
+          channels,
+          combinePdfs,
+        } = report,
+        promises = dashboards.map(async dashboard => (
+          await downloadDashboardPdf(this.apiKey, dashboard, downloadDir)
+        )),
+        dashboardPdfs = await Promise.all(promises)
 
-        dashboardPdfs.push(dashboardPdfFileName)
-        await this.downloadPdf(results[0].dashboardCreateSnapshotUrl, dashboardPdfFileName)
-      })
-    } catch (err) {
-      this.logger.error(err)
-    }
-    return dashboardPdfs
-  }
-
-  mergePdfsStep(downloadDir, dashboardCount, dashboardPdfs, consolidatedPdf) {
-    this.logger.verbose('mergePdfsStep()')
-    const intervalObject = setInterval(() => {
-      const pdfCount = fs.readdirSync(downloadDir).length
-
-      if (currentStep === steps.mergePdfs && pdfCount === dashboardCount) {
-        this.mergePdfs(dashboardPdfs, consolidatedPdf)
-        clearInterval(intervalObject)
-        currentStep = steps.publishChannels
-      } else {
-        this.logger.verbose(`state: ${currentStep} -- pdf file count ${pdfCount} of ${dashboardCount}`)
-      }
-    }, 2000)
-  }
-
-  publishChannelsStep(outputFiles, downloadDir, channels) {
-    this.logger.verbose('publishChannelsStep()')
-    const intervalObject = setInterval(() => {
-      const downloadDirContent = fs.readdirSync(downloadDir)
-
-      this.logger.verbose(`downloadDirContent: ${downloadDirContent} -- count: ${downloadDirContent.length}`)
-      this.logger.verbose(`outputFiles: ${outputFiles} -- count: ${outputFiles.length}`)
-
-      if (currentStep === steps.publishChannels && outputFiles.every(item => downloadDirContent.includes(item.slice(item.lastIndexOf('/') + 1)))) {
-        channels.forEach(async (channel, index) => {
-          this.logger.verbose(`sending to channel: ${channel.type}`)
-          await publish(channel, outputFiles, {})
-          if (index === (channels.length - 1)) {
-            clearInterval(intervalObject)
-            currentStep = steps.cleanupDownloadDir
-          }
-        })
-      } else {
-        this.logger.verbose(`state: ${currentStep} -- wait for 2 more seconds`)
-      }
-    }, 2000)
-  }
-
-  cleanupDownloadDirStep(downloadDir) {
-    this.logger.verbose('cleanupDownloadDirStep()')
-    const intervalObject = setInterval(() => {
-      if (currentStep === steps.cleanupDownloadDir) {
-        if (downloadDir && downloadDir.trim() !== '/' && downloadDir.trim() !== '.' && fs.existsSync(downloadDir)) {
-          this.logger.verbose(`removing tempDir ${downloadDir}`)
-
-          fs.rmSync(downloadDir, { recursive: true })
-          clearInterval(intervalObject)
-          currentStep = steps.completed
-        }
-      } else {
-        this.logger.verbose(`state: ${currentStep} -- wait for 2 more seconds`)
-      }
-    }, 2000)
-  }
-
-  async getDashboards(report) {
-    let downloadDir, dashboardPdfs, consolidatedPdf
-
-    try {
-      downloadDir = fs.mkdtempSync(path.join('.', 'dashboards-'))
-      this.logger.verbose(`dashboard report directory: ${downloadDir}`)
-      dashboardPdfs = await this.runMutation(this.apiKey, report.dashboards, downloadDir)
-      if (report.combinedPdf) {
+      if (combinePdfs) {
         consolidatedPdf = path.join(downloadDir, 'consolidated_dashboards.pdf')
-        this.logger.verbose(`report.dashboards.length: ${report.dashboards.length}`)
-
-        currentStep = steps.mergePdfs
-        const expectedCount = report.dashboards.length
-
-        this.mergePdfsStep(downloadDir, expectedCount, dashboardPdfs, consolidatedPdf)
-      } else {
-        currentStep = steps.publishChannels
+        await mergePdfs(dashboardPdfs, consolidatedPdf)
       }
 
-      if (report.channels.length) {
-        const outputFiles = report.combinedPdf ? [consolidatedPdf] : dashboardPdfs
-
-        this.publishChannelsStep(outputFiles, downloadDir, report.channels)
-      } else {
-        currentStep = steps.cleanupDownloadDir
-      }
+      await publish(
+        channels,
+        combinePdfs ? [consolidatedPdf] : dashboardPdfs,
+        parameters,
+      )
+    } catch (err) {
+      logger.error(err)
     } finally {
       try {
-        this.cleanupDownloadDirStep(downloadDir)
-
+        if (
+          downloadDir && downloadDir.trim() !== '/' &&
+          downloadDir.trim() !== '.' &&
+          fs.existsSync(downloadDir)
+        ) {
+          logger.verbose(`Removing temporary directory ${downloadDir}...`)
+          fs.rmdirSync(downloadDir, { recursive: true })
+        }
       } catch (err) {
-        this.logger.error(`Process failed - Error: ${err}`)
+        logger.error(err)
       }
     }
   }

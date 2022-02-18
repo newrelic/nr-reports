@@ -11,14 +11,14 @@
   "scripts": {},
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.3.0"
+    "node": ">=10.0.0"
   },
   "dependencies": {
     "aws-sdk": "^2.1060.0",
-    "easy-pdf-merge": "^0.2.6",
     "node-fetch": "^2.6.6",
     "nodemailer": "^6.7.2",
     "nunjucks": "^3.2.3",
+    "pdf-merger-js": "^3.3.2",
     "puppeteer-core": "^12.0.1",
     "showdown": "^1.9.1"
   },

@@ -68,7 +68,6 @@ function ChartExtension(apiKey) {
     const accountId = options.accountId || vars.accountId
 
     if (!accountId) {
-      // eslint-disable-next-line no-console
       this.logger.warn('missing account ID')
       callback(null, '')
       return

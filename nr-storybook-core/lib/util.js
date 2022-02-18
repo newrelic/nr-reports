@@ -89,39 +89,31 @@ function parseManifest(manifestFile) {
   }
 
   return data.map(report => {
+    if (!report.parameters) {
+      report.parameters = {}
+    }
+
+    if (!report.channels) {
+      report.channels = [{ type: 'email' }]
+    }
+
     if (!report.dashboards) {
       if (!report.template) {
         report.template = 'report.html'
-      }
-
-      if (!report.parameters) {
-        report.parameters = {}
       }
 
       if (!report.output) {
         report.output = 'report.pdf'
       }
 
-      if (!report.channels) {
-        report.channels = [{ type: 'email' }]
-      }
+      return report
+    }
 
-      return {
-        template: report.template,
-        parameters: report.parameters,
-        output: report.output,
-        channels: report.channels,
-      }
-    // eslint-disable-next-line brace-style
-    }
-    // eslint-disable-next-line no-else-return
-    else {
-      return {
-        dashboards: report.dashboards,
-        combinedPdf: report.combinedPdf || false,
-        channels: report.channels || [],
-      }
-    }
+    report.combinePdfs = typeof report.combinePdfs !== 'undefined' ? (
+      report.combinePdfs
+    ) : false
+
+    return report
   })
 }
 

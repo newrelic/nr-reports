@@ -10,6 +10,7 @@ Stuff and things.
 - [ ] Manifest support in lambda
 - [ ] Report channels - Email
 - [ ] Report channels - S3
+- [ ] YAML report engine
 
 ## Things
 
