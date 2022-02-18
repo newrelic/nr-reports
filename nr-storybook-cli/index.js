@@ -116,17 +116,14 @@ async function main() {
 
     for (let index = 0; index < reports.length; index += 1) {
       if (reports[index].template) {
-        const { template, parameters, output, channels: channelConfigs } = reports[index]
-
-        await engine.runReport(template, parameters, output, channelConfigs)
-
+        await engine.runReport(reports[index])
+        continue
       } else if (reports[index].dashboards) {
-
-        await engine.getDashboards(reports[index])
-      } else {
-        throw new Error('invalid template entry')
+        await engine.runDashboardReport(reports[index])
+        continue
       }
 
+      log.warn(`Unrecognized report schema or missing required properties for report #${index}. Ignoring.`)
     }
   } catch (err) {
     log.error(err)
