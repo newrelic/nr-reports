@@ -129,9 +129,15 @@ async function main() {
       })
 
     for (let index = 0; index < reports.length; index += 1) {
-      const { template, parameters, output, channels: channelConfigs } = reports[index]
+      if (reports[index].template) {
+        await engine.runReport(reports[index])
+        continue
+      } else if (reports[index].dashboards) {
+        await engine.runDashboardReport(reports[index])
+        continue
+      }
 
-      await engine.runReport(template, parameters, output, channelConfigs)
+      log.warn(`Unrecognized report schema or missing required properties for report #${index}. Ignoring.`)
     }
   } catch (err) {
     log.error(err)

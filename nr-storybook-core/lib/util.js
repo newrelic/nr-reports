@@ -78,28 +78,31 @@ function parseManifest(manifestFile) {
   }
 
   return data.map(report => {
-    if (!report.template) {
-      report.template = 'report.html'
-    }
-
     if (!report.parameters) {
       report.parameters = {}
-    }
-
-    if (!report.output) {
-      report.output = 'report.pdf'
     }
 
     if (!report.channels) {
       report.channels = [{ type: 'email' }]
     }
 
-    return {
-      template: report.template,
-      parameters: report.parameters,
-      output: report.output,
-      channels: report.channels,
+    if (!report.dashboards) {
+      if (!report.template) {
+        report.template = 'report.html'
+      }
+
+      if (!report.output) {
+        report.output = 'report.pdf'
+      }
+
+      return report
     }
+
+    report.combinePdfs = typeof report.combinePdfs !== 'undefined' ? (
+      report.combinePdfs
+    ) : false
+
+    return report
   })
 }
 

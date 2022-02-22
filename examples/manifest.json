@@ -2,15 +2,15 @@
   {
     "template": "golden-signals.html",
     "parameters": {
-      "title": "New Relic Golden Signals Weekly Report for Billing Service",
+      "title": "New Relic Golden Signals Weekly Report",
       "author": "Alice Reli",
       "authorTitle": "SRE",
-      "accountId": 1966971,
-      "accountName": "Demotron Sandbox",
-      "appName": "Billing Service (Sandbox)"
+      "accountId": 9999999,
+      "accountName": "NEWRELIC_ACCOUNT_NAME",
+      "appName": "NEWRELIC_APPLICATION_NAME"
     },
     "output": "golden-signals.pdf",
-    "channels": [ {
+    "channels": [{
       "type": "email",
       "from": "me@nowhere.local",
       "to": "you@nowhere.local",
@@ -19,6 +19,24 @@
     }, {
       "type": "s3",
       "bucket": "sdewitt"
+    }]
+  },
+  {
+    "dashboards": [
+      "DASHBOARD_ENTITY_GUID_1",
+      "DASHBOARD_ENTITY_GUID_1",
+      "DASHBOARD_ENTITY_GUID_1"
+    ],
+    "combinePdfs": false,
+    "parameters": {
+      "title": "New Relic Weekly Dashboards"
+    },
+    "channels": [{
+      "type": "email",
+      "from": "me@nowhere.local",
+      "to": "you@nowhere.local",
+      "subject": "{{ title }}",
+      "template": "email-template.html"
     }]
   }
 ]

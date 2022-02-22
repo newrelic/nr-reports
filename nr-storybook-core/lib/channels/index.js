@@ -3,19 +3,22 @@
 const email = require('./email'),
   s3 = require('./s3')
 
-const channels = {
+const publishers = {
   email,
   s3,
 }
 
-async function publish(channelConfig, files, reportParams) {
-  const channel = channels[channelConfig.type]
+async function publish(channels, files, parameters) {
+  for (let index = 0; index < channels.length; index += 1) {
+    const channel = channels[index],
+      publisher = publishers[channel.type]
 
-  if (!channel) {
-    throw new Error(`Invalid channel ${channelConfig.type}`)
+    if (!publisher) {
+      throw new Error(`Invalid channel ${channel.type}`)
+    }
+
+    await publisher(channel, files, parameters)
   }
-
-  channel(channelConfig, files, reportParams)
 }
 
 module.exports = publish

@@ -68,7 +68,6 @@ function ChartExtension(apiKey) {
     const accountId = options.accountId || vars.accountId
 
     if (!accountId) {
-      // eslint-disable-next-line no-console
       this.logger.warn('missing account ID')
       callback(null, '')
       return
@@ -92,7 +91,7 @@ function ChartExtension(apiKey) {
             chart: chartOptions,
           },
         ),
-        imageStr = `
+        imageStr = vars.isMarkdown ? `![](${result})` : `
           <img ${options.class ? `class="${options.class}"` : ''} src="${result}"
             width="${chartOptions.width}"
             height="${chartOptions.height}"
