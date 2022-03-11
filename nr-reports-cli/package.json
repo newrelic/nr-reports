@@ -1,0 +1,17 @@
+{
+  "name": "nr-reports-cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "./scripts/build.sh",
+    "build-cron": "./scripts/build-cron.sh"
+  },
+  "author": "sdewitt@newrelic.com",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "nr-reports-core": "file:../nr-reports-core",
+    "puppeteer": "^13.1.1",
+    "yargs": "^17.3.1"
+  }
+}

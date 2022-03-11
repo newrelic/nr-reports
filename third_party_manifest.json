@@ -1,7 +1,7 @@
 {
   "lastUpdated": "Thu Feb 24 2022 14:10:19 GMT-0500 (Eastern Standard Time)",
-  "projectName": "New Relic Storybook",
-  "projectUrl": "https://github.com/newrelic-experimental/nr-storybook",
+  "projectName": "New Relic Reports",
+  "projectUrl": "https://github.com/newrelic-experimental/nr-reports",
   "includeOptDeps": false,
   "includeDev": true,
   "dependencies": {},

@@ -1,0 +1,28 @@
+{
+  "name": "nr-reports-lambda",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "./scripts/build.sh",
+    "deploy": "./scripts/deploy.sh",
+    "update": "./scripts/update.sh",
+    "delete": "./scripts/delete.sh",
+    "function-name": "node -e \"console.log(require('./cf-params.json').find(v => v.ParameterKey==='FunctionName').ParameterValue)\"",
+    "image-repo-uri": "node -e \"console.log(require('./cf-params.json').find(v => v.ParameterKey==='ImageRepoUri').ParameterValue)\"",
+    "image-tag": "node -e \"console.log(require('./cf-params.json').find(v => v.ParameterKey==='ImageTag').ParameterValue)\"",
+    "params-to-env-args": "node ./scripts/params-to-env-args.js ./cf-template.yaml ./cf-params.json"
+  },
+  "author": "sdewitt@newrelic.com",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "chrome-aws-lambda": "^10.1.0",
+    "nr-reports-core": "file:../nr-reports-core",
+    "puppeteer-core": "^13.1.1"
+  },
+  "devDependencies": {
+    "change-case": "^4.1.2",
+    "js-yaml": "^4.1.0",
+    "yaml-cfn": "^0.3.1"
+  }
+}

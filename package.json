@@ -1,16 +1,15 @@
 {
-  "name": "nr-storybook",
+  "name": "nr-reports",
   "version": "1.0.0",
   "author": "sdewitt@newrelic.com",
-  "description": "New Relic Storybook provides tools to let you build, generate, and deliver custom New Relic reports.",
+  "description": "New Relic Reports is a report generation and automation framework for New Relic.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/newrelic-experimental/nr-storybook"
+    "url": "https://github.com/newrelic-experimental/nr-reports"
   },
-  "main": "index.js",
   "scripts": {
     "lint": "npx eslint .",
-    "preinstall": "cd nr-storybook-core && npm install && cd ../nr-storybook-cli && npm install && cd ../nr-storybook-lambda && npm install"
+    "preinstall": "cd nr-reports-core && npm install && cd ../nr-reports-cli && npm install && cd ../nr-reports-lambda && npm install"
   },
   "license": "Apache-2.0",
   "devDependencies": {
