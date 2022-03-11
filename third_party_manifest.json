@@ -1,0 +1,75 @@
+{
+  "lastUpdated": "Thu Feb 24 2022 14:10:19 GMT-0500 (Eastern Standard Time)",
+  "projectName": "New Relic Storybook",
+  "projectUrl": "https://github.com/newrelic-experimental/nr-storybook",
+  "includeOptDeps": false,
+  "includeDev": true,
+  "dependencies": {},
+  "devDependencies": {
+    "eslint-config-eslint@7.0.0": {
+      "name": "eslint-config-eslint",
+      "version": "7.0.0",
+      "range": "^7.0.0",
+      "licenses": "MIT",
+      "repoUrl": "https://github.com/eslint/eslint",
+      "versionedRepoUrl": "https://github.com/eslint/eslint/tree/v7.0.0",
+      "licenseFile": "node_modules/eslint-config-eslint/LICENSE",
+      "licenseUrl": "https://github.com/eslint/eslint/blob/v7.0.0/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "Nicholas C. Zakas",
+      "email": "nicholas+npm@nczconsulting.com"
+    },
+    "eslint-plugin-disable@2.0.3": {
+      "name": "eslint-plugin-disable",
+      "version": "2.0.3",
+      "range": "^2.0.3",
+      "licenses": "MIT",
+      "repoUrl": "https://github.com/mradionov/eslint-plugin-disable",
+      "versionedRepoUrl": "https://github.com/mradionov/eslint-plugin-disable/tree/v2.0.3",
+      "licenseFile": "node_modules/eslint-plugin-disable/LICENSE",
+      "licenseUrl": "https://github.com/mradionov/eslint-plugin-disable/blob/v2.0.3/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "Michael Radionov",
+      "url": "https://github.com/mradionov"
+    },
+    "eslint-plugin-jsdoc@37.6.1": {
+      "name": "eslint-plugin-jsdoc",
+      "version": "37.6.1",
+      "range": "^37.1.0",
+      "licenses": "BSD-3-Clause",
+      "repoUrl": "https://github.com/gajus/eslint-plugin-jsdoc",
+      "versionedRepoUrl": "https://github.com/gajus/eslint-plugin-jsdoc/tree/v37.6.1",
+      "licenseFile": "node_modules/eslint-plugin-jsdoc/LICENSE",
+      "licenseUrl": "https://github.com/gajus/eslint-plugin-jsdoc/blob/v37.6.1/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "Gajus Kuizinas",
+      "email": "gajus@gajus.com",
+      "url": "http://gajus.com"
+    },
+    "eslint-plugin-node@11.1.0": {
+      "name": "eslint-plugin-node",
+      "version": "11.1.0",
+      "range": "^11.1.0",
+      "licenses": "MIT",
+      "repoUrl": "https://github.com/mysticatea/eslint-plugin-node",
+      "versionedRepoUrl": "https://github.com/mysticatea/eslint-plugin-node/tree/v11.1.0",
+      "licenseFile": "node_modules/eslint-plugin-node/LICENSE",
+      "licenseUrl": "https://github.com/mysticatea/eslint-plugin-node/blob/v11.1.0/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "Toru Nagashima"
+    },
+    "eslint@8.7.0": {
+      "name": "eslint",
+      "version": "8.7.0",
+      "range": "^8.3.0",
+      "licenses": "MIT",
+      "repoUrl": "https://github.com/eslint/eslint",
+      "versionedRepoUrl": "https://github.com/eslint/eslint/tree/v8.7.0",
+      "licenseFile": "node_modules/eslint/LICENSE",
+      "licenseUrl": "https://github.com/eslint/eslint/blob/v8.7.0/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "Nicholas C. Zakas",
+      "email": "nicholas+npm@nczconsulting.com"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 [
   {
+    "name": "golden-signals",
     "template": "golden-signals.html",
     "parameters": {
       "title": "New Relic Golden Signals Weekly Report",
@@ -9,7 +10,6 @@
       "accountName": "NEWRELIC_ACCOUNT_NAME",
       "appName": "NEWRELIC_APPLICATION_NAME"
     },
-    "output": "golden-signals.pdf",
     "channels": [{
       "type": "email",
       "from": "me@nowhere.local",
@@ -22,6 +22,7 @@
     }]
   },
   {
+    "name": "performance-summary-dashboards",
     "dashboards": [
       "DASHBOARD_ENTITY_GUID_1",
       "DASHBOARD_ENTITY_GUID_1",

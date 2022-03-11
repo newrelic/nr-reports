@@ -92,27 +92,27 @@ async function handler(event) {
       browser: await chromium.puppeteer.launch(puppetArgs),
     })
 
-    let values
+    let parameters
 
     if (process.env.REPORT_PARAMS) {
-      values = JSON.parse(process.env.REPORT_PARAMS)
+      parameters = JSON.parse(process.env.REPORT_PARAMS)
     } else if (event.body) {
-      values = event.body
+      parameters = event.body
     } else if (event.params) {
-      values = event.params
+      parameters = event.params
     }
 
     const templateBucket = (
-        (values && values.templateBucket) || process.env.S3_SOURCE_BUCKET || 'newrelic'
+        (parameters && parameters.templateBucket) || process.env.S3_SOURCE_BUCKET || 'newrelic'
       ),
       templatePath = (
-        (values && values.templatePath) || process.env.S3_SOURCE_PATH_KEY || 'report.html'
+        (parameters && parameters.templatePathKey) || process.env.S3_SOURCE_PATH_KEY || 'report.html'
       ),
       reportBucket = (
-        (values && values.reportBucket) || process.env.S3_DEST_BUCKET || 'newrelic'
+        (parameters && parameters.reportBucket) || process.env.S3_DEST_BUCKET || 'newrelic'
       ),
       reportPath = (
-        (values && values.reportPath) || process.env.S3_DEST_PATH_KEY || 'report.pdf'
+        (parameters && parameters.reportPathKey) || process.env.S3_DEST_PATH_KEY || 'report.pdf'
       ),
       template = await getS3ObjectAsString(templateBucket, templatePath)
 
@@ -120,9 +120,11 @@ async function handler(event) {
     tempFile = await getTempFile()
 
     await engine.runReportFromString(
-      template,
-      values,
-      tempFile,
+      {
+        template,
+        parameters,
+        outputPath: tempFile,
+      },
     )
 
     const data = await putS3Object(
