@@ -14,7 +14,8 @@ const nunjucks = require('nunjucks'),
   NrqlExtension = require('./extensions/nrql-extension'),
   ChartExtension = require('./extensions/chart-extension'),
   DumpContextExtension = require('./extensions/dump-context-extension'),
-  { NerdgraphClient } = require('./nerdgraph')
+  { NerdgraphClient } = require('./nerdgraph'),
+  { templateOutputName } = require('./util')
 
 const logger = createLogger('engine'),
   converter = new showdown.Converter({
@@ -108,7 +109,7 @@ async function downloadDashboardPdf(apiKey, dashboard, downloadDir) {
     ),
     dashboardPdfFileName = path.join(
       downloadDir,
-      `dashboard_${dashboard}.pdf`,
+      `dashboard-${dashboard}.pdf`,
     ),
     dashboardUrl = results[0].dashboardCreateSnapshotUrl
 
@@ -160,46 +161,94 @@ class Engine {
     const {
       template,
       parameters,
-      output,
       channels,
+      isMarkdown,
     } = report
+    let downloadDir,
+      templateIsMarkdown = isMarkdown
 
+    try {
+      downloadDir = fs.mkdtempSync('report-')
+      logger.verbose(`Created temporary directory ${downloadDir}`)
 
-    logger.verbose((log, format) => {
-      log(format(`Rendering ${template} to ${output}`))
-    })
+      const output = path.join(downloadDir, templateOutputName(template))
 
-    parameters.isMarkdown = (path.extname(template.toLowerCase()) === '.md')
-    let content = await renderTemplateFromFile(template, parameters)
+      logger.verbose((log, format) => {
+        log(format(`Rendering ${template} to ${output}...`))
+      })
 
-    if (parameters.isMarkdown) {
-      content = await renderTemplateFromString(
-        `{% extends "report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
-        parameters,
+      if (templateIsMarkdown === 'undefined') {
+        templateIsMarkdown = (path.extname(template.toLowerCase()) === '.md')
+      }
+
+      parameters.isMarkdown = templateIsMarkdown
+
+      let content = await renderTemplateFromFile(template, parameters)
+
+      if (templateIsMarkdown) {
+        content = await renderTemplateFromString(
+          `{% extends "report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
+          parameters,
+        )
+      }
+
+      await renderReport(
+        this.browser,
+        content,
+        output,
       )
+
+      await publish(channels, [output], parameters)
+    } catch (err) {
+      logger.error(err)
+    } finally {
+      try {
+        if (
+          downloadDir && downloadDir.trim() !== '/' &&
+          downloadDir.trim() !== '.' &&
+          fs.existsSync(downloadDir)
+        ) {
+          logger.verbose(`Removing temporary directory ${downloadDir}...`)
+          fs.rmdirSync(downloadDir, { recursive: true })
+        }
+      } catch (err) {
+        logger.error(err)
+      }
     }
-
-    await renderReport(
-      this.browser,
-      content,
-      output,
-    )
-
-    await publish(channels, [output], parameters)
   }
 
-  async runReportFromString(template, values, outputPath) {
-    logger.verbose((log, format) => {
-      log(format(`Rendering string template to ${outputPath}`))
-    })
-
-    await renderReport(
-      this.browser,
-      template.match(/\{%\s*extends\s*.*\s*%\}/giu) // find match for '{% extends "report.html" %}' === html template
-        ? template
-        : await renderTemplateFromString(`{% extends "report.md.html" %} {% block content %}${converter.makeHtml(template)}{% endblock %}`, values),
+  async runReportFromString(report) {
+    const {
+      template,
+      parameters,
+      isMarkdown,
       outputPath,
-    )
+    } = report
+
+    try {
+      logger.verbose((log, format) => {
+        log(format(`Rendering string template to ${outputPath}`))
+      })
+
+      parameters.isMarkdown = isMarkdown
+
+      let content = await renderTemplateFromString(template, parameters)
+
+      if (isMarkdown) {
+        content = await renderTemplateFromString(
+          `{% extends "report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
+          parameters,
+        )
+      }
+
+      await renderReport(
+        this.browser,
+        content,
+        outputPath,
+      )
+    } catch (err) {
+      logger.error(err)
+    }
   }
 
   async runDashboardReport(report) {
@@ -220,7 +269,7 @@ class Engine {
         )),
         dashboardPdfs = await Promise.all(promises)
 
-      if (combinePdfs) {
+      if (combinePdfs && dashboardPdfs.length > 1) {
         consolidatedPdf = path.join(downloadDir, 'consolidated_dashboards.pdf')
         await mergePdfs(dashboardPdfs, consolidatedPdf)
       }

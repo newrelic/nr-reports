@@ -26,7 +26,7 @@ async function main() {
     log = rootLogger
 
   const yarggles = yargs(args)
-      .usage('Usage: [-f manifest-file] | [-n name -v values-file -o output-file -c channels] [-p template-path] [--verbose] [--debug] [--no-headless])')
+      .usage('Usage: node index.js ([-f manifest-file] | [-n name -v values-file] [-p template-path] | [-d dashboards]) [-c channels] [--verbose] [--debug] [--full-chrome])')
       .option('n', {
         alias: 'template-name',
         type: 'string',
@@ -37,15 +37,10 @@ async function main() {
         type: 'string',
         describe: 'Render the template with the parameter values defined in the JSON <values-file>',
       })
-      .option('o', {
-        alias: 'output',
-        type: 'string',
-        describe: 'Write output to <output-file> ',
-      })
       .option('c', {
         alias: 'channels',
         type: 'string',
-        describe: 'Send the rendered output to the channels listed in <channels> (comma delimited)',
+        describe: 'Send report output files to the channels listed in <channels> (comma delimited)',
       })
       .option('p', {
         alias: 'template-path',
@@ -58,25 +53,30 @@ async function main() {
         type: 'string',
         describe: 'Render all reports defined in the JSON <manifest-file>',
       })
+      .option('d', {
+        alias: 'dashboards',
+        type: 'string',
+        describe: 'Download dashboard snapshots for all dashboard GUIDs listed in <dashboards> (comma delimited)',
+      })
       .boolean('verbose')
       .default('verbose', false)
       .describe('verbose', 'Enable verbose mode')
       .boolean('debug')
       .default('debug', false)
       .describe('debug', 'Enable debug mode (be very verbose)')
-      .boolean('no-headless')
-      .default('no-headless', false)
-      .describe('no-headless', 'Don\'t launch Chromium in headless mode (useful for testing templates)'),
+      .boolean('full-chrome')
+      .default('full-chrome', false)
+      .describe('full-chrome', 'Don\'t launch Chromium in headless mode (useful for testing templates)'),
     argv = yarggles.argv,
     templateName = argv.n,
     valuesFile = argv.v,
-    outputFile = argv.o,
     channels = argv.c,
     templatePath = argv.p,
     manifestFile = argv.f,
+    dashboardGuids = argv.d,
     verbose = argv.verbose,
     debug = argv.debug,
-    noHeadless = argv.noHeadless
+    fullChrome = argv.fullChrome
   let reports
 
   log.isVerbose = verbose
@@ -84,8 +84,6 @@ async function main() {
 
   if (manifestFile) {
     reports = parseManifest(manifestFile)
-  } else if (!templateName) {
-    reports = parseManifest('manifest.json')
   } else if (templateName) {
     let parameters = {}
 
@@ -96,11 +94,19 @@ async function main() {
     reports = [{
       template: templateName,
       parameters,
-      output: outputFile || 'report.pdf',
       channels: channels ? channels.split(/[\s]*,[\s]*/u).map(
         channel => ({ type: channel }),
-      ) : [{ type: 'email' }],
+      ) : [{ type: 'file' }],
     }]
+  } else if (dashboardGuids) {
+    reports = [{
+      dashboards: dashboardGuids.split(/[\s]*,[\s]*/u),
+      channels: channels ? channels.split(/[\s]*,[\s]*/u).map(
+        channel => ({ type: channel }),
+      ) : [{ type: 'file' }],
+    }]
+  } else {
+    reports = parseManifest('manifest.json')
   }
 
   if (!reports || reports.length === 0) {
@@ -116,7 +122,7 @@ async function main() {
     browser = (
       await puppeteer.launch({
         args: ['--disable-dev-shm-usage'],
-        headless: !noHeadless,
+        headless: !fullChrome,
         ignoreHTTPSErrors: true,
       })
     )
@@ -142,7 +148,7 @@ async function main() {
   } catch (err) {
     log.error(err)
   } finally {
-    if (browser && !noHeadless) {
+    if (browser && !fullChrome) {
       await browser.close()
     }
   }

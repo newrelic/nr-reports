@@ -2,6 +2,10 @@
 
 source $(dirname "$0")/vars.sh
 
+if [ -z "$MANIFEST_FILE" ]; then
+  MANIFEST_FILE="manifest.json"
+fi
+
 if [ -z "$CRON_ENTRY" ]; then
   CRON_ENTRY="00   *   *   *   *"
 fi

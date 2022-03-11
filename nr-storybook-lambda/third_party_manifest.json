@@ -1,0 +1,74 @@
+{
+  "lastUpdated": "Thu Feb 24 2022 14:09:05 GMT-0500 (Eastern Standard Time)",
+  "projectName": "New Relic Storybook",
+  "projectUrl": "https://github.com/newrelic-experimental/nr-storybook",
+  "includeOptDeps": false,
+  "includeDev": true,
+  "dependencies": {
+    "chrome-aws-lambda@10.1.0": {
+      "name": "chrome-aws-lambda",
+      "version": "10.1.0",
+      "range": "^10.1.0",
+      "licenses": "MIT",
+      "repoUrl": "https://github.com/alixaxel/chrome-aws-lambda",
+      "versionedRepoUrl": "https://github.com/alixaxel/chrome-aws-lambda/tree/v10.1.0",
+      "licenseFile": "node_modules/chrome-aws-lambda/LICENSE",
+      "licenseUrl": "https://github.com/alixaxel/chrome-aws-lambda/blob/v10.1.0/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "Alix Axel"
+    },
+    "puppeteer-core@13.1.1": {
+      "name": "puppeteer-core",
+      "version": "13.1.1",
+      "range": "^13.1.1",
+      "licenses": "Apache-2.0",
+      "repoUrl": "https://github.com/puppeteer/puppeteer",
+      "versionedRepoUrl": "https://github.com/puppeteer/puppeteer/tree/v13.1.1",
+      "licenseFile": "node_modules/puppeteer-core/LICENSE",
+      "licenseUrl": "https://github.com/puppeteer/puppeteer/blob/v13.1.1/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "The Chromium Authors"
+    }
+  },
+  "devDependencies": {
+    "change-case@4.1.2": {
+      "name": "change-case",
+      "version": "4.1.2",
+      "range": "^4.1.2",
+      "licenses": "MIT",
+      "repoUrl": "https://github.com/blakeembrey/change-case",
+      "versionedRepoUrl": "https://github.com/blakeembrey/change-case/tree/v4.1.2",
+      "licenseFile": "node_modules/change-case/LICENSE",
+      "licenseUrl": "https://github.com/blakeembrey/change-case/blob/v4.1.2/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "Blake Embrey",
+      "email": "hello@blakeembrey.com",
+      "url": "http://blakeembrey.me"
+    },
+    "js-yaml@4.1.0": {
+      "name": "js-yaml",
+      "version": "4.1.0",
+      "range": "^4.1.0",
+      "licenses": "MIT",
+      "repoUrl": "https://github.com/nodeca/js-yaml",
+      "versionedRepoUrl": "https://github.com/nodeca/js-yaml/tree/v4.1.0",
+      "licenseFile": "node_modules/js-yaml/LICENSE",
+      "licenseUrl": "https://github.com/nodeca/js-yaml/blob/v4.1.0/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "Vladimir Zapparov",
+      "email": "dervus.grim@gmail.com"
+    },
+    "yaml-cfn@0.3.1": {
+      "name": "yaml-cfn",
+      "version": "0.3.1",
+      "range": "^0.3.1",
+      "licenses": "Apache-2.0",
+      "repoUrl": "https://github.com/gristlabs/yaml-cfn",
+      "versionedRepoUrl": "https://github.com/gristlabs/yaml-cfn/tree/v0.3.1",
+      "licenseFile": "node_modules/yaml-cfn/LICENSE",
+      "licenseUrl": "https://github.com/gristlabs/yaml-cfn/blob/v0.3.1/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "Dmitry S, Grist Labs"
+    }
+  }
+}

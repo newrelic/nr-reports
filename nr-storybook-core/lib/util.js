@@ -77,22 +77,22 @@ function parseManifest(manifestFile) {
     throw new Error(`${manifestFile} must start with an array`)
   }
 
-  return data.map(report => {
+  return data.map((report, index) => {
+    if (!report.name) {
+      throw new Error(`Report ${index} in ${manifestFile} must include a 'name' property`)
+    }
+
     if (!report.parameters) {
       report.parameters = {}
     }
 
     if (!report.channels) {
-      report.channels = [{ type: 'email' }]
+      report.channels = [{ type: 'file' }]
     }
 
     if (!report.dashboards) {
       if (!report.template) {
         report.template = 'report.html'
-      }
-
-      if (!report.output) {
-        report.output = 'report.pdf'
       }
 
       return report
@@ -116,6 +116,24 @@ function splitPaths(paths) {
   return paths.split(path.delimiter)
 }
 
+function templateOutputName(templateName, ext = 'pdf') {
+  const {
+    name,
+  } = path.parse(templateName)
+
+  return `${name}.${ext}`
+}
+
+function stringToBoolean(str) {
+  const lower = str.toLowerCase()
+
+  if (lower === 'true' || lower === 'on' || lower === 'yes' || lower === '1') {
+    return true
+  }
+
+  return false
+}
+
 module.exports = {
   ENDPOINTS,
   HttpError,
@@ -126,4 +144,6 @@ module.exports = {
   parseManifest,
   parseParams,
   splitPaths,
+  templateOutputName,
+  stringToBoolean,
 }

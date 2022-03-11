@@ -1,7 +1,8 @@
 'use strict'
 
 const nodemailer = require('nodemailer'),
-  nunjucks = require('nunjucks')
+  nunjucks = require('nunjucks'),
+  { stringToBoolean } = require('../util')
 
 function createSmtpTransport() {
   const smtpConfig = {
@@ -10,8 +11,8 @@ function createSmtpTransport() {
       parseInt(process.env.EMAIL_SMTP_PORT, 10)
     ) : 587,
     secure: typeof process.env.EMAIL_SMTP_SECURE === 'undefined' ? (
-      process.env.EMAIL_SMTP_SECURE
-    ) : true,
+      true
+    ) : stringToBoolean(process.env.EMAIL_SMTP_SECURE),
   }
 
   if (process.env.EMAIL_SMTP_USER) {
@@ -29,10 +30,10 @@ async function sendEmail(channelConfig, files, reportParams) {
     from = channelConfig.from || process.env.EMAIL_FROM,
     to = channelConfig.to || process.env.EMAIL_TO,
     subject = nunjucks.renderString(
-      channelConfig.subject || process.env.EMAIL_SUBJECT,
+      channelConfig.subject || process.env.EMAIL_SUBJECT || '',
       { ...channelConfig, ...reportParams },
     ),
-    template = channelConfig.template || 'default',
+    template = channelConfig.template || process.env.EMAIL_TEMPLATE || 'email-template.html',
     body = nunjucks.render(template, { ...channelConfig, ...reportParams })
 
   await transporter.sendMail({

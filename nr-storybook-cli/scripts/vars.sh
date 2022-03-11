@@ -12,8 +12,8 @@ usage() {
   exit
 }
 
-MANIFEST_FILE="manifest.json"
-TEMPLATE_DIR="templates"
+MANIFEST_FILE=""
+TEMPLATE_DIR=""
 CRON_ENTRY=""
 IMAGE_REPO=""
 IMAGE_TAG="latest"
