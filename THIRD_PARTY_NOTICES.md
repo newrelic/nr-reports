@@ -1,6 +1,6 @@
 # Third Party Notices
 
-The New Relic Storybook uses source code from third party libraries which carry
+The New Relic Reports uses source code from third party libraries which carry
 their own copyright notices and license terms. These notices are provided
 below.
 
@@ -8,7 +8,7 @@ In the event that a required notice is missing or incorrect, please notify us
 by e-mailing [open-source@newrelic.com](mailto:open-source@newrelic.com).
 
 For any licenses that require the disclosure of source
-code, the source code can be found at [https://github.com/newrelic-experimental/nr-storybook](https://github.com/newrelic-experimental/nr-storybook).
+code, the source code can be found at [https://github.com/newrelic-experimental/nr-reports](https://github.com/newrelic-experimental/nr-reports).
 
 ## Content
 
@@ -17,11 +17,15 @@ code, the source code can be found at [https://github.com/newrelic-experimental/
 
 **[devDependencies](#devDependencies)**
 
-* [eslint-config-eslint](#eslint-config-eslint)
-* [eslint-plugin-disable](#eslint-plugin-disable)
-* [eslint-plugin-jsdoc](#eslint-plugin-jsdoc)
-* [eslint-plugin-node](#eslint-plugin-node)
-* [eslint](#eslint)
+- [Third Party Notices](#third-party-notices)
+  - [Content](#content)
+  - [dependencies](#dependencies)
+  - [devDependencies](#devdependencies)
+    - [eslint-config-eslint](#eslint-config-eslint)
+    - [eslint-plugin-disable](#eslint-plugin-disable)
+    - [eslint-plugin-jsdoc](#eslint-plugin-jsdoc)
+    - [eslint-plugin-node](#eslint-plugin-node)
+    - [eslint](#eslint)
 
 
 ## dependencies

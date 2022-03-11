@@ -1,0 +1,33 @@
+{
+  "lastUpdated": "Thu Feb 24 2022 14:07:53 GMT-0500 (Eastern Standard Time)",
+  "projectName": "New Relic Reports",
+  "projectUrl": "https://github.com/newrelic-experimental/nr-reports",
+  "includeOptDeps": false,
+  "includeDev": true,
+  "dependencies": {
+    "puppeteer@13.1.1": {
+      "name": "puppeteer",
+      "version": "13.1.1",
+      "range": "^13.1.1",
+      "licenses": "Apache-2.0",
+      "repoUrl": "https://github.com/puppeteer/puppeteer",
+      "versionedRepoUrl": "https://github.com/puppeteer/puppeteer/tree/v13.1.1",
+      "licenseFile": "node_modules/puppeteer/LICENSE",
+      "licenseUrl": "https://github.com/puppeteer/puppeteer/blob/v13.1.1/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "The Chromium Authors"
+    },
+    "yargs@17.3.1": {
+      "name": "yargs",
+      "version": "17.3.1",
+      "range": "^17.3.1",
+      "licenses": "MIT",
+      "repoUrl": "https://github.com/yargs/yargs",
+      "versionedRepoUrl": "https://github.com/yargs/yargs/tree/v17.3.1",
+      "licenseFile": "node_modules/yargs/LICENSE",
+      "licenseUrl": "https://github.com/yargs/yargs/blob/v17.3.1/LICENSE",
+      "licenseTextSource": "file"
+    }
+  },
+  "devDependencies": {}
+}

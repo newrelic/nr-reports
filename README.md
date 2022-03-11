@@ -15,18 +15,18 @@
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/newrelic-experimental/newrelic-experimental-FIT-template)
 ![GitHub pull requests closed](https://img.shields.io/github/issues-pr-closed/newrelic-experimental/newrelic-experimental-FIT-template)
 
-# New Relic Storybook
+# New Relic Reports
 
 A report generation and automation framework for New Relic.
 
 ## Overview
 
-New Relic Storybook is a framework for building custom reports and automating
+New Relic Reports is a framework for building custom reports and automating
 the generation and delivery of those reports via a variety of channels.
 
 ### Report Types
 
-The Storybook framework supports two types of reports: template based and
+The Reports framework supports two types of reports: template based and
 dashboard based. providing a simple list of dashboard GUIDs or creating
 report template files in HTML or Markdown.
 
@@ -43,7 +43,7 @@ single PDF.
 
 ### Channel Types
 
-The Storybook framework supports different mechanisms for delivering generated
+The Reports framework supports different mechanisms for delivering generated
 reports. These mechanisms are referred to as channels. The following types of
 channels are supported.
 
@@ -53,7 +53,7 @@ channels are supported.
 
 ### Running Reports
 
-Storybook supports three ways to run reports.
+Reports supports three ways to run reports.
 
 1. Using the command line interface (CLI)
 
@@ -63,7 +63,7 @@ Storybook supports three ways to run reports.
 
 1. Packaged as a Docker image
 
-   `Dockerfile`s are provided to package the Storybook engine, along with your
+   `Dockerfile`s are provided to package the Reports engine, along with your
    [templates](#templates) and [manifest file](#manifest-file) as a docker
    image that runs reports on a schedule using `CRON` or that provides a CLI
    based `ENTRYPOINT` that can be run via external scheduled task mechanisms
@@ -71,22 +71,15 @@ Storybook supports three ways to run reports.
 
 1. Packaged as an AWS Lambda function
 
-   [A Dockerfile](./nr-storybook-lambda/Dockerfile) is provided to package the
-   Storybook engine as an AWS Lambda function. The Lambda can be deployed with
-   [the provided CloudFormation template](./nr-storybook-lambda/cf-template.yaml)
-   and [the provided helper scripts](./nr-storybook-lambda/scripts).
+   [A Dockerfile](./nr-reports-lambda/Dockerfile) is provided to package the
+   Reports engine as an AWS Lambda function. The Lambda can be deployed with
+   [the provided CloudFormation template](./nr-reports-lambda/cf-template.yaml)
+   and [the provided helper scripts](./nr-reports-lambda/scripts).
 
    The AWS Lambda function is designed to read a single template from a source
    S3 bucket and store the resulting report back into a destination S3 bucket.
    [Manifest file](#manifest-file) and [Dashboard](#dashboard-report-properties)
    support is on [the TODO list](./TODO.md).
-
-### Why Storybook?
-
-A wise person once told me that Dashboards should tell a story about the health
-of your systems and services. While the Storybook framework does more than just
-take snapshots of Dashboards, the fundamental idea behind any report is the
-same: to tell a story using your observability data. Hence, Storybook.
 
 ## Prerequisites
 
@@ -113,8 +106,8 @@ To build and deploy Lambda based images, you will need the following.
 ## Installation
 
 ```bash
-git clone git@github.com:newrelic-experimental/nr-storybook.git
-cd nr-storybook
+git clone git@github.com:newrelic-experimental/nr-reports.git
+cd nr-reports
 npm install
 ```
 
@@ -125,7 +118,7 @@ throughput chart for an application named `Shop Service`.
 
 **NOTE:** For this simple tutorial, we will be generating reports interactively
 from the command line. While this is convenient for testing things out, one of
-the main features of the Storybook project is the automation support for
+the main features of the Reports project is the automation support for
 report generation and delivery.
 
 ### Before you begin
@@ -135,12 +128,12 @@ If you haven't already, make sure you have checked
 will also need [a New Relic User key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#user-api-key).
 
 Then open a terminal that supports Bash scripts and execute the following
-commands, making sure to replace `path/to/nr-storybook` with the path to the
-directory where you cloned the `nr-storybook` repository AND `YOUR_USER_KEY`
+commands, making sure to replace `path/to/nr-reports` with the path to the
+directory where you cloned the `nr-reports` repository AND `YOUR_USER_KEY`
 with your New Relic User key.
 
 ```bash
-cd path/to/nr-storybook
+cd path/to/nr-reports
 export NEW_RELIC_API_KEY=[YOUR USER KEY]
 ```
 
@@ -183,7 +176,7 @@ and will be explained [in the usage section](#usage).
 Now run the report using the following command.
 
 ```bash
-./nr-storybook-cli/bin/nr-storybook.sh -p examples -n hello-world.html
+./nr-reports-cli/bin/nr-reports.sh -p examples -n hello-world.html
 ```
 
 That's it!
@@ -253,7 +246,7 @@ Now, run the report using the following command, noting the addition of the `-v`
 option that is used to specify the path to the values file.
 
 ```bash
-./nr-storybook-cli/bin/nr-storybook.sh -p examples -n hello-world.html -v examples/hello-world.json 
+./nr-reports-cli/bin/nr-reports.sh -p examples -n hello-world.html -v examples/hello-world.json 
 ```
 
 Now there should be a new PDF file in the current directory called
@@ -264,7 +257,7 @@ actually change the values.
 ### Run a dashboard report
 
 So far we have been running template reports, i.e. reports based on a template
-file. Storybook supports another report type called dashboard reports.
+file. Reports supports another report type called dashboard reports.
 Dashboard reports are much simpler. You specify a list of dashboard GUIDs and
 the report engine will use Nerdgraph to download a dashboard snapshot PDF for
 each dashboard and optionally combine multiple snapshots in a single PDF.
@@ -291,7 +284,7 @@ Now run the report using the following command, replacing the string
 `ABCDEF123456` with your dashboard GUID.
 
 ```bash
-./nr-storybook-cli/bin/nr-storybook.sh -d ABCDEF123456
+./nr-reports-cli/bin/nr-reports.sh -d ABCDEF123456
 ```
 
 Now there should be a new PDF file in the current directory called
@@ -314,7 +307,7 @@ Here's what we just did.
    report in the current directory.
 
 Though useful during template development, in most cases, you won't be
-generating reports by running the CLI directly. Rather, Storybook provides
+generating reports by running the CLI directly. Rather, Reports provides
 mechanisms for you to automate the generation and delivery of these reports.
 See [the usage section](#usage) for more details.
 
@@ -352,7 +345,7 @@ contain HTML or Markdown or XML. As long as it is a text file, Nunjucks will
 scan for template expressions and attempt to process them.
 
 That said, with the exception of template files with the extension `.md`,
-Storybook passes the template file directly to the Nunjucks engine, and passes
+Reports passes the template file directly to the Nunjucks engine, and passes
 the output from the engine directly to a headless Chrome instance for rendering.
 Template files with a `.md` extension are assumed to contain Markdown and are
 converted to HTML using [the `showdown` module](https://github.com/showdownjs/showdown)
@@ -377,15 +370,15 @@ directory on the template path for the a file matching the template name. For
 example, consider the following directory structure.
 
 ```text
-/app/my-storybook
+/app/my-reports
   |- templates
     |- hello-world.html
 ```
 
 Given the template name `hello-world.html` and the template path
-`/app/my-storybook/templates`, the `FileSystemLoader` would load the template
-from the file `/app/my-storybook/templates/hello-world.html`. However, if the
-template path were `/app/my-storybook`, the `FileSystemLoader` would fail to
+`/app/my-reports/templates`, the `FileSystemLoader` would load the template
+from the file `/app/my-reports/templates/hello-world.html`. However, if the
+template path were `/app/my-reports`, the `FileSystemLoader` would fail to
 find a matching template and the engine would throw an exception.
 
 The template name _may_ include segments separated by the system path separator,
@@ -527,7 +520,7 @@ command line. For example, the CLI command used in the [Run a report](#run-a-rep
 section could have explicitly specified the file channel as follows.
 
 ```bash
-./nr-storybook-cli/bin/nr-storybook.sh -p examples -n hello-world.html -c file
+./nr-reports-cli/bin/nr-reports.sh -p examples -n hello-world.html -c file
 ```
 
 This is not necessary since the [file channel](#file-channel) is the default.
@@ -535,7 +528,7 @@ However, if we wanted to use the [email channel](#email-channel) instead, we
 would have to specify it as follows.
 
 ```bash
-./nr-storybook-cli/bin/nr-storybook.sh -p examples -n hello-world.html -c email
+./nr-reports-cli/bin/nr-reports.sh -p examples -n hello-world.html -c email
 ```
 
 In both of the above cases, the respective channel implementation will attempt
@@ -715,41 +708,41 @@ node index.js ([-f manifest-file] | ([-n name -v values-file] [-p template-path]
 
 #### CLI Examples
 
-The examples shown below use the `./nr-storybook-cli/bin/nr-storybook.sh`
+The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh`
 wrapper.
 
 * Run all reports using the defaults (read reports from `manifest.json` in the
   current working directory)
 
-  `./nr-storybook-cli/bin/nr-storybook.sh`
+  `./nr-reports-cli/bin/nr-reports.sh`
 
 * Run all reports defined in the manifest file `my-manifest.json`
 
-  `./nr-storybook-cli/bin/nr-storybook.sh -f my-manifest.json`
+  `./nr-reports-cli/bin/nr-reports.sh -f my-manifest.json`
 
 * Run a report using the template named `my-report.html` in the current working
   directory with the values file `my-report-values.json` and copies the result
   report into the current working directory
 
-  `./nr-storybook-cli/bin/nr-storybook.sh -n my-report.html -v my-report-values.json`
+  `./nr-reports-cli/bin/nr-reports.sh -n my-report.html -v my-report-values.json`
 
 * Run a report using the template named `my-report.html` in the directory
   `/opt/templates` with the values file `my-report-values.json` and upload the
   result report to AWS S3 using the bucket name defined in the `S3_DEST_BUCKET`
   environment variable
 
-  `./nr-storybook-cli/bin/nr-storybook.sh -n my-report.html -v my-report-values.json -p /opt/templates -c s3`
+  `./nr-reports-cli/bin/nr-reports.sh -n my-report.html -v my-report-values.json -p /opt/templates -c s3`
 
 * Run a report with a snapshot image of the dashboards with GUIDs `A1234` and
   `B1234`, copy the result report into the current working directory, and email
   the result report using the email channel configuration values specified in
   the `EMAIL_*` environment variables
 
-  `./nr-storybook-cli/bin/nr-storybook.sh -d A1234,B1234 -c file,email`
+  `./nr-reports-cli/bin/nr-reports.sh -d A1234,B1234 -c file,email`
 
 ### Using the CLI image
 
-A [Dockerfile](./nr-storybook-cli/Dockerfile) is provided to build a Docker
+A [Dockerfile](./nr-reports-cli/Dockerfile) is provided to build a Docker
 image that provides an `ENTRYPOINT` that runs the CLI with no arguments. This
 image is meant to be used in conjuction with external scheduled task mechanisms
 such as [AWS ECS Scheduled Tasks](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/scheduled_tasks.html)
@@ -763,22 +756,28 @@ when the image is deployed.
 
 #### Building the CLI image
 
-In addition to the CLI `Dockerfile`, the [`build.sh`](./nr-storybook-cli/scripts/build.sh)
+In addition to the CLI `Dockerfile`, the [`build.sh`](./nr-reports-cli/scripts/build.sh)
 script is provided to simplify building the CLI image. It supports the
 following options.
 
 | Option | Description | Example |
 | --- | --- | --- |
-| `--manifest-file manifest-file` | A local [manifest file](#manifest-file) that specifies reports to run. Will be copied into the images `/app/nr-storybook-cli` directory. | `--manifest-file manifest.json` |
-| `--template-dir template-dir` | A local directory containing the templates to copy into the images `/app/nr-storybook-cli/templates` directory. | `--template-dir templates` |
-| `--image-repo image-repository` | The repository to use when tagging the image. Defaults to `nr-storybook`. | `--image-repo nr-storybook` |
+| `--manifest-file manifest-file` | A local [manifest file](#manifest-file) that specifies reports to run. Will be copied into the images `/app/nr-reports-cli` directory. | `--manifest-file manifest.json` |
+| `--template-dir template-dir` | A local directory containing the templates to copy into the images `/app/nr-reports-cli/templates` directory. | `--template-dir templates` |
+| `--image-repo image-repository` | The repository to use when tagging the image. Defaults to `nr-reports`. | `--image-repo nr-reports` |
 | `--image-tag image-tag` | The tag to use whtn tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
+
+You can either run the script directly or use the `npm run build` command while
+in the `./nr-reports-cli` directory.
 
 Here are a few examples.
 
 * Build an image using all the defaults.
   
-  `./nr-storybook-cli/scripts/build.sh`
+  ```bash
+  cd ./nr-reports-cli
+  npm run build
+  ```
 
   The only way this image is useful is if you are going to pass _all_ arguments
   into it when run. In addition, if you are generating any template reports or
@@ -787,50 +786,59 @@ Here are a few examples.
 
 * Build an image that will run all reports in `./examples/manifest.json` and
   will include all templates from `./examples` in the image. The image will be
-  tagged with `nr-storybook:latest` in the local Docker registry.
+  tagged with `nr-reports:latest` in the local Docker registry.
   
-  `./nr-storybook-cli/scripts/build.sh --manifest-file ./examples/manifest.json --template-dir ./examples`
+  ```bash
+  cd ./nr-reports-cli
+  npm run build -- --manifest-file ./examples/manifest.json --template-dir ./examples
+  ```
 
 ### Using the CRON image
 
-The Dockerfile [`Dockerfile-cron`](./nr-storybook-cli/Dockerfile-cron) is
+The Dockerfile [`Dockerfile-cron`](./nr-reports-cli/Dockerfile-cron) is
 provided to build a Docker image that runs reports on a schedule using `cron`.
 
 #### Building the CRON image
 
-The [`build-cron.sh`](./nr-storybook-cli/scripts/build-cron.sh) script is
+The [`build-cron.sh`](./nr-reports-cli/scripts/build-cron.sh) script is
 provided to simplify building a CRON image. It supports the following options.
 
 | Option | Description | Example |
 | --- | --- | --- |
-| `--manifest-file manifest-file` | A local [manifest file](#manifest-file) that specifies reports to run. Will be copied into the images `/app/nr-storybook-cli` directory. Defaults to `manifest.json`. | `--manifest-file manifest.json` |
-| `--template-dir template-dir` | A local directory containing the template to copy into the images `/app/nr-storybook-cli/templates` directory. | `--template-dir templates` |
+| `--manifest-file manifest-file` | A local [manifest file](#manifest-file) that specifies reports to run. Will be copied into the images `/app/nr-reports-cli` directory. Defaults to `manifest.json`. | `--manifest-file manifest.json` |
+| `--template-dir template-dir` | A local directory containing the template to copy into the images `/app/nr-reports-cli/templates` directory. | `--template-dir templates` |
 | `--cron-entry crontab-entry` | A crontab instruction specifying the cron schedule. Defaults to `0 * * * *`. Make sure to quote the entry string. | `--cron-entry "*     *     *     *     *"` |
-| `--image-repo image-repository` | The repository to use when tagging the image. Defaults to `nr-storybook-cron`. | `--image-repo nr-storybook-cron` |
+| `--image-repo image-repository` | The repository to use when tagging the image. Defaults to `nr-reports-cron`. | `--image-repo nr-reports-cron` |
 | `--image-tag image-tag` | The tag to use whtn tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
+
+You can either run the script directly or use the `npm run build-cron` command
+while in the `./nr-reports-cli` directory.
 
 Here are a few examples.
 
 * Build an image using all the defaults.
   
-  `./nr-storybook-cron/scripts/build-cron.sh`
+  ```bash
+  cd ./nr-reports-cli
+  npm run build-cron
+  ```
 
   This will build an image that will run all reports the `./manifest.json` once
-  an hour. The image will be tagged with `nr-storybook-cron:latest` in the local
+  an hour. The image will be tagged with `nr-reports-cron:latest` in the local
   Docker registry. Note that if a `manifest.json` file does not exist in the
   current working directory, the build will fail. A manifest file is required
   for the CRON image.
 
 * Build an image that will run all reports in `./examples/manifest.json` every
   day at 04:00 and will include all templates from `./examples` in the image.
-  The image will be tagged with `nr-storybook-cron:latest` in the local Docker
+  The image will be tagged with `nr-reports-cron:latest` in the local Docker
   registry.
 
-  `./nr-storybook-cli/scripts/build-cron.sh --manifest-file ./examples/manifest.json --template-dir ./examples --cron-entry "0     4     *     *     *`
+  `./nr-reports-cli/scripts/build-cron.sh --manifest-file ./examples/manifest.json --template-dir ./examples --cron-entry "0     4     *     *     *`
 
 ### Using the AWS Lambda function
 
-Storybook can be deployed as an AWS Lambda function. The Lambda function can be
+Reports can be deployed as an AWS Lambda function. The Lambda function can be
 combined with other AWS services to trigger report generation in a variety of
 ways. For example, an AWS EventBridge trigger can be used to run reports on a
 schedule. Or, an Application Load Balancer trigger can be used to expose an
@@ -855,7 +863,7 @@ Prior to working with the Lambda function, you will need to ensure that you have
 the following.
 
 1. An ECR container registry to host the container image built with
-   [the Lambda Dockerfile](./nr-storybook-lambda/Dockerfile)
+   [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile)
 2. A [function execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)
    that the Lambda function will assume when the function is invoked
 3. An S3 bucket that the Lambda function can read from
@@ -865,12 +873,12 @@ the following.
 
 #### Deploying the Lambda function
 
-The Storybook AWS Lambda function can be deployed and managed using the scripts
-defined in [the scripts directory](./nr-storybook-lambda/scripts). These scripts
+The Reports AWS Lambda function can be deployed and managed using the scripts
+defined in [the scripts directory](./nr-reports-lambda/scripts). These scripts
 require the AWS CLI to be installed. It is used to create and manage the AWS
-resources required by the Storybook Lambda function.
+resources required by the Reports Lambda function.
 
-The Lambda function is deployed using [a CloudFormation template](./nr-storybook-lambda/cf-template.yaml).
+The Lambda function is deployed using [a CloudFormation template](./nr-reports-lambda/cf-template.yaml).
 The CloudFormation template accepts a number of parameters which must be
 specified when deploying. Parameters are specified using a JSON file with the
 following format.
@@ -888,10 +896,10 @@ following format.
 ]
 ```
 
-A [sample template parameter file](./nr-storybook-lambda/cf-params.sample.json)
+A [sample template parameter file](./nr-reports-lambda/cf-params.sample.json)
 is provided the shows an example of using each of the parameters supported by
 the template. Documentation for each parameter is provided inline in
-[the CloudFormation template](./nr-storybook-lambda/cf-template.yaml) as
+[the CloudFormation template](./nr-reports-lambda/cf-template.yaml) as
 comments. For example, here is the documentation for the `UserApiKey` parameter.
 
 ```yaml
@@ -908,31 +916,31 @@ comments. For example, here is the documentation for the `UserApiKey` parameter.
     Default: ''
 ```
 
-[The `deploy.sh` script](./nr-storybook-lambda/scripts/deploy.sh) is used
-to deploy the Storybook Lambda function. This script will first invoke
-[the `build.sh` script](./nr-storybook-lambda/scripts/build.sh) to build the
-Lambda Docker image using [the Lambda Dockerfile](./nr-storybook-lambda/Dockerfile).
+[The `deploy.sh` script](./nr-reports-lambda/scripts/deploy.sh) is used
+to deploy the Reports Lambda function. This script will first invoke
+[the `build.sh` script](./nr-reports-lambda/scripts/build.sh) to build the
+Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
 The script will then push the image from the local Docker registry to the
-registry defined in the `./nr-storybook-lambda/cf-params.json` file and use the
+registry defined in the `./nr-reports-lambda/cf-params.json` file and use the
 `aws cloudformation deploy` command to create the stack using
-[the CloudFormation template](./nr-storybook-lambda/cf-template.yaml).
+[the CloudFormation template](./nr-reports-lambda/cf-template.yaml).
 
 To deploy the Lambdda function using the `deploy.sh` script, perform the
 following steps.
 
 1. Ensure you are logged into AWS ECR using `aws ecr get-login-password`.
-2. Copy the [./nr-storybook-lambda/cf-params.sample.json](./nr-storybook-lambda/cf-params.sample.json)
-   file to `./nr-storybook-lambda/cf-params.json`
+2. Copy the [./nr-reports-lambda/cf-params.sample.json](./nr-reports-lambda/cf-params.sample.json)
+   file to `./nr-reports-lambda/cf-params.json`
 
-   `cp ./nr-storybook-lambda/cf-params.sample.json ./nr-storybook-lambda/cf-params.json`
+   `cp ./nr-reports-lambda/cf-params.sample.json ./nr-reports-lambda/cf-params.json`
 
    _Note:_ This file does not exist by default, so make sure to do this step.
 
-3. Update the values in the file `./nr-storybook-lambda/cf-params.json` as
+3. Update the values in the file `./nr-reports-lambda/cf-params.json` as
    appropriate for your environment.
-4. Run [The `deploy.sh` script](./nr-storybook-lambda/scripts/deploy.sh).
+4. Run [The `deploy.sh` script](./nr-reports-lambda/scripts/deploy.sh).
 
-   `./nr-storybook-lambda/scripts/deploy.sh --package-name nr-report-builder`
+   `./nr-reports-lambda/scripts/deploy.sh --package-name nr-report-builder`
 
    The "package-name" will be used as the stack name as well as the image name
    used to tag the image in your local Docker registry.
@@ -994,28 +1002,60 @@ used in the AWS Lambda function.
 
 #### Update the Lambda function
 
-[The `update.sh` script](./nr-storybook-lambda/scripts/deploy.sh) is used
-to update the Storybook Lambda function. This script first invokes
-[the `build.sh` script](./nr-storybook-lambda/scripts/build.sh) to build the
-Lambda Docker image using [the Lambda Dockerfile](./nr-storybook-lambda/Dockerfile).
+[The `update.sh` script](./nr-reports-lambda/scripts/deploy.sh) is used
+to update the Reports Lambda function. This script first invokes
+[the `build.sh` script](./nr-reports-lambda/scripts/build.sh) to build the
+Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
 The script will then push the image from the local Docker registry to the
-registry defined in the `./nr-storybook-lambda/cf-params.json` file and use the
+registry defined in the `./nr-reports-lambda/cf-params.json` file and use the
 `aws lambda update-function-code` command to update the Lambda to point to the
 new image. Note that you _must_ increment the value of the `ImageTag` parameter
-specified in your `./nr-storybook-lambda/cf-params.json` file.
+specified in your `./nr-reports-lambda/cf-params.json` file.
 
 At this time, updating the Lambda function is of little use unless you make
-changes to the actual Storybook code. This script will be useful once the Lambda
+changes to the actual Reports code. This script will be useful once the Lambda
 function supports [manifest files](#manifest-file) and bundled template files.
 
 #### Deleting the Lambda function
 
-[The `delete.sh` script](./nr-storybook-lambda/scripts/delete.sh) is used
-to delete the Storybook Lambda function and the associated CloudFormation stack.
+[The `delete.sh` script](./nr-reports-lambda/scripts/delete.sh) is used
+to delete the Reports Lambda function and the associated CloudFormation stack.
 
 ## Troubleshooting
 
-No troubles in sight.
+### `Error: Failed to launch the browser process!`
+
+If you get the error below while running the Docker CLI or CRON image, you
+need to ensure that the container has privileged access. Granting the container
+privileged access can vary depending on where the container is being run. For
+example, on ECS, the container must have the privileged container capability,
+i.e. `com.amazonaws.ecs.capability.privileged-container`. When running locally,
+you may need to add `--cap-add=SYS_ADMIN`. See
+[this documentation](https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-in-docker)
+for more details.
+
+```bash
+Error: Failed to launch the browser process!
+Failed to move to new namespace: PID namespaces supported, Network namespace supported, but failed: errno = Operation not permitted
+[0311/215738.145277:FATAL:zygote_host_impl_linux.cc(191)] Check failed: ReceiveFixedMessage(fds[0], kZygoteBootMessage, sizeof(kZygoteBootMessage), &boot_pid).
+Received signal 6
+  r8: 00007ffe9021d000  r9: 00007fc18b8aefdc r10: 0000000000000008 r11: 0000000000000246
+ r12: 00007ffe9021d650 r13: 00007ffe9021d56c r14: 00007fc189afbe20 r15: 00000000000000a0
+  di: 0000000000000002  si: 00007ffe9021ce90  bp: 00007ffe9021ce90  bx: 0000000000000000
+  dx: 0000000000000000  ax: 0000000000000000  cx: 00007fc18e3ef3f2  sp: 00007ffe9021ce88
+  ip: 00007fc18e3ef3f2 efl: 0000000000000246 cgf: 002b000000000033 erf: 0000000000000000
+ trp: 0000000000000000 msk: 0000000000000000 cr2: 0000000000000000
+[end of stack trace]
+
+
+TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md
+
+    at onClose (/app/nr-storybook-cli/node_modules/puppeteer/lib/cjs/puppeteer/node/BrowserRunner.js:229:20)
+    at ChildProcess.<anonymous> (/app/nr-storybook-cli/node_modules/puppeteer/lib/cjs/puppeteer/node/BrowserRunner.js:220:79)
+    at ChildProcess.emit (events.js:412:35)
+    at ChildProcess.emit (domain.js:475:12)
+    at Process.ChildProcess._handle.onexit (internal/child_process.js:282:12)
+```
 
 ## Support
 
@@ -1029,7 +1069,7 @@ collaborate on solutions and new ideas.
 
 ## Contributing
 
-We encourage your contributions to improve Storybook! Keep in mind when you
+We encourage your contributions to improve Reports! Keep in mind when you
 submit your pull request, you'll need to sign the CLA via the click-through
 using CLA-Assistant. You only have to sign the CLA one time per project. If you
 have any questions, or to execute our corporate CLA, required if your
@@ -1049,9 +1089,9 @@ reporting it to New Relic through [HackerOne](https://hackerone.com/newrelic).
 
 ## License
 
-New Relic Storybook is licensed under the [Apache 2.0](http://apache.org/licenses/LICENSE-2.0.txt)
+New Relic Reports is licensed under the [Apache 2.0](http://apache.org/licenses/LICENSE-2.0.txt)
 License.
 
-New Relic Storybook also uses source code from third-party libraries. You can
+New Relic Reports also uses source code from third-party libraries. You can
 find full details on which libraries are used and the terms under which they
 are licensed in the third-party notices document.
