@@ -1,7 +1,7 @@
 [
   {
     "name": "golden-signals",
-    "template": "golden-signals.html",
+    "templateName": "golden-signals.html",
     "parameters": {
       "title": "New Relic Golden Signals Weekly Report",
       "author": "Alice Reli",
@@ -15,10 +15,10 @@
       "from": "me@nowhere.local",
       "to": "you@nowhere.local",
       "subject": "{{ title }}",
-      "template": "email-template.html"
+      "template": "email/message.html"
     }, {
       "type": "s3",
-      "bucket": "sdewitt"
+      "bucket": "MY_S3_BUCKET"
     }]
   },
   {
@@ -37,7 +37,7 @@
       "from": "me@nowhere.local",
       "to": "you@nowhere.local",
       "subject": "{{ title }}",
-      "template": "email-template.html"
+      "template": "email/message.html"
     }]
   }
 ]

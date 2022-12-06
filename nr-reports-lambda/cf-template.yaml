@@ -160,35 +160,94 @@ Parameters:
       - VERBOSE
       - DEBUG
   #
-  # S3 bucket containing report templates.
+  # Manifest file. If specified, this manifest file will always override any
+  # specified template name, whether in the event payload or environment
+  # variables. If a source bucket is also specified, this value will be treated
+  # as a bucket key in the source bucket and resolved against the bucket. If no
+  # source bucket is specified, this value will be resolved against the local
+  # filesystem of the running container.
+  #
+  ManifestFile:
+    Type: String
+    Description: Name of the manifest file to load.
+    Default: ''
+  #
+  # Template name. If a manifest file is specified either in the event payload
+  # or as an environment variable, this value is ignored. Otherwise, this value
+  # will be treated as the name of a template to render.  If a source bucket is
+  # also specified, this value will be treated as a bucket key in the source
+  # bucket and resolved against the bucket. If no source bucket is specified,
+  # this value will be resolved against the local filesystem of the running
+  # container. If the value includes path-like segments separated by the system
+  # path separator, the template name will be treated as a relative path and
+  # resolved against each directory in the template path. This value always
+  # overrides any dashboard GUIDs specified either in the event payload or via
+  # an environment variable.
+  #
+  TemplateName:
+    Type: String
+    Description: Name of the template to render.
+    Default: ''
+  #
+  # Template parameters values file. If a source bucket is also specified, this
+  # value will be treated as a bucket key in the source bucket and resolved
+  # against the bucket. If no source bucket is specified, this value will be
+  # resolved against the local filesystem of the running container. Template
+  # parameters specified in the event payload always take precedence over this.
+  #
+  ValuesFile:
+    Type: String
+    Description: Name of the values file to load.
+    Default: ''
+  #
+  # Template parameters specified as a serialized JSON string. Template
+  # parameters specified in the event payload or in the VALUES_FILE environment
+  # variable always take precendence over this value. When present, this string
+  # will be deserialized as a JSON object.
+  #
+  TemplateParams:
+    Type: String
+    Description: Serialized JSON string of template parameters.
+    Default: ''
+  #
+  # Dashboard GUIDs. If specified, a comma delimited string of dashboard entity
+  # GUIDs to render. If a manifest file or template name is specified either in
+  # the event payload or as an environment variable, this value is ignored.
+  #
+  Dashboards:
+    Type: String
+    Description: Comma delimited list of dashboard GUIDs.
+    Default: ''
+  #
+  # Channel IDs. If specified, a comma delimited string of channel identifiers.
+  # This value is ignored if a manifest file is specified.
+  #
+  Channels:
+    Type: String
+    Description: Comma delimited List of channel IDs to which report outputs are sent.
+    Default: ''
+  #
+  # S3 source bucket. If specified, template names will be resolved against
+  # this bucket. If a manifest file is specified or the default manifest file
+  # is being used because no template name was specified, the manifest file will
+  # also be resolved against this bucket. If the S3_DEST_BUCKET environment 
+  # variable is not specified, also used as the destination bucket for any 's3'
+  # channels that do not specify a destination bucket.
   #
   S3SourceBucket:
     Type: String
-    Description: S3 bucket name containing report templates.
+    Description: S3 source bucket.
     AllowedPattern: '([a-z0-9][a-z0-9.\-]+[a-z0-9])?'
+    Default: ''
   #
-  # S3 bucket key for the default template input path.
-  #
-  S3SourcePathKey:
-    Type: String
-    Description: S3 bucket key for the default template input path.
-    AllowedPattern: '[a-zA-Z0-9/!\-_.*()]*'
-    Default: 'report.html'
-  #
-  # S3 bucket to be used as the destination for rendered reports.
+  # S3 destination bucket. This bucket is used for any 's3' channels that do not
+  # specify a destination bucket.
   #
   S3DestBucket:
     Type: String
-    Description: S3 bucket to be used as the destination for rendered reports.
+    Description: S3 destination bucket.
     AllowedPattern: '([a-z0-9][a-z0-9.\-]+[a-z0-9])?'
-  #
-  # S3 bucket key for the default report output path.
-  #
-  S3DestPathKey:
-    Type: String
-    Description: S3 bucket key for the default report output path.
-    AllowedPattern: '[a-zA-Z0-9/!\-_.*()]*'
-    Default: 'report.pdf'
+    Default: ''
 
 Resources:
 
@@ -235,7 +294,11 @@ Resources:
           USER_API_KEY_SECRET: !Sub ${UserApiKeySecret}
           USER_API_KEY_SECRET_KEY: !Sub ${UserApiKeySecretKey}
           LOG_LEVEL: !Sub ${LogLevel}
+          MANIFEST_FILE: !Sub ${ManifestFile}
+          TEMPLATE_NAME: !Sub ${TemplateName}
+          VALUES_FILE: !Sub ${ValuesFile}
+          TEMPLATE_PARAMS: !Sub ${TemplateParams}
+          DASHBOARDS: !Sub ${Dashboards}
+          CHANNELS: !Sub ${Channels}
           S3_SOURCE_BUCKET: !Sub ${S3SourceBucket}
-          S3_SOURCE_PATH_KEY: !Sub ${S3SourcePathKey}
           S3_DEST_BUCKET: !Sub ${S3DestBucket}
-          S3_DEST_PATH_KEY: !Sub ${S3DestPathKey}

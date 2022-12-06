@@ -33,7 +33,7 @@ async function sendEmail(channelConfig, files, reportParams) {
       channelConfig.subject || process.env.EMAIL_SUBJECT || '',
       { ...channelConfig, ...reportParams },
     ),
-    template = channelConfig.template || process.env.EMAIL_TEMPLATE || 'email-template.html',
+    template = channelConfig.template || process.env.EMAIL_TEMPLATE || 'email/message.html',
     body = nunjucks.render(template, { ...channelConfig, ...reportParams })
 
   await transporter.sendMail({

@@ -4,7 +4,6 @@ const nunjucks = require('nunjucks'),
   fetch = require('node-fetch'),
   PDFMerger = require('pdf-merger-js'),
   showdown = require('showdown'),
-  fs = require('fs'),
   { createWriteStream } = require('fs'),
   path = require('path'),
   { pipeline } = require('stream'),
@@ -32,19 +31,20 @@ const logger = createLogger('engine'),
 converter.setFlavor('github')
 
 async function renderReport(browser, content, file) {
+  logger.verbose(`Creating new browser page to render PDF to ${file}...`)
+
   const page = await browser.newPage()
 
-  /*
-  @todo
   page
-    .on('console', message =>
-      console.log(`${message.type().substr(0, 3).toUpperCase()} ${message.text()}`))
-    .on('pageerror', ({ message }) => console.log(message))
-    .on('response', response =>
-      console.log(`${response.status()} ${response.url()}`))
-    .on('requestfailed', request =>
-      console.log(`${request.failure()} ${request.url()}`))
-  */
+    .on('console', message => logger.verbose(`chrome-console: ${message.type().slice(0, 3).toUpperCase()} ${message.text()}`))
+    .on('pageerror', ({ message }) => logger.error(`chrome-pageerror: ${message}`))
+    .on('response', response => logger.verbose(`chrome-response: ${response.status()} ${response.url()}`))
+    .on('requestfailed', request => logger.error(`chrome-requestfailed: ${request.failure()} ${request.url()}`))
+
+  logger.debug((log, format) => {
+    log(format('Dumping HTML content:'))
+    log(content)
+  })
 
   await page.setContent(
     content,
@@ -52,6 +52,8 @@ async function renderReport(browser, content, file) {
       waitUntil: ['load', 'domcontentloaded', 'networkidle0'],
     },
   )
+
+  logger.verbose(`Saving PDF to ${file}...`)
 
   await page.pdf({
     path: file,
@@ -67,6 +69,13 @@ async function renderReport(browser, content, file) {
 
 function renderTemplateFromFile(file, context = {}) {
   return new Promise((resolve, reject) => {
+    logger.verbose(`Rendering file template named ${file}...`)
+
+    logger.debug((log, format) => {
+      log(format('Context:'))
+      log(context)
+    })
+
     nunjucks.render(file, context, (err, res) => {
       if (err) {
         reject(err)
@@ -80,6 +89,13 @@ function renderTemplateFromFile(file, context = {}) {
 
 function renderTemplateFromString(template, context = {}) {
   return new Promise((resolve, reject) => {
+    logger.verbose('Rendering template content...')
+
+    logger.debug((log, format) => {
+      log(format('Context:'))
+      log(context)
+    })
+
     nunjucks.renderString(template, context, (err, res) => {
       if (err) {
         reject(err)
@@ -157,37 +173,33 @@ class Engine {
     this.browser = options.browser
   }
 
-  async runReport(report) {
+  async runTemplateReport(report, tempDir) {
     const {
-      template,
+      templateName,
       parameters,
       channels,
       isMarkdown,
     } = report
-    let downloadDir,
-      templateIsMarkdown = isMarkdown
+    let templateIsMarkdown = isMarkdown
 
     try {
-      downloadDir = fs.mkdtempSync('report-')
-      logger.verbose(`Created temporary directory ${downloadDir}`)
+      const output = path.join(tempDir, templateOutputName(templateName))
 
-      const output = path.join(downloadDir, templateOutputName(template))
+      logger.verbose(`Rendering ${templateName} to ${output}...`)
 
-      logger.verbose((log, format) => {
-        log(format(`Rendering ${template} to ${output}...`))
-      })
-
-      if (templateIsMarkdown === 'undefined') {
-        templateIsMarkdown = (path.extname(template.toLowerCase()) === '.md')
+      if (typeof templateIsMarkdown === 'undefined') {
+        templateIsMarkdown = (path.extname(templateName.toLowerCase()) === '.md')
       }
+
+      logger.verbose(`templateIsMarkdown: ${templateIsMarkdown}`)
 
       parameters.isMarkdown = templateIsMarkdown
 
-      let content = await renderTemplateFromFile(template, parameters)
+      let content = await renderTemplateFromFile(templateName, parameters)
 
       if (templateIsMarkdown) {
         content = await renderTemplateFromString(
-          `{% extends "report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
+          `{% extends "base/report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
           parameters,
         )
       }
@@ -201,42 +213,36 @@ class Engine {
       await publish(channels, [output], parameters)
     } catch (err) {
       logger.error(err)
-    } finally {
-      try {
-        if (
-          downloadDir && downloadDir.trim() !== '/' &&
-          downloadDir.trim() !== '.' &&
-          fs.existsSync(downloadDir)
-        ) {
-          logger.verbose(`Removing temporary directory ${downloadDir}...`)
-          fs.rmdirSync(downloadDir, { recursive: true })
-        }
-      } catch (err) {
-        logger.error(err)
-      }
     }
   }
 
-  async runReportFromString(report) {
+  async runTemplateReportWithContent(report, templateContent, tempDir) {
     const {
-      template,
+      templateName,
       parameters,
+      channels,
       isMarkdown,
-      outputPath,
     } = report
+    let templateIsMarkdown = isMarkdown
 
     try {
-      logger.verbose((log, format) => {
-        log(format(`Rendering string template to ${outputPath}`))
-      })
+      const output = path.join(tempDir, templateOutputName(templateName))
+
+      logger.verbose(`Rendering ${templateName} to ${output}...`)
+
+      if (typeof templateIsMarkdown === 'undefined') {
+        templateIsMarkdown = (path.extname(templateName.toLowerCase()) === '.md')
+      }
+
+      logger.verbose(`templateIsMarkdown: ${templateIsMarkdown}`)
 
       parameters.isMarkdown = isMarkdown
 
-      let content = await renderTemplateFromString(template, parameters)
+      let content = await renderTemplateFromString(templateContent, parameters)
 
       if (isMarkdown) {
         content = await renderTemplateFromString(
-          `{% extends "report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
+          `{% extends "base/report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
           parameters,
         )
       }
@@ -244,33 +250,35 @@ class Engine {
       await renderReport(
         this.browser,
         content,
-        outputPath,
+        output,
       )
+
+      await publish(channels, [output], parameters)
     } catch (err) {
       logger.error(err)
     }
   }
 
-  async runDashboardReport(report) {
-    let downloadDir, consolidatedPdf
+  async runDashboardReport(report, tempDir) {
+    let consolidatedPdf
 
     try {
-      downloadDir = fs.mkdtempSync('dashboards-')
-      logger.verbose(`Created temporary directory ${downloadDir}`)
-
       const {
-          dashboards,
-          parameters,
-          channels,
-          combinePdfs,
-        } = report,
-        promises = dashboards.map(async dashboard => (
-          await downloadDashboardPdf(this.apiKey, dashboard, downloadDir)
+        dashboards,
+        parameters,
+        channels,
+        combinePdfs,
+      } = report
+
+      logger.verbose(`Running dashboard report for dashboards [${dashboards}]...`)
+
+      const promises = dashboards.map(async dashboard => (
+          await downloadDashboardPdf(this.apiKey, dashboard, tempDir)
         )),
         dashboardPdfs = await Promise.all(promises)
 
       if (combinePdfs && dashboardPdfs.length > 1) {
-        consolidatedPdf = path.join(downloadDir, 'consolidated_dashboards.pdf')
+        consolidatedPdf = path.join(tempDir, 'consolidated_dashboards.pdf')
         await mergePdfs(dashboardPdfs, consolidatedPdf)
       }
 
@@ -281,19 +289,6 @@ class Engine {
       )
     } catch (err) {
       logger.error(err)
-    } finally {
-      try {
-        if (
-          downloadDir && downloadDir.trim() !== '/' &&
-          downloadDir.trim() !== '.' &&
-          fs.existsSync(downloadDir)
-        ) {
-          logger.verbose(`Removing temporary directory ${downloadDir}...`)
-          fs.rmdirSync(downloadDir, { recursive: true })
-        }
-      } catch (err) {
-        logger.error(err)
-      }
     }
   }
 }

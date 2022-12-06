@@ -10,7 +10,7 @@ const publishers = {
     file,
     s3,
   },
-  logger = createLogger('engine')
+  logger = createLogger('publisher')
 
 async function publish(channels, files, parameters) {
   for (let index = 0; index < channels.length; index += 1) {
@@ -21,15 +21,22 @@ async function publish(channels, files, parameters) {
       throw new Error(`Invalid channel ${channel.type}`)
     }
 
+    logger.verbose(`Publishing ${files.length} files to channel ${channel.type}...`)
+
     logger.debug((log, format) => {
-      log(format(`Publishing ${files.length} files to channel ${channel.type}...`))
       log(format('Channel:'))
       log(channel)
       log(format('Files:'))
-      files.forEach(f => log(format(f)))
+      files.forEach(f => log(f))
     })
 
-    await publisher(channel, files, parameters)
+    try {
+      await publisher(channel, files, parameters)
+      logger.verbose(`${files.length} files published to channel ${channel.type}.`)
+    } catch (err) {
+      logger.error(`Publishing ${files.length} files to channel ${channel.type} failed with the following error. Publishing will continue with remaining channels.`)
+      logger.error(err)
+    }
   }
 }
 

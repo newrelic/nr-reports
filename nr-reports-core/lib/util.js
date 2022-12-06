@@ -2,14 +2,16 @@
 
 const fs = require('fs'),
   os = require('os'),
-  path = require('path')
+  path = require('path'),
+  { createLogger } = require('./logger')
 
-const ENDPOINTS = {
-  GRAPHQL: {
-    US: 'https://api.newrelic.com/graphql',
-    EU: 'https://api.eu.newrelic.com/graphql',
-  },
-}
+const logger = createLogger('util'),
+  ENDPOINTS = {
+    GRAPHQL: {
+      US: 'https://api.newrelic.com/graphql',
+      EU: 'https://api.eu.newrelic.com/graphql',
+    },
+  }
 
 function getNestedHelper(val, arr = [], index = 0) {
   if (index === arr.length) {
@@ -69,17 +71,40 @@ function getTempFile() {
   )
 }
 
-function parseManifest(manifestFile) {
-  const contents = fs.readFileSync(manifestFile, { encoding: 'utf-8' }),
-    data = JSON.parse(contents)
+async function withTempDir(fn) {
+  let tempDir
+
+  try {
+    tempDir = fs.mkdtempSync('nr-reports-')
+    logger.verbose(`Created temporary directory ${tempDir}`)
+
+    await fn(tempDir)
+  } finally {
+    try {
+      if (
+        tempDir && tempDir.trim() !== '/' &&
+        tempDir.trim() !== '.' &&
+        fs.existsSync(tempDir)
+      ) {
+        logger.verbose(`Removing temporary directory ${tempDir}...`)
+        fs.rmdirSync(tempDir, { recursive: true })
+      }
+    } catch (err) {
+      logger.error(err)
+    }
+  }
+}
+
+function parseManifest(contents, defaultChannel = null) {
+  const data = JSON.parse(contents)
 
   if (!Array.isArray(data)) {
-    throw new Error(`${manifestFile} must start with an array`)
+    throw new Error('Manifest must start with an array')
   }
 
   return data.map((report, index) => {
     if (!report.name) {
-      throw new Error(`Report ${index} in ${manifestFile} must include a 'name' property`)
+      throw new Error(`Report ${index} must include a 'name' property`)
     }
 
     if (!report.parameters) {
@@ -87,29 +112,35 @@ function parseManifest(manifestFile) {
     }
 
     if (!report.channels) {
-      report.channels = [{ type: 'file' }]
+      report.channels = [defaultChannel || { type: 'file' }]
     }
 
-    if (!report.dashboards) {
-      if (!report.template) {
-        report.template = 'report.html'
-      }
+    if (report.dashboards) {
+      report.combinePdfs = typeof report.combinePdfs !== 'undefined' ? (
+        report.combinePdfs
+      ) : false
 
       return report
     }
-
-    report.combinePdfs = typeof report.combinePdfs !== 'undefined' ? (
-      report.combinePdfs
-    ) : false
 
     return report
   })
 }
 
-function parseParams(paramFile) {
-  const contents = fs.readFileSync(paramFile, { encoding: 'utf-8' })
+function loadManifest(manifestFile, defaultChannel = null) {
+  const contents = fs.readFileSync(manifestFile, { encoding: 'utf-8' })
 
+  return parseManifest(contents, defaultChannel)
+}
+
+function parseParams(contents) {
   return JSON.parse(contents)
+}
+
+function loadParams(valuesFile) {
+  const contents = fs.readFileSync(valuesFile, { encoding: 'utf-8' })
+
+  return parseParams(contents)
 }
 
 function splitPaths(paths) {
@@ -141,9 +172,12 @@ module.exports = {
   raiseForStatus,
   nonDestructiveMerge,
   getTempFile,
+  loadManifest,
   parseManifest,
+  loadParams,
   parseParams,
   splitPaths,
   templateOutputName,
   stringToBoolean,
+  withTempDir,
 }

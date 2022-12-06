@@ -152,7 +152,7 @@ content, making sure to replace `Shop Service` with an appropriate APM service
 name and `1234567` with the account ID for the service. Then save the template.
 
 ```html
-{% extends "report.html" %}
+{% extends "base/report.html" %}
 
 {% block content %}
 <h1>My Application Throughput</h1>
@@ -485,7 +485,7 @@ in one of the following ways, listed in order of decreasing precedence. In all
 cases, the JSON structure is the same as the sample above. The only difference
 is how it is passed to the Lambda.
 
-* A JSON string in the `REPORT_PARAMS` environment variable
+* A JSON string in the `TEMPLATE_PARAMS` environment variable
 * The `body` property of the `event` arugment passed to the handler function
 * The `params` property of the `event` argument passed to the handler function
 
@@ -619,8 +619,8 @@ supported ones, as well as all [template parameters](#template-parameters) (if
 running a template report)  will be made available to the email template when it
 is rendered.
 
-An [example email template](./examples/email-template.html) is provided in the
-`examples` directory.
+The [default email template](./templates/email/message.html) is located in the
+`templates/email` directory.
 
 Because why not? Everyone needs more email.
 
@@ -986,7 +986,7 @@ location for the generated output using the following properties.
 The AWS Lambda function looks for [template parameters](#template-parameters) in
 the following locations, listed in order of precedence.
 
-* The `REPORT_PARAMS` environment variable (as a serialized JSON string)
+* The `TEMPLATE_PARAMS` environment variable (as a serialized JSON string)
 * The `body` property of the `event` parameter passed to the handler function
 * The `params` property of the `event` parameter passed to the handler function
 

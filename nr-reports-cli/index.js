@@ -4,10 +4,11 @@ const yargs = require('yargs/yargs'),
   puppeteer = require('puppeteer'),
   {
     rootLogger,
-    parseManifest,
-    parseParams,
+    loadManifest,
+    loadParams,
     splitPaths,
     Engine,
+    withTempDir,
   } = require('nr-reports-core')
 
 function getApiKey() {
@@ -23,7 +24,7 @@ function getApiKey() {
 
 async function main() {
   const args = process.argv.slice(2),
-    log = rootLogger
+    logger = rootLogger
 
   const yarggles = yargs(args)
       .usage('Usage: node index.js ([-f manifest-file] | [-n name -v values-file] [-p template-path] | [-d dashboards]) [-c channels] [--verbose] [--debug] [--full-chrome])')
@@ -79,20 +80,28 @@ async function main() {
     fullChrome = argv.fullChrome
   let reports
 
-  log.isVerbose = verbose
-  log.isDebug = debug
+  logger.isVerbose = verbose
+  logger.isDebug = debug
+
+  logger.debug((log, format) => {
+    log(format('Invoked with args:'))
+    log(argv)
+
+    log(format('Invoked with environment:'))
+    log(process.env)
+  })
 
   if (manifestFile) {
-    reports = parseManifest(manifestFile)
+    reports = loadManifest(manifestFile)
   } else if (templateName) {
     let parameters = {}
 
     if (valuesFile) {
-      parameters = parseParams(valuesFile)
+      parameters = loadParams(valuesFile)
     }
 
     reports = [{
-      template: templateName,
+      templateName,
       parameters,
       channels: channels ? channels.split(/[\s]*,[\s]*/u).map(
         channel => ({ type: channel }),
@@ -106,47 +115,72 @@ async function main() {
       ) : [{ type: 'file' }],
     }]
   } else {
-    reports = parseManifest('manifest.json')
+    reports = loadManifest('manifest.json')
   }
 
   if (!reports || reports.length === 0) {
     // eslint-disable-next-line no-console
-    console.error('No reports selected')
+    console.error('No reports selected.')
     yarggles.showHelp()
     return
   }
 
   let browser
 
+  logger.verbose(`Running ${reports.length} reports...`)
+
+  logger.debug((log, format) => {
+    log(format('Reports:'))
+    log(reports)
+  })
+
   try {
-    browser = (
-      await puppeteer.launch({
+    const paths = templatePath ? splitPaths(templatePath) : [],
+      reportIndex = reports.findIndex(report => (
+        report.templateName && (!report.type || report.type === 'text/html')
+      ))
+
+    if (reportIndex >= 0) {
+      const puppetArgs = {
         args: ['--disable-dev-shm-usage'],
         headless: !fullChrome,
         ignoreHTTPSErrors: true,
-      })
-    )
-
-    const paths = templatePath ? splitPaths(templatePath) : [],
-      engine = new Engine({
-        apiKey: getApiKey(),
-        templatesPath: ['.'].concat(paths).concat(['templates']),
-        browser,
-      })
-
-    for (let index = 0; index < reports.length; index += 1) {
-      if (reports[index].template) {
-        await engine.runReport(reports[index])
-        continue
-      } else if (reports[index].dashboards) {
-        await engine.runDashboardReport(reports[index])
-        continue
       }
 
-      log.warn(`Unrecognized report schema or missing required properties for report #${index}. Ignoring.`)
+      logger.debug((log, format) => {
+        log(format('Launching browser using the following args:'))
+        log(puppetArgs)
+      })
+
+      browser = await puppeteer.launch(puppetArgs)
     }
+
+    const engine = new Engine({
+      apiKey: getApiKey(),
+      templatesPath: ['.'].concat(paths).concat(['templates']),
+      browser,
+    })
+
+    await withTempDir(async tempDir => {
+      for (let index = 0; index < reports.length; index += 1) {
+        const report = reports[index]
+
+        logger.verbose(`Running report ${report.name || index}...`)
+
+        if (report.templateName) {
+          await engine.runTemplateReport(report, tempDir)
+          continue
+        } else if (report.dashboards) {
+          await engine.runDashboardReport(report, tempDir)
+          continue
+        }
+
+        logger.warn(`Unrecognized report schema or missing required properties for report ${report.name || index}. Ignoring.`)
+      }
+    })
   } catch (err) {
-    log.error(err)
+    logger.error('Uncaught exception:')
+    logger.error(err)
   } finally {
     if (browser && !fullChrome) {
       await browser.close()
