@@ -1,6 +1,6 @@
 'use strict'
 
-const fs = require('fs'),
+const fs = require('fs').promises,
   os = require('os'),
   path = require('path'),
   { createLogger } = require('./logger')
@@ -71,11 +71,41 @@ function getTempFile() {
   )
 }
 
+function getArgv() {
+  return process.argv.slice(2)
+}
+
+function getEnv(envName, defaultValue = null) {
+  if (typeof process.env[envName] !== 'undefined') {
+    return process.env[envName].trim()
+  }
+
+  return defaultValue
+}
+
+function getOption(options, optionName, envName = null, defaultValue = null) {
+  if (options) {
+    const type = options && typeof options[optionName]
+
+    if (type !== 'undefined') {
+      return type === 'string' ? options[optionName].trim() : options[optionName]
+    }
+  }
+
+  return envName ? getEnv(envName, defaultValue) : defaultValue
+}
+
+function makeChannel(type) {
+  return { type }
+}
+
+const DEFAULT_CHANNEL = 'file'
+
 async function withTempDir(fn) {
   let tempDir
 
   try {
-    tempDir = fs.mkdtempSync('nr-reports-')
+    tempDir = await fs.mkdtemp('nr-reports-')
     logger.verbose(`Created temporary directory ${tempDir}`)
 
     await fn(tempDir)
@@ -84,10 +114,10 @@ async function withTempDir(fn) {
       if (
         tempDir && tempDir.trim() !== '/' &&
         tempDir.trim() !== '.' &&
-        fs.existsSync(tempDir)
+        await fs.exists(tempDir)
       ) {
         logger.verbose(`Removing temporary directory ${tempDir}...`)
-        fs.rmdirSync(tempDir, { recursive: true })
+        await fs.rmdir(tempDir, { recursive: true })
       }
     } catch (err) {
       logger.error(err)
@@ -95,8 +125,34 @@ async function withTempDir(fn) {
   }
 }
 
+function getDefaultChannel(report, defaultChannel) {
+  if (!defaultChannel) {
+    return makeChannel(DEFAULT_CHANNEL)
+  }
+
+  if (typeof defaultChannel === 'function') {
+    return defaultChannel(report)
+  }
+
+  return defaultChannel
+}
+
+async function loadFile(filePath) {
+  return await fs.readFile(filePath, { encoding: 'utf-8' })
+}
+
 function parseManifest(contents, defaultChannel = null) {
+  logger.debug((log, format) => {
+    log(format('Parsing manifest:'))
+    log(contents)
+  })
+
   const data = JSON.parse(contents)
+
+  logger.debug((log, format) => {
+    log(format('Parsed manifest:'))
+    log(JSON.stringify(data, null, 2))
+  })
 
   if (!Array.isArray(data)) {
     throw new Error('Manifest must start with an array')
@@ -107,12 +163,10 @@ function parseManifest(contents, defaultChannel = null) {
       throw new Error(`Report ${index} must include a 'name' property`)
     }
 
-    if (!report.parameters) {
-      report.parameters = {}
-    }
-
-    if (!report.channels) {
-      report.channels = [defaultChannel || { type: 'file' }]
+    if (report.templateName) {
+      if (!report.parameters) {
+        report.parameters = {}
+      }
     }
 
     if (report.dashboards) {
@@ -123,31 +177,35 @@ function parseManifest(contents, defaultChannel = null) {
       return report
     }
 
+    if (!report.channels || report.channels.length === 0) {
+      report.channels = [getDefaultChannel(report, defaultChannel)]
+    }
+
     return report
   })
 }
 
-function loadManifest(manifestFile, defaultChannel = null) {
-  const contents = fs.readFileSync(manifestFile, { encoding: 'utf-8' })
+function parseJson(contents) {
+  logger.debug((log, format) => {
+    log(format('Parsing values:'))
+    log(contents)
+  })
 
-  return parseManifest(contents, defaultChannel)
-}
+  const data = JSON.parse(contents)
 
-function parseParams(contents) {
-  return JSON.parse(contents)
-}
+  logger.debug((log, format) => {
+    log(format('Parsed values:'))
+    log(JSON.stringify(data, null, 2))
+  })
 
-function loadParams(valuesFile) {
-  const contents = fs.readFileSync(valuesFile, { encoding: 'utf-8' })
-
-  return parseParams(contents)
+  return data
 }
 
 function splitPaths(paths) {
   return paths.split(path.delimiter)
 }
 
-function templateOutputName(templateName, ext = 'pdf') {
+function getFilenameWithNewExtension(templateName, ext) {
   const {
     name,
   } = path.parse(templateName)
@@ -172,12 +230,16 @@ module.exports = {
   raiseForStatus,
   nonDestructiveMerge,
   getTempFile,
-  loadManifest,
+  getArgv,
+  getEnv,
+  getOption,
+  makeChannel,
+  loadFile,
   parseManifest,
-  loadParams,
-  parseParams,
+  parseJson,
   splitPaths,
-  templateOutputName,
+  getFilenameWithNewExtension,
   stringToBoolean,
   withTempDir,
+  DEFAULT_CHANNEL,
 }

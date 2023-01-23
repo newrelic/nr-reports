@@ -9,12 +9,10 @@ AWS_DIR=$ROOT_DIR/nr-reports-lambda
 
 usage() {
   BASE=$(basename "$0")
-  echo "usage: $BASE --package-name package-name --template-dir dir --manifest-file file"
+  echo "usage: $BASE --package-name package-name"
   exit
 }
 
-MANIFEST_FILE=""
-TEMPLATE_DIR=""
 PARAMS=""
 PACKAGE_NAME=""
 
@@ -22,24 +20,6 @@ while (( "$#" )); do
   case "$1" in
     --help)
       usage
-      ;;
-    --manifest-file)
-      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
-        MANIFEST_FILE=$2
-        shift 2
-      else
-        echo "Error: Argument for $1 is missing" >&2
-        exit 1
-      fi
-      ;;
-    --template-dir)
-      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
-        TEMPLATE_DIR=$2
-        shift 2
-      else
-        echo "Error: Argument for $1 is missing" >&2
-        exit 1
-      fi
       ;;
     --package-name)
       if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
@@ -89,8 +69,6 @@ echo "New Relic Lamda Extension layer version:  $NEW_RELIC_LAYER_VER"
 echo "AWS Node.js Lambda version:  $AWS_LAMBDA_VER"
 echo "Function name:               $FUNCTION_NAME"
 echo "Package name:                $PACKAGE_NAME"
-echo "Manifest file:               $MANIFEST_FILE"
-echo "Template dir:                $TEMPLATE_DIR"
 echo "ECR repository URI:          $ECR_REPO_URI"
 echo "ECR image tag:               $ECR_IMAGE_TAG"
 echo "------------------------------------"

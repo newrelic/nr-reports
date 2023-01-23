@@ -25,16 +25,18 @@ function createSmtpTransport() {
   return nodemailer.createTransport(smtpConfig)
 }
 
-async function sendEmail(channelConfig, files, reportParams) {
-  const transporter = createSmtpTransport(),
+async function sendEmail(report, channelConfig, files) {
+  const { parameters } = report,
+    renderContext = { ...channelConfig, ...parameters },
+    transporter = createSmtpTransport(),
     from = channelConfig.from || process.env.EMAIL_FROM,
     to = channelConfig.to || process.env.EMAIL_TO,
     subject = nunjucks.renderString(
       channelConfig.subject || process.env.EMAIL_SUBJECT || '',
-      { ...channelConfig, ...reportParams },
+      renderContext,
     ),
     template = channelConfig.template || process.env.EMAIL_TEMPLATE || 'email/message.html',
-    body = nunjucks.render(template, { ...channelConfig, ...reportParams })
+    body = nunjucks.render(template, renderContext)
 
   await transporter.sendMail({
     from,
@@ -47,4 +49,7 @@ async function sendEmail(channelConfig, files, reportParams) {
   // @todo handle errors, log success
 }
 
-module.exports = sendEmail
+module.exports = {
+  publish: sendEmail,
+  getChannelDefaults: () => ({}),
+}

@@ -70,6 +70,12 @@ function getS3Object(bucket, key) {
         return
       }
 
+      logger.verbose(`Got object with ${key} from bucket ${bucket}.`)
+      logger.debug((log, format) => {
+        log(format('GetObject response:'))
+        log(data)
+      })
+
       resolve(data)
     })
   })
@@ -99,6 +105,12 @@ function putS3Object(bucket, key, content) {
         reject(err)
         return
       }
+
+      logger.verbose(`Put object with ${key} into bucket ${bucket}.`)
+      logger.debug((log, format) => {
+        log(format('PutObject response:'))
+        log(data)
+      })
 
       resolve(data)
     })

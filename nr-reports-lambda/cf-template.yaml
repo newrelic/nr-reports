@@ -31,6 +31,7 @@ Parameters:
   FunctionName:
     Type: String
     Description: Name of the lambda function.
+    Default: RunNewRelicReport
   #
   # Timeout (in seconds) for the lambda function.
   #
@@ -189,6 +190,17 @@ Parameters:
     Description: Name of the template to render.
     Default: ''
   #
+  # Template path. If a manifest file is specified either in the event payload
+  # or as an environment variable, this value is ignored. If a source bucket is
+  # specified, this value will also be ignored. Otherwise, this value will be
+  # treated as a list of additional directories to search for templates,
+  # separated by the system path separator of the underlying image OS.
+  #
+  TemplatePath:
+    Type: String
+    Description: List of directories to search for templates, separated by the system path separator.
+    Default: ''
+  #
   # Template parameters values file. If a source bucket is also specified, this
   # value will be treated as a bucket key in the source bucket and resolved
   # against the bucket. If no source bucket is specified, this value will be
@@ -200,21 +212,11 @@ Parameters:
     Description: Name of the values file to load.
     Default: ''
   #
-  # Template parameters specified as a serialized JSON string. Template
-  # parameters specified in the event payload or in the VALUES_FILE environment
-  # variable always take precendence over this value. When present, this string
-  # will be deserialized as a JSON object.
-  #
-  TemplateParams:
-    Type: String
-    Description: Serialized JSON string of template parameters.
-    Default: ''
-  #
   # Dashboard GUIDs. If specified, a comma delimited string of dashboard entity
   # GUIDs to render. If a manifest file or template name is specified either in
   # the event payload or as an environment variable, this value is ignored.
   #
-  Dashboards:
+  DashboardIDs:
     Type: String
     Description: Comma delimited list of dashboard GUIDs.
     Default: ''
@@ -222,7 +224,7 @@ Parameters:
   # Channel IDs. If specified, a comma delimited string of channel identifiers.
   # This value is ignored if a manifest file is specified.
   #
-  Channels:
+  ChannelIDs:
     Type: String
     Description: Comma delimited List of channel IDs to which report outputs are sent.
     Default: ''
@@ -264,8 +266,8 @@ Resources:
       Role: !Sub ${ExecRoleArn}
       Description: A lambda for generating custom New Relic reports. 
       FunctionName: !Sub ${FunctionName}
-      Timeout: !Sub ${FunctionTimeout}
-      MemorySize: !Sub ${FunctionMemorySize}
+      Timeout: !Ref FunctionTimeout
+      MemorySize: !Ref FunctionMemorySize
       Environment:
         Variables:
           # New Relic Lambda Extension variables
@@ -296,9 +298,9 @@ Resources:
           LOG_LEVEL: !Sub ${LogLevel}
           MANIFEST_FILE: !Sub ${ManifestFile}
           TEMPLATE_NAME: !Sub ${TemplateName}
+          TEMPLATE_PATH: !Sub ${TemplatePath}
           VALUES_FILE: !Sub ${ValuesFile}
-          TEMPLATE_PARAMS: !Sub ${TemplateParams}
-          DASHBOARDS: !Sub ${Dashboards}
-          CHANNELS: !Sub ${Channels}
+          DASHBOARD_IDS: !Sub ${DashboardIDs}
+          CHANNEL_IDS: !Sub ${ChannelIDs}
           S3_SOURCE_BUCKET: !Sub ${S3SourceBucket}
           S3_DEST_BUCKET: !Sub ${S3DestBucket}

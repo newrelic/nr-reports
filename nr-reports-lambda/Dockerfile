@@ -4,10 +4,6 @@ ARG AWS_LAMBDA_VER=14
 # Base image
 FROM public.ecr.aws/lambda/nodejs:${AWS_LAMBDA_VER}
 
-# Build args
-ARG MANIFEST_FILE
-ARG TEMPLATE_DIR
-
 # Unzip the New Relic Lambda Extension layer
 ADD nr-reports-lambda/newrelic-lambda-extension-layer.tgz /opt
 
@@ -15,8 +11,7 @@ ADD nr-reports-lambda/newrelic-lambda-extension-layer.tgz /opt
 COPY nr-reports-core ${LAMBDA_TASK_ROOT}/nr-reports-core/
 COPY nr-reports-lambda ${LAMBDA_TASK_ROOT}/nr-reports-lambda/
 COPY templates ${LAMBDA_TASK_ROOT}/templates/
-COPY ${TEMPLATE_DIR} ${LAMBDA_TASK_ROOT}/nr-reports-lambda/templates/
-COPY ${MANIFEST_FILE} ${LAMBDA_TASK_ROOT}/nr-reports-lambda/manifest.json
+COPY include ${LAMBDA_TASK_ROOT}/include
 
 # Install production dependencies
 RUN cd ${LAMBDA_TASK_ROOT}/nr-reports-core && \

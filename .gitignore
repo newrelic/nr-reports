@@ -124,3 +124,7 @@ dist
 
 # Any "local" files
 *.local.*
+
+# Local templates and manifests
+include/*
+!include/.keep

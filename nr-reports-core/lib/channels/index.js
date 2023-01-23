@@ -12,7 +12,14 @@ const publishers = {
   },
   logger = createLogger('publisher')
 
-async function publish(channels, files, parameters) {
+async function publish(report, files) {
+  const { channels } = report
+
+  logger.debug((log, format) => {
+    log(format(`Publishing ${files.length} files to the following channels:`))
+    log(channels)
+  })
+
   for (let index = 0; index < channels.length; index += 1) {
     const channel = channels[index],
       publisher = publishers[channel.type]
@@ -31,7 +38,7 @@ async function publish(channels, files, parameters) {
     })
 
     try {
-      await publisher(channel, files, parameters)
+      await publisher.publish(report, channel, files)
       logger.verbose(`${files.length} files published to channel ${channel.type}.`)
     } catch (err) {
       logger.error(`Publishing ${files.length} files to channel ${channel.type} failed with the following error. Publishing will continue with remaining channels.`)
@@ -40,4 +47,17 @@ async function publish(channels, files, parameters) {
   }
 }
 
-module.exports = publish
+function getChannelDefaults(type, options) {
+  const publisher = publishers[type]
+
+  if (!publisher) {
+    throw new Error(`Invalid channel ${type}`)
+  }
+
+  return { type, ...publisher.getChannelDefaults(options) }
+}
+
+module.exports = {
+  publish,
+  getChannelDefaults,
+}

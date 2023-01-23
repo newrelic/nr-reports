@@ -21,8 +21,6 @@ echo "Building image..."
 cd $ROOT_DIR && \
     docker build -f $ROOT_DIR/nr-reports-lambda/Dockerfile \
     --build-arg AWS_LAMBDA_VER=$AWS_LAMBDA_VER \
-    --build-arg MANIFEST_FILE=$MANIFEST_FILE \
-    --build-arg TEMPLATE_DIR=$TEMPLATE_DIR \
     --progress plain \
     -t $PACKAGE_NAME:$ECR_IMAGE_TAG \
     $ROOT_DIR
