@@ -159,7 +159,7 @@ name and `1234567` with the account ID for the service. Then save the template.
 </p>
 <div>
     {% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
-        chartType="AREA",
+        type="AREA",
         accountId=1234567
     %}{% endchart %}
 </div>
@@ -194,14 +194,15 @@ above.
 First, load `hello-world.html` back into an editor. Now replace the name
 of your application with the string `{{ appName }}` (curly braces and all) and
 completely _remove_ the `accountId` parameter (and the `,` after
-`chartType="AREA"`).
+`type="AREA"`). Also, change the `type` from `AREA` to `LINE` just so we are
+sure we are really running a new example.
 
 The `chart` tag should now look something like the following.
 
 ```html
 <div>
     {% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = '{{ appName }}' SINCE last week UNTIL this week TIMESERIES",
-        chartType="AREA"
+        type="AREA"
     %}{% endchart %}
 </div>
 ```
@@ -347,6 +348,23 @@ APM service name, `1234567` with the account ID for the service, and
 Again, don't worry for now what all that means. It looks more complicated than
 it is and will be explained [in the manifest file section](#manifest-file).
 
+### Run the report using the manifest file
+
+Now run the report using the following command.
+
+```bash
+./nr-reports-cli/bin/nr-reports.sh
+```
+
+Now there should be both a `hello-world.pdf` file in the current directory
+_and_ a PDF file called `dashboard-[DASHBOARD_GUID].pdf` in the current
+directory. Using the manifest file we were able to generate both reports at
+once!
+
+Notice that we did not specify any arguments to the command! That is because the
+reporting engine will load the [manifest file](#manifest-file) located at
+`include/manifest.json` by default.
+
 ### Summary
 
 Here's what we just did.
@@ -367,7 +385,7 @@ Here's what we just did.
 7. Created a [manifest file](#manifest-file) with report definitions for the
    HTML template report and dashboard report from the previous steps.
 8. Used the CLI script to run an ad-hoc report at the command line using the
-   manifest file.
+   default manifest file located at `include/manifest.json`.
 9. Without knowing it, used the `file` channel to store the resulting PDF
    reports in the current directory.
 
@@ -833,17 +851,18 @@ The CLI accepts the following options.
 The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
 
 * Run all reports using the defaults (read reports from `manifest.json` in the
-  current working directory)
+  `include` directory)
 
   `./nr-reports-cli/bin/nr-reports.sh`
 
-* Run all reports defined in the manifest file `my-manifest.json`
+* Run all reports defined in the manifest file `my-manifest.json` in the current
+  working directory
 
   `./nr-reports-cli/bin/nr-reports.sh -f my-manifest.json`
 
 * Run a report using the template named `my-report.html` in the current working
-  directory with the values file `my-report-values.json` and copies the result
-  report into the current working directory
+  directory with the values file `my-report-values.json` in the current working
+  directory and copy the result report into the current working directory
 
   `./nr-reports-cli/bin/nr-reports.sh -n my-report.html -v my-report-values.json`
 
@@ -890,7 +909,7 @@ following options.
 | Option | Description | Example |
 | --- | --- | --- |
 | `--image-repo image-repository` | The repository to use when tagging the image. Defaults to `nr-reports`. | `--image-repo nr-reports` |
-| `--image-tag image-tag` | The tag to use whtn tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
+| `--image-tag image-tag` | The tag to use when tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
 
 You can either run the script directly or use the `npm run build` command while
 in the `./nr-reports-cli` directory.
@@ -913,10 +932,99 @@ Here are a few examples.
   npm run build -- --image-repo my-great-reports --image-tag 1.1
   ```
 
+#### Running the CLI image
+
+The following examples show how you can run reports using the CLI image. Though
+the image is intended to be used in conjuction with a scheduled task mechanism,
+it can be helpful for testing and debugging reports in the exact environment
+they will be run when the image is deployed rather than running in a local
+environment which may not be consistent with the deployed image.
+
+**NOTE:** The Docker option `--cap-add=SYS_ADMIN` is used in the examples below
+to work around [the `Error: Failed to launch the browser process!` message](#error-failed-to-launch-the-browser-process).
+This option would only be necessary if you are running template reports and you
+encounter this error message. The option should be used _carefully_ as it
+provides **_`root`_** access to the underlying host OS. In general it should
+only be used locally when testing and developing templates.
+
+**NOTE:** In the examples below, the [AWS configuration and credential files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
+in the local `.aws` directory are mounted into the home directory of the
+`pptruser` in the container so that the [AWS SDK for Node.js](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started-nodejs.html)
+has access to the AWS configuration and credentials without having to pass those via
+arguments on the command line.
+
+##### Running a report using a template name with the CLI image
+
+The example below uses the [`email`](#email-channel) and [`s3`](#s3-channel)
+channels. The example specifies the channel IDs [engine option](#engine-options)
+and the [channel parmeters](#channel-parameters) via environment variables and
+runs a simple template report that does not use a manifest file and assumes the
+template `hello-world.html` is available on [the template path](#template-resolution).
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e CHANNEL_IDS='email,s3' \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -e EMAIL_FROM='[YOUR_FROM_EMAIL]' \
+    -e EMAIL_TO='[YOUR_TO_EMAIL]' \
+    -e S3_DEST_BUCKET='[A_S3_BUCKET_NAME]' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports -n hello-world.html
+```
+
+##### Running a report using the default manifest file with the CLI image
+
+The example below uses the default [manifest file](#manifest-file) located at
+`include/manifest.json`. The channels and the channel configuration parameters
+are specified in the manifest file, except for the ones that are only supported
+via environment variables.
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports
+```
+
+##### Running a report using a custom manifest file with the CLI image
+
+The example below uses a custom [manifest file](#manifest-file) located at
+`include/custom-manifest.json`. The channels and the channel configuration
+parameters are specified in the manifest file, except for the ones that are only
+supported via environment variables.
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports -f include/custom-manifest.json
+```
+
 ### Using the CRON image
 
 The Dockerfile [`Dockerfile-cron`](./nr-reports-cli/Dockerfile-cron) is
-provided to build a Docker image that runs reports on a schedule using `cron`.
+provided to build a Docker image that runs [the CLI](#using-the-cli) on a
+schedule using `cron`. The containers `CMD` runs `crond` with the `-f` flag to
+keep it in the foreground, which keeps the container up and running. Because
+of this, arguments can _only_ be passed to the the CLI when
+[the container is built](#building-the-cron-image). Arguments are specified
+by invoking the [`build-cron.sh` script (or `npm run build-cron`)](./nr-reports-cli/scripts/build-cron.sh)
+with the `--cli-args` option. If the `--cli-args` option is not specified, the
+default [Engine options](#engine-options) are used when running the container
+unless overriden by [Engine options](#engine-options) specified as environment
+variables.
 
 #### Building the CRON image
 
@@ -925,6 +1033,7 @@ provided to simplify building a CRON image. It supports the following options.
 
 | Option | Description | Example |
 | --- | --- | --- |
+| `--cli-args 'arguments'` | Arguments to pass to the CLI on each invocation by `crond`. Make sure to quote the arguments string.  | `--cli-args '-n hello-world.html'` |
 | `--cron-entry crontab-entry` | A crontab instruction specifying the cron schedule. Defaults to `0 * * * *`. Make sure to quote the entry string. | `--cron-entry "*     *     *     *     *"` |
 | `--image-repo image-repository` | The repository to use when tagging the image. Defaults to `nr-reports-cron`. | `--image-repo nr-reports-cron` |
 | `--image-tag image-tag` | The tag to use whtn tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
@@ -942,21 +1051,177 @@ Here are a few examples.
   npm run build-cron
   ```
 
-* Build an image that will run all reports in `./examples/manifest.json` every
-  day at 04:00 and will include all templates from `./examples` in the image.
-  The image will be tagged with `nr-reports-cron:latest` in the local Docker
-  registry.
+* Build an image that will run all reports in the `include/custom-manifest.json`
+  every day at 04:00. The image will be tagged with `nr-reports-cron:latest` in
+  the local Docker registry.
 
-  `./nr-reports-cli/scripts/build-cron.sh --manifest-file ./examples/manifest.json --template-dir ./examples --cron-entry "0     4     *     *     *`
+  ```bash
+  npm run build-cron -- --cli-args '-f include/custom-manifest.json' --cron-entry "0     4     *     *     *`
+  ```
+
+#### Running the CRON image
+
+The following examples show how you can run reports using the CRON image.
+Because CLI arguments can be passed to the container when it is _built_, and
+because [engine options](#engine-options) specified via CLI options take
+precedence over environment variables, the behavior of the rendering engine when
+a container is run depends both on the environment variables specified when the
+container is launched and the CLI arguments specified to build the image used to
+run the container. Use of both could make it difficult to determine what options
+are actually being used by the rendering engine. Therefore, in the examples
+below, both the way the containers are run and the way the images used by those
+containers are built are called out.
+
+**NOTE:** The Docker option `--cap-add=SYS_ADMIN` is used in the examples below
+to work around [the `Error: Failed to launch the browser process!` message](#error-failed-to-launch-the-browser-process).
+This option would only be necessary if you are running template reports and you
+encounter this error message. The option should be used _carefully_ as it
+provides **_`root`_** access to the underlying host OS. In general it should
+only be used locally when testing and developing templates.
+
+**NOTE:** In the examples below, the [AWS configuration and credential files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
+in the local `.aws` directory are mounted into the home directory of the
+`pptruser` in the container so that the [AWS SDK for Node.js](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started-nodejs.html)
+has access to the AWS configuration and credentials without having to pass those via
+arguments on the command line.
+
+##### Running a report using a template name with the CRON image - Variation 1
+
+This example runs a simple template report that does not use a manifest
+file. The report is run using an image built with all defaults. The template
+name and channel IDs [engine options](#engine-options) are specified via
+**environment variables**. The [channel parmeters](#channel-parameters) for both
+channels are also specified via **environment variables**.  The generated report
+is published to the [`email`](#email-channel) and [`s3`](#s3-channel) channels.
+Finally, it assumes that the template `hello-world.html` is available on
+[the template path](#template-resolution).
+
+_Build command:_
+
+```bash
+npm run build-cron
+```
+
+_Run command:_
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e TEMPLATE_NAME='hello-world.html' \
+    -e CHANNEL_IDS='email,s3' \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -e EMAIL_FROM='[YOUR_FROM_EMAIL]' \
+    -e EMAIL_TO='[YOUR_TO_EMAIL]' \
+    -e S3_DEST_BUCKET='[A_S3_BUCKET_NAME]' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports-cron
+```
+
+##### Running a report using a template name with the CRON image - Variation 2
+
+This example runs a simple template report that does not use a manifest
+file. The report is run using an image built with CLI arguments for the template
+name and channels specified via the `--cli-args` option. The generated report
+is published to the [`email`](#email-channel) and [`s3`](#s3-channel) channels.
+The [channel parmeters](#channel-parameters) for both channels are specified via
+**environment variables** since these cannot be specified at the command line.
+Finally, it assumes that the template `hello-world.html` is available on
+[the template path](#template-resolution).
+
+_Build command:_
+
+```bash
+npm run build-cron -- --cli-args '-n hello-world.html -c email,s3'
+```
+
+_Run command:_
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -e EMAIL_FROM='[YOUR_FROM_EMAIL]' \
+    -e EMAIL_TO='[YOUR_TO_EMAIL]' \
+    -e S3_DEST_BUCKET='[A_S3_BUCKET_NAME]' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports-cron
+```
+
+##### Running a report using a default manifest file with the CRON image
+
+There are no major differences between CRON images built to run reports
+using the default manifest file. This is because no option or environment
+variable is needed to run the CLI with the default manifest file.
+
+##### Running a report using a custom manifest file with the CRON image - Variation 1
+
+This example runs reports using a custom [manifest file](#manifest-file) located
+at `include/custom-manifest.json`. Reports are run using an image built with all
+defaults. The manifest file is specified via an **environment variables**. All
+other values are specified in the manifest file, except for the ones that are
+only supported via **environment variables**.
+
+_Build command:_
+
+```bash
+npm run build-cron
+```
+
+_Run command:_
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e MANIFEST_FILE='include/custom-manifest.json' \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports-cron
+```
+
+##### Running a report using a custom manifest file with the CRON image - Variation 2
+
+This example runs reports using a custom [manifest file](#manifest-file) located
+at `include/custom-manifest.json`. Reports are run using an image that is built
+using the `--cli-args` option to specify the manifest file. All other values are
+specified in the manifest file, except for the ones that are only supported via
+**environment variables**.
+
+_Build command:_
+
+```bash
+npm run build-cron -- --cli-args '-f include/custom-manifest.json'
+```
+
+_Run command:_
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports-cron
+```
 
 ### Using the AWS Lambda function
 
-Reports can be deployed as an AWS Lambda function. The Lambda function can be
-combined with other AWS services to trigger report generation in a variety of
-ways. For example, an AWS EventBridge trigger can be used to run reports on a
-schedule. Or, an Application Load Balancer trigger can be used to expose an
-HTTP endpoint for generating reports on demand by making a request to the
-endpoint.
+The reporting engine can be also be deployed as an AWS Lambda function.
+The Lambda function can be combined with other AWS services to trigger report
+generation in a variety of ways. For example, an AWS EventBridge trigger can be
+used to run reports on a schedule. Or, an Application Load Balancer trigger can
+be used to expose an HTTP endpoint for generating reports on demand by making a
+request to the endpoint.
 
 #### AWS Lambda function and S3
 
@@ -985,10 +1250,10 @@ the following.
 
 #### Deploying the Lambda function
 
-The Reports AWS Lambda function can be deployed and managed using the scripts
-defined in [the scripts directory](./nr-reports-lambda/scripts). These scripts
-require the AWS CLI to be installed. It is used to create and manage the AWS
-resources required by the Reports Lambda function.
+The AWS Lambda function can be deployed and managed using the scripts defined in
+[the scripts directory](./nr-reports-lambda/scripts). These scripts require the
+AWS CLI to be installed. It is used to create and manage the AWS resources
+required by the Lambda function.
 
 The Lambda function is deployed using [a CloudFormation template](./nr-reports-lambda/cf-template.yaml).
 The CloudFormation template accepts a number of parameters which must be
@@ -1029,9 +1294,8 @@ comments. For example, here is the documentation for the `UserApiKey` parameter.
 ```
 
 [The `deploy.sh` script](./nr-reports-lambda/scripts/deploy.sh) is used
-to deploy the Reports Lambda function. This script will first invoke
-[the `build.sh` script](./nr-reports-lambda/scripts/build.sh) to build the
-Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
+to deploy the Lambda function. This script will first invoke [the `build.sh` script](./nr-reports-lambda/scripts/build.sh)
+to build the Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
 The script will then push the image from the local Docker registry to the
 registry defined in the `./nr-reports-lambda/cf-params.json` file and use the
 `aws cloudformation deploy` command to create the stack using
@@ -1071,18 +1335,17 @@ in the AWS Lambda console or running the following command in your terminal.
 #### Update the Lambda function
 
 [The `update.sh` script](./nr-reports-lambda/scripts/deploy.sh) is used
-to update the Reports Lambda function. This script first invokes
-[the `build.sh` script](./nr-reports-lambda/scripts/build.sh) to build the
-Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
+to update the Lambda function. This script first invokes [the `build.sh` script](./nr-reports-lambda/scripts/build.sh)
+to build the Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
 The script will then push the image from the local Docker registry to the
 registry defined in the `./nr-reports-lambda/cf-params.json` file and use the
 `aws lambda update-function-code` command to update the Lambda to point to the
 new image. Note that you _must_ increment the value of the `ImageTag` parameter
 specified in your `./nr-reports-lambda/cf-params.json` file.
 
-At this time, updating the Lambda function is of little use unless you make
-changes to the actual Reports code. This script will be useful once the Lambda
-function supports [manifest files](#manifest-file) and bundled template files.
+This script can be used to update the Lambda function image to include new
+or updated [manifest files](#manifest-file), [template files](#templates),
+and/or [values files](#values-file).
 
 #### Deleting the Lambda function
 
@@ -1100,7 +1363,9 @@ example, on ECS, the container must have the privileged container capability,
 i.e. `com.amazonaws.ecs.capability.privileged-container`. When running locally,
 you may need to add `--cap-add=SYS_ADMIN`. See
 [this documentation](https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-in-docker)
-for more details.
+for more details. Note that this option should be used _carefully_ as it provides
+**_`root`_** access to the underlying host OS. In general it should only be used
+locally when testing and developing templates.
 
 ```bash
 Error: Failed to launch the browser process!

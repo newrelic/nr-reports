@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation template for the VAST Info lambdas.
+Description: CloudFormation template for the New Relic Reports lambda.
 
 Parameters:
   #
@@ -290,7 +290,7 @@ Resources:
           # NEW_RELIC_LICENSE_KEY by default.
           NEW_RELIC_LICENSE_KEY_SECRET: !Sub ${NRLicenseKeySecret}
           
-          # VAST Lambda variables
+          # Lambda environment variables
           #AWS_REGION: !Sub ${AwsRegion}
           USER_API_KEY: !Sub ${UserApiKey}
           USER_API_KEY_SECRET: !Sub ${UserApiKeySecret}

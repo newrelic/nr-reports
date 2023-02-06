@@ -172,6 +172,15 @@ async function mergePdfs(dashboardPdfs, consolidatedPdf) {
   await merger.save(consolidatedPdf)
 }
 
+function buildTemplatePath(args) {
+  const templatePath = getOption(args.options, 'templatePath', 'TEMPLATE_PATH'),
+    templatesPath = ['.', 'include', 'templates']
+
+  return templatePath ? (
+    templatesPath.concat(splitPaths(templatePath))
+  ) : templatesPath
+}
+
 function makeChannel(type, options) {
   return getChannelDefaults(type || DEFAULT_CHANNEL, options)
 }
@@ -207,14 +216,14 @@ function getChannels(defaultChannelType, options) {
 }
 
 async function loadManifest(
-  loadFile,
+  fileLoader,
   manifestFile,
   defaultChannel,
   values,
   extras,
 ) {
   return (parseManifest(
-    await loadFile(manifestFile),
+    await fileLoader(manifestFile),
     defaultChannel,
   )).map(report => {
     if (report.templateName) {
@@ -241,7 +250,7 @@ async function loadManifest(
 async function discoverReportsHelper(
   options,
   values,
-  loadFile,
+  fileLoader,
   defaultChannel,
   defaultChannelType,
   extras,
@@ -253,7 +262,7 @@ async function discoverReportsHelper(
     logger.debug(`Found manifest file ${manifestFile}.`)
 
     return await loadManifest(
-      loadFile,
+      fileLoader,
       manifestFile,
       defaultChannel,
       values,
@@ -274,7 +283,7 @@ async function discoverReportsHelper(
 
       // Do not allow values file to override options
       // eslint-disable-next-line no-unused-vars
-      const { options: ignore, ...rest } = parseJson(loadFile(valuesFile))
+      const { options: ignore, ...rest } = parseJson(await fileLoader(valuesFile))
 
       return [{
         templateName,
@@ -314,8 +323,8 @@ async function discoverReportsHelper(
 
   // Try to load a default manifest from local storage
   return await loadManifest(
-    loadFile,
-    'manifest.json',
+    async filePath => await loadFile(filePath),
+    'include/manifest.json',
     defaultChannel,
     values,
     extras,
@@ -340,8 +349,7 @@ async function discoverReports(context, args) {
     return await discoverReportsHelper(
       options,
       values,
-      async filePath => await getS3ObjectAsString(sourceBucket, filePath)
-      ),
+      async filePath => await getS3ObjectAsString(sourceBucket, filePath),
       () => makeChannel('s3', options),
       's3',
       {
@@ -410,6 +418,7 @@ async function renderTemplateReport(
     logger.error(err)
   }
 }
+
 class Engine {
   constructor(options) {
     const env = nunjucks.configure(options.templatesPath || null)
@@ -484,7 +493,7 @@ class EngineRunner {
   async run(args) {
     logger.debug((log, format) => {
       log(format('Invoked with context:'))
-      log(this.context)
+      log({ ...this.context, apiKey: '[REDACTED]' })
 
       log(format('Invoked with arguments:'))
       log(args)
@@ -496,7 +505,6 @@ class EngineRunner {
     let browser
 
     try {
-
       const reports = await discoverReports(this.context, args)
 
       if (!reports || reports.length === 0) {
@@ -517,29 +525,25 @@ class EngineRunner {
         )),
         engineOptions = {
           apiKey: this.context.apiKey,
-          templatesPath: null,
+          templatesPath: buildTemplatePath(args),
           browser: null,
         }
+
+      logger.debug((log, format) => {
+        log(format('Final template path:'))
+        log(engineOptions.templatesPath)
+      })
 
       if (reportIndex >= 0) {
         logger.debug('Found 1 or more template reports. Launching browser...')
 
-        const puppetArgs = await this.context.getPuppetArgs(),
-          templatePath = getOption(args.options, 'templatePath', 'TEMPLATE_PATH')
-        let templatesPath = ['.', 'include', 'templates']
-
-        if (templatePath) {
-          templatesPath = templatesPath.concat(splitPaths(templatePath))
-        }
+        const puppetArgs = await this.context.getPuppetArgs()
 
         logger.debug((log, format) => {
-          log(format(`Final templates path: ${templatesPath}`))
-
           log(format('Launching browser using the following args:'))
           log(puppetArgs)
         })
 
-        engineOptions.templatesPath = templatesPath
         engineOptions.browser = browser = (
           await this.context.openChrome(puppetArgs)
         )

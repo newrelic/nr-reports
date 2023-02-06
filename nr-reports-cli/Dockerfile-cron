@@ -1,6 +1,7 @@
 FROM alpine:3.14
 
 # Build args
+ARG CLI_ARGS
 ARG CRON_ENTRY
 
 # Install required packages
@@ -41,7 +42,7 @@ RUN addgroup -S pptruser && adduser -S -g pptruser pptruser \
     && mkdir -p /home/pptruser/Downloads /app \
     && chown -R pptruser:pptruser /home/pptruser \
     && chown -R pptruser:pptruser /app && \
-    echo "${CRON_ENTRY}    cd /app/nr-reports-cli && node index.js" > /crontab.txt && \
+    echo "${CRON_ENTRY}    cd /app/nr-reports-cli && node index.js ${CLI_ARGS}" > /crontab.txt && \
     /usr/bin/crontab -u pptruser /crontab.txt && \
     cd /app/nr-reports-core && \
     npm install --production && \

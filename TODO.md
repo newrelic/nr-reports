@@ -26,6 +26,7 @@ Stuff and things.
 - [ ] Rename channels to destinations
 - [ ] Add generic sources
 - [ ] Add ability to specify channel params at CLI using ;key=value
+- [ ] Honor template path when rendering email templates
 
 ## Things
 

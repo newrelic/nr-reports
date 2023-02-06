@@ -1,6 +1,6 @@
 'use strict'
 
-const fs = require('fs').promises,
+const fs = require('fs'),
   os = require('os'),
   path = require('path'),
   { createLogger } = require('./logger')
@@ -11,7 +11,8 @@ const logger = createLogger('util'),
       US: 'https://api.newrelic.com/graphql',
       EU: 'https://api.eu.newrelic.com/graphql',
     },
-  }
+  },
+  { access, mkdtemp, readFile, rmdir } = fs.promises
 
 function getNestedHelper(val, arr = [], index = 0) {
   if (index === arr.length) {
@@ -105,7 +106,7 @@ async function withTempDir(fn) {
   let tempDir
 
   try {
-    tempDir = await fs.mkdtemp('nr-reports-')
+    tempDir = await mkdtemp('nr-reports-')
     logger.verbose(`Created temporary directory ${tempDir}`)
 
     await fn(tempDir)
@@ -113,11 +114,14 @@ async function withTempDir(fn) {
     try {
       if (
         tempDir && tempDir.trim() !== '/' &&
-        tempDir.trim() !== '.' &&
-        await fs.exists(tempDir)
+        tempDir.trim() !== '.'
       ) {
+
+        /* Check for file existence */
+        await access(tempDir, fs.constants.F_OK)
+
         logger.verbose(`Removing temporary directory ${tempDir}...`)
-        await fs.rmdir(tempDir, { recursive: true })
+        await rmdir(tempDir, { recursive: true })
       }
     } catch (err) {
       logger.error(err)
@@ -138,7 +142,7 @@ function getDefaultChannel(report, defaultChannel) {
 }
 
 async function loadFile(filePath) {
-  return await fs.readFile(filePath, { encoding: 'utf-8' })
+  return await readFile(filePath, { encoding: 'utf-8' })
 }
 
 function parseManifest(contents, defaultChannel = null) {
@@ -167,14 +171,10 @@ function parseManifest(contents, defaultChannel = null) {
       if (!report.parameters) {
         report.parameters = {}
       }
-    }
-
-    if (report.dashboards) {
+    } else if (report.dashboards) {
       report.combinePdfs = typeof report.combinePdfs !== 'undefined' ? (
         report.combinePdfs
       ) : false
-
-      return report
     }
 
     if (!report.channels || report.channels.length === 0) {

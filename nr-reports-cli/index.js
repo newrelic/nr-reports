@@ -10,7 +10,7 @@ const yargs = require('yargs/yargs'),
     getOption,
   } = require('nr-reports-core')
 
-async function getApiKey() {
+function getApiKey() {
   // eslint-disable-next-line dot-notation
   const apiKey = getEnv('NEW_RELIC_API_KEY')
 
