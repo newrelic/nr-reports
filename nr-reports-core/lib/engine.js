@@ -206,8 +206,14 @@ function parseChannels(options, channels) {
 function getChannels(defaultChannelType, options) {
   const channels = getOption(options, 'channelIds', 'CHANNEL_IDS')
 
-  if (!channels || channels.length === 0) {
+  if (!channels) {
     return [makeChannel(defaultChannelType, options)]
+  }
+
+  if (Array.isArray(channels)) {
+    return channels.length === 0 ? (
+      [makeChannel(defaultChannelType, options)]
+    ) : channels
   }
 
   const data = parseChannels(options, channels)

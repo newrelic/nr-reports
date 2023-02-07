@@ -65,10 +65,10 @@ function nonDestructiveMerge(target, source) {
   return target
 }
 
-function getTempFile() {
+function getTempPath(prefix) {
   return path.join(
     os.tmpdir(),
-    `report-${new Date().getTime()}`,
+    prefix,
   )
 }
 
@@ -106,7 +106,7 @@ async function withTempDir(fn) {
   let tempDir
 
   try {
-    tempDir = await mkdtemp('nr-reports-')
+    tempDir = await mkdtemp(getTempPath('nr-reports-'))
     logger.verbose(`Created temporary directory ${tempDir}`)
 
     await fn(tempDir)
@@ -229,7 +229,6 @@ module.exports = {
   getNested,
   raiseForStatus,
   nonDestructiveMerge,
-  getTempFile,
   getArgv,
   getEnv,
   getOption,

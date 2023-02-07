@@ -75,8 +75,9 @@ There are three ways to run reports.
 1. Packaged as an AWS Lambda function
 
    [A Dockerfile](./nr-reports-lambda/Dockerfile) is provided to package the
-   reporting engine as an AWS Lambda function. The Lambda can be deployed with
-   [the provided CloudFormation template](./nr-reports-lambda/cf-template.yaml)
+   reporting engine, along with your [templates](#templates) and
+   [manifest files](#manifest-file) as an AWS Lambda function. The Lambda can be
+   deployed with[the provided CloudFormation template](./nr-reports-lambda/cf-template.yaml)
    and [the provided helper scripts](./nr-reports-lambda/scripts).
 
 ## Prerequisites
@@ -1026,6 +1027,10 @@ default [Engine options](#engine-options) are used when running the container
 unless overriden by [Engine options](#engine-options) specified as environment
 variables.
 
+As mentioned in the section [template-resolution](#template-resolution), all
+files in the[`include`](./include) directory are copied into the application
+root of the image (`/app/nr-reports-cli`).
+
 #### Building the CRON image
 
 The [`build-cron.sh`](./nr-reports-cli/scripts/build-cron.sh) script is
@@ -1036,7 +1041,7 @@ provided to simplify building a CRON image. It supports the following options.
 | `--cli-args 'arguments'` | Arguments to pass to the CLI on each invocation by `crond`. Make sure to quote the arguments string.  | `--cli-args '-n hello-world.html'` |
 | `--cron-entry crontab-entry` | A crontab instruction specifying the cron schedule. Defaults to `0 * * * *`. Make sure to quote the entry string. | `--cron-entry "*     *     *     *     *"` |
 | `--image-repo image-repository` | The repository to use when tagging the image. Defaults to `nr-reports-cron`. | `--image-repo nr-reports-cron` |
-| `--image-tag image-tag` | The tag to use whtn tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
+| `--image-tag image-tag` | The tag to use when tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
 
 You can either run the script directly or use the `npm run build-cron` command
 while in the `./nr-reports-cli` directory.
@@ -1056,6 +1061,7 @@ Here are a few examples.
   the local Docker registry.
 
   ```bash
+  cd ./nr-reports-cli
   npm run build-cron -- --cli-args '-f include/custom-manifest.json' --cron-entry "0     4     *     *     *`
   ```
 
@@ -1223,7 +1229,27 @@ used to run reports on a schedule. Or, an Application Load Balancer trigger can
 be used to expose an HTTP endpoint for generating reports on demand by making a
 request to the endpoint.
 
-#### AWS Lambda function and S3
+The AWS Lambda function is deployed and managed as a
+[CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html).
+using the scripts provided in [the scripts directory](./nr-reports-lambda/scripts).
+These scripts require the AWS CLI to be installed as it is used to create and
+manage the CloudFormation stack.
+
+#### The AWS Lambda function "package name"
+
+Each of the scripts in in [the scripts directory](./nr-reports-lambda/scripts)
+require the `--package-name` argument to be specified. The "package name" serves
+a dual purpose. First, it is used as the name of the CloudFormation stack that
+includes the AWS Lambda function and associated resources. Second, it is used
+as the name for the AWS Lambda function Docker image in your _local_ Docker
+registry.
+
+**NOTE:** The image version used as the image _tag_ in your local Docker
+registry is taken from the `ImageTag` parameter specified in your
+`cf-params.json` file. This value is also used to tag the image when it is
+pushed to the ECR container registry during deployment of the Lambda function.
+
+#### The AWS Lambda function and S3
 
 The AWS Lambda function supports reading manifest, template, and values files
 from Amazon S3 if the `sourceBucket` [engine option](#engine-options) is set.
@@ -1236,7 +1262,43 @@ report, the default being `s3`, or `s3` is specified as a channel without a
 destination bucket, the AWS Lambda function will default the destination bucket
 to the source bucket.
 
-#### Preparing to deploy or update the Lambda function
+#### Building the AWS Lambda image
+
+A Dockerfile [`Dockerfile`](./nr-reports-cli/Dockerfile-cron) is
+provided to build a Docker image that can be
+[deployed as a Lambda container image](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html).
+The image is built from an [AWS base image for Node.js](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html#nodejs-image-base).
+By default, [version 14](https://github.com/aws/aws-lambda-base-images/blob/nodejs14.x/Dockerfile.nodejs14.x)
+is used but this can be customized by specifying the `AWS_LAMBDA_VER` argument
+when building the image. The image automatically includes the
+[New Relic Lambda Extension Layer](https://github.com/newrelic/newrelic-lambda-extension)
+corresponding to the version of the base image that is specified. Like the
+[CLI image](#using-the-cli-image) and the [CRON image](#using-the-cron-image),
+all files in the[`include`](./include) directory are also included in the Lambda
+container image.
+
+The [`build.sh`](./nr-reports-labda/scripts/build.sh) script is
+provided to simplify building the AWS Lambda image image. It supports the
+following options.
+
+| Option | Description | Example |
+| --- | --- | --- |
+| `--package-name package-name` | The name used as the stack name as well as the name used to tag the image in your local Docker registry. | `--package-name nr-reports-lambda` |
+
+You can either run the script directly or use the `npm run build` command
+while in the `./nr-reports-lambda` directory. For example, to build the image
+using the NPM script, you would run the following command.
+
+```bash
+npm run build -- --package-name nr-reports-lambda
+```
+
+**NOTE:** While the [`build.sh`](./nr-reports-labda/scripts/build.sh) _can_ be
+invoked on it's own, the [`deploy.sh`](./nr-reports-labda/scripts/deploy.sh) and
+the [`update.sh`](./nr-reports-labda/scripts/update.sh) scripts invoke it for
+you prior to deployment.
+
+#### Preparing to deploy or update the AWS Lambda function
 
 Prior to working with the Lambda function, you will need to ensure that you have
 the following.
@@ -1248,12 +1310,7 @@ the following.
 3. Optionally, a Secrets Manager secret in which to store the New Relic User
    API key used by the Lambda
 
-#### Deploying the Lambda function
-
-The AWS Lambda function can be deployed and managed using the scripts defined in
-[the scripts directory](./nr-reports-lambda/scripts). These scripts require the
-AWS CLI to be installed. It is used to create and manage the AWS resources
-required by the Lambda function.
+#### Deploying the AWS Lambda function
 
 The Lambda function is deployed using [a CloudFormation template](./nr-reports-lambda/cf-template.yaml).
 The CloudFormation template accepts a number of parameters which must be
@@ -1301,8 +1358,15 @@ registry defined in the `./nr-reports-lambda/cf-params.json` file and use the
 `aws cloudformation deploy` command to create the stack using
 [the CloudFormation template](./nr-reports-lambda/cf-template.yaml).
 
-To deploy the Lambdda function using the `deploy.sh` script, perform the
-following steps.
+You can either run the script directly or use the `npm run deploy` command
+while in the `./nr-reports-lambda` directory. For example, to deploy the AWS
+Lambda function using the NPM script, you would run the following command.
+
+```bash
+npm run deploy -- --package-name nr-reports-lambda
+```
+
+To deploy the AWS Lambda function, perform the following steps.
 
 1. Ensure you are logged into AWS ECR using `aws ecr get-login-password`.
 2. Copy the [./nr-reports-lambda/cf-params.sample.json](./nr-reports-lambda/cf-params.sample.json)
@@ -1314,12 +1378,9 @@ following steps.
 
 3. Update the values in the file `./nr-reports-lambda/cf-params.json` as
    appropriate for your environment.
-4. Run [The `deploy.sh` script](./nr-reports-lambda/scripts/deploy.sh).
+4. Run the `deploy` script.
 
-   `./nr-reports-lambda/scripts/deploy.sh --package-name nr-report-builder`
-
-   The "package-name" will be used as the stack name as well as the image name
-   used to tag the image in your local Docker registry.
+   `npm run deploy -- --package-name nr-reports-lambda`
 
 You should now have a Lambda function named `RunNewRelicReport` (unless you
 customized it in the `cf-params.json` file). You can confirm this by looking
@@ -1347,10 +1408,26 @@ This script can be used to update the Lambda function image to include new
 or updated [manifest files](#manifest-file), [template files](#templates),
 and/or [values files](#values-file).
 
+You can either run the script directly or use the `npm run update` command
+while in the `./nr-reports-lambda` directory. For example, to update the AWS
+Lambda function using the NPM script, you would run the following command.
+
+```bash
+npm run update -- --package-name nr-reports-lambda
+```
+
 #### Deleting the Lambda function
 
 [The `delete.sh` script](./nr-reports-lambda/scripts/delete.sh) is used
 to delete the Reports Lambda function and the associated CloudFormation stack.
+
+You can either run the script directly or use the `npm run delete` command
+while in the `./nr-reports-lambda` directory. For example, to delete the AWS
+Lambda function using the NPM script, you would run the following command.
+
+```bash
+npm run delete -- --package-name nr-reports-lambda
+```
 
 ## Troubleshooting
 

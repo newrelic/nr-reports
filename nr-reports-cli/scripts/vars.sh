@@ -52,8 +52,11 @@ while (( "$#" )); do
       fi
       ;;
     -*|--*=) # unsupported flags
-      handle_option $1 "$2"
-      RESULT=$?
+      RESULT=0
+      if [[ $(type -t handle_option) == function ]]; then
+        handle_option $1 "$2"
+        RESULT=$?
+      fi
       if (( $RESULT == 0 ))
         then
         echo "Error: Unsupported flag $1" >&2

@@ -31,8 +31,22 @@ while (( "$#" )); do
       fi
       ;;
     -*|--*=) # unsupported flags
-      echo "Error: Unsupported flag $1" >&2
-      exit 1
+      RESULT=0
+      if [[ $(type -t handle_option) == function ]]; then
+        handle_option $1 "$2"
+        RESULT=$?
+      fi
+      if (( $RESULT == 0 ))
+        then
+        echo "Error: Unsupported flag $1" >&2
+        exit 1
+      elif (( $RESULT == 1 ))
+        then
+        shift 1
+      elif (( $RESULT == 2))
+        then
+        shift 2
+      fi
       ;;
     *) # preserve positional arguments
       PARAMS="$PARAMS $1"
