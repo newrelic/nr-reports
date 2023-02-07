@@ -58,7 +58,7 @@ function raiseForStatus(response) {
 
 function nonDestructiveMerge(target, source) {
   for (const prop in source) {
-    if (!target[prop]) {
+    if (typeof target[prop] === 'undefined') {
       target[prop] = source[prop]
     }
   }
