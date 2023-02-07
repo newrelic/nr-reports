@@ -4,16 +4,16 @@
 ![GitHub stars](https://img.shields.io/github/stars/newrelic-experimental/nr-reports?style=social)
 ![GitHub watchers](https://img.shields.io/github/watchers/newrelic-experimental/nr-reports?style=social)
 
-![GitHub all releases](https://img.shields.io/github/downloads/newrelic-experimental/newrelic-experimental-FIT-template/total)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/newrelic-experimental/newrelic-experimental-FIT-template)
-![GitHub last commit](https://img.shields.io/github/last-commit/newrelic-experimental/newrelic-experimental-FIT-template)
-![GitHub Release Date](https://img.shields.io/github/release-date/newrelic-experimental/newrelic-experimental-FIT-template)
+![GitHub all releases](https://img.shields.io/github/downloads/newrelic-experimental/nr-reports/total)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/newrelic-experimental/nr-reports)
+![GitHub last commit](https://img.shields.io/github/last-commit/newrelic-experimental/nr-reports)
+![GitHub Release Date](https://img.shields.io/github/release-date/newrelic-experimental/nr-reports)
 
 
-![GitHub issues](https://img.shields.io/github/issues/newrelic-experimental/newrelic-experimental-FIT-template)
-![GitHub issues closed](https://img.shields.io/github/issues-closed/newrelic-experimental/newrelic-experimental-FIT-template)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/newrelic-experimental/newrelic-experimental-FIT-template)
-![GitHub pull requests closed](https://img.shields.io/github/issues-pr-closed/newrelic-experimental/newrelic-experimental-FIT-template)
+![GitHub issues](https://img.shields.io/github/issues/newrelic-experimental/nr-reports)
+![GitHub issues closed](https://img.shields.io/github/issues-closed/newrelic-experimental/nr-reports)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/newrelic-experimental/nr-reports)
+![GitHub pull requests closed](https://img.shields.io/github/issues-pr-closed/newrelic-experimental/nr-reports)
 
 # New Relic Reports
 
