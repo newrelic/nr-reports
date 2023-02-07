@@ -1,21 +1,21 @@
 'use strict'
 
-const fs = require('fs'),
-  chromium = require('chrome-aws-lambda'),
+const chromium = require('chrome-aws-lambda'),
   {
     rootLogger,
     FileHandler,
-    getTempFile,
-    Engine,
-    getS3ObjectAsString,
-    putS3Object,
+    EngineRunner,
+    getEnv,
+    getOption,
     getSecretValue,
   } = require('nr-reports-core')
 
+const logger = rootLogger
+
 async function getApiKey() {
-  const apiKey = process.env.USER_API_KEY,
-    apiKeySecret = process.env.USER_API_KEY_SECRET,
-    apiKeySecretKey = process.env.USER_API_KEY_SECRET_KEY || 'UserApiKey'
+  const apiKey = getEnv('USER_API_KEY'),
+    apiKeySecret = getEnv('USER_API_KEY_SECRET'),
+    apiKeySecretKey = getEnv('USER_API_KEY_SECRET_KEY', 'UserApiKey')
 
   if (!apiKeySecret) {
     return apiKey
@@ -55,107 +55,51 @@ function lambdaResponse(
 }
 
 async function handler(event) {
-  const log = rootLogger,
-    logLevel = process.env.LOG_LEVEL || 'INFO'
+  const values = event.body || event,
+    logLevel = getOption(values, 'logLevel', 'LOG_LEVEL', 'INFO'),
+    logFile = getEnv('LOG_FILE')
 
-  if (logLevel === 'VERBOSE') {
-    log.isVerbose = true
+  logger.isVerbose = logLevel === 'VERBOSE'
+  logger.isDebug = logLevel === 'DEBUG'
+
+  if (logFile) {
+    logger.handlers = new FileHandler(logFile)
   }
-
-  if (logLevel === 'DEBUG') {
-    log.isDebug = true
-  }
-
-  if (process.env.LOG_FILE) {
-    log.handlers = new FileHandler(process.env.LOG_FILE)
-  }
-
-  let tempFile = null
 
   try {
-    const puppetArgs = {
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath,
-      headless: chromium.headless,
-      ignoreHTTPSErrors: true,
-    }
-
-    log.log('Creating browser using the following args:')
-    log.log(puppetArgs)
-
-    log.debug(process.env)
-
-    const engine = new Engine({
+    const runner = new EngineRunner({
       apiKey: await getApiKey(),
-      templatesPath: 'templates',
-      browser: await chromium.puppeteer.launch(puppetArgs),
+      defaultChannelType: 's3',
+      getPuppetArgs: async () => ({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath,
+        headless: chromium.headless,
+        ignoreHTTPSErrors: true,
+      }),
+      openChrome: async puppetArgs => (
+        await chromium.puppeteer.launch(puppetArgs)
+      ),
+      closeChrome: async browser => (
+        await browser.close()
+      ),
     })
 
-    let parameters
-
-    if (process.env.REPORT_PARAMS) {
-      parameters = JSON.parse(process.env.REPORT_PARAMS)
-    } else if (event.body) {
-      parameters = event.body
-    } else if (event.params) {
-      parameters = event.params
-    }
-
-    const templateBucket = (
-        (parameters && parameters.templateBucket) || process.env.S3_SOURCE_BUCKET || 'newrelic'
-      ),
-      templatePath = (
-        (parameters && parameters.templatePathKey) || process.env.S3_SOURCE_PATH_KEY || 'report.html'
-      ),
-      reportBucket = (
-        (parameters && parameters.reportBucket) || process.env.S3_DEST_BUCKET || 'newrelic'
-      ),
-      reportPath = (
-        (parameters && parameters.reportPathKey) || process.env.S3_DEST_PATH_KEY || 'report.pdf'
-      ),
-      template = await getS3ObjectAsString(templateBucket, templatePath)
-
-
-    tempFile = await getTempFile()
-
-    await engine.runReportFromString(
-      {
-        template,
-        parameters,
-        outputPath: tempFile,
-      },
-    )
-
-    const data = await putS3Object(
-      reportBucket,
-      reportPath,
-      fs.createReadStream(tempFile),
-    )
+    await runner.run(values)
 
     return lambdaResponse(
       200,
       true,
-      data,
     )
   } catch (err) {
-    log.error('Uncaught exception:')
-    log.error(err)
+    logger.error('Uncaught exception:')
+    logger.error(err)
     return lambdaResponse(
       500,
       false,
       null,
       err.message,
     )
-  } finally {
-    try {
-      if (tempFile && fs.existsSync(tempFile)) {
-        fs.unlinkSync(tempFile)
-      }
-    } catch (err) {
-      log.warn(`Failed to close ${tempFile}`)
-      log.warn(err)
-    }
   }
 }
 

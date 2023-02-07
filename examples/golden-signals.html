@@ -1,4 +1,4 @@
-{% extends "report.html" %}
+{% extends "base/report.html" %}
 
 {% block content %}
 <div class="columns is-multiline">
@@ -41,7 +41,7 @@
       and retrievals per second.
     </p>
     {% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = '{{appName}}' SINCE last week UNTIL this week TIMESERIES",
-        chartType="AREA",
+        type="AREA",
         class="has-text-centered" 
     %}{% endchart %}
   </div>

@@ -17,18 +17,19 @@
 
 # New Relic Reports
 
-A report generation and automation framework for New Relic.
+A framework for automating the generation and delivery of custom New Relic
+reports.
 
 ## Overview
 
-New Relic Reports is a framework for building custom reports and automating
-the generation and delivery of those reports via a variety of channels.
+New Relic Reports is an engine for automating the generation of custom reports
+built using telemetry in the New Relic Telemetry Data Platform and the delivery
+of those reports via a variety of channels.
 
 ### Report Types
 
-The Reports framework supports two types of reports: template based and
-dashboard based. providing a simple list of dashboard GUIDs or creating
-report template files in HTML or Markdown.
+The New Relic Reports engine supports two types of reports: template reports and
+dashboard reports.
 
 Template based reports use the [Nunjucks](https://mozilla.github.io/nunjucks/)
 template engine to process user defined templates. Templates can be authored
@@ -43,17 +44,19 @@ single PDF.
 
 ### Channel Types
 
-The Reports framework supports different mechanisms for delivering generated
-reports. These mechanisms are referred to as channels. The following types of
-channels are supported.
+A variety of mechanisms are supported for delivering generated reports. These
+mechanisms are referred to as channels. The following types of channels are
+supported.
 
+* File: PDFs are copied to a destination directory on the local filesystem.
+  Mostly meant for development and testing purposes.
 * Email: PDFs are attached to an email using a user defined email template and
   sent via SMTP using SMTP settings defined as environment variables.
 * S3: PDFs are uploaded to an S3 bucket specified as an environment variable.
 
 ### Running Reports
 
-Reports supports three ways to run reports.
+There are three ways to run reports.
 
 1. Using the command line interface (CLI)
 
@@ -63,8 +66,8 @@ Reports supports three ways to run reports.
 
 1. Packaged as a Docker image
 
-   `Dockerfile`s are provided to package the Reports engine, along with your
-   [templates](#templates) and [manifest file](#manifest-file) as a docker
+   `Dockerfile`s are provided to package the reporting engine, along with your
+   [templates](#templates) and [manifest files](#manifest-file) as a docker
    image that runs reports on a schedule using `CRON` or that provides a CLI
    based `ENTRYPOINT` that can be run via external scheduled task mechanisms
    such as [AWS ECS Scheduled Tasks](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/scheduled_tasks.html).
@@ -72,14 +75,10 @@ Reports supports three ways to run reports.
 1. Packaged as an AWS Lambda function
 
    [A Dockerfile](./nr-reports-lambda/Dockerfile) is provided to package the
-   Reports engine as an AWS Lambda function. The Lambda can be deployed with
-   [the provided CloudFormation template](./nr-reports-lambda/cf-template.yaml)
+   reporting engine, along with your [templates](#templates) and
+   [manifest files](#manifest-file) as an AWS Lambda function. The Lambda can be
+   deployed with[the provided CloudFormation template](./nr-reports-lambda/cf-template.yaml)
    and [the provided helper scripts](./nr-reports-lambda/scripts).
-
-   The AWS Lambda function is designed to read a single template from a source
-   S3 bucket and store the resulting report back into a destination S3 bucket.
-   [Manifest file](#manifest-file) and [Dashboard](#dashboard-report-properties)
-   support is on [the TODO list](./TODO.md).
 
 ## Prerequisites
 
@@ -118,8 +117,8 @@ throughput chart for an application named `Shop Service`.
 
 **NOTE:** For this simple tutorial, we will be generating reports interactively
 from the command line. While this is convenient for testing things out, one of
-the main features of the Reports project is the automation support for
-report generation and delivery.
+the main features of New Relic Reports is the automation support for report
+generation and delivery.
 
 ### Before you begin
 
@@ -142,7 +141,7 @@ export NEW_RELIC_API_KEY=[YOUR USER KEY]
 Next, copy the example template to a new template named `hello-world.html`.
 
 ```bash
-cp ./examples/golden-signals.html ./examples/hello-world.html
+cp ./examples/golden-signals.html ./include/hello-world.html
 ```
 
 ### Update the example template
@@ -152,7 +151,7 @@ content, making sure to replace `Shop Service` with an appropriate APM service
 name and `1234567` with the account ID for the service. Then save the template.
 
 ```html
-{% extends "report.html" %}
+{% extends "base/report.html" %}
 
 {% block content %}
 <h1>My Application Throughput</h1>
@@ -161,22 +160,22 @@ name and `1234567` with the account ID for the service. Then save the template.
 </p>
 <div>
     {% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
-        chartType="AREA",
+        type="AREA",
         accountId=1234567
     %}{% endchart %}
 </div>
 {% endblock %}
-````
+```
 
 Don't worry for now what all that means. It looks more complicated than it is
 and will be explained [in the usage section](#usage).
 
-### Run a report
+### Run the template report
 
 Now run the report using the following command.
 
 ```bash
-./nr-reports-cli/bin/nr-reports.sh -p examples -n hello-world.html
+./nr-reports-cli/bin/nr-reports.sh -n hello-world.html
 ```
 
 That's it!
@@ -193,17 +192,18 @@ hard-coded the application name in the query and the account ID on the `chart`
 tag. That isn't very "templatish". Let's see how to templatize the example
 above.
 
-First, load `hello-world.html` back into an editor. Now replace the string
-`Shop Service` with the string `{{ appName }}` (curly braces and all) and
+First, load `hello-world.html` back into an editor. Now replace the name
+of your application with the string `{{ appName }}` (curly braces and all) and
 completely _remove_ the `accountId` parameter (and the `,` after
-`chartType="AREA"`).
+`type="AREA"`). Also, change the `type` from `AREA` to `LINE` just so we are
+sure we are really running a new example.
 
 The `chart` tag should now look something like the following.
 
 ```html
 <div>
     {% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = '{{ appName }}' SINCE last week UNTIL this week TIMESERIES",
-        chartType="AREA"
+        type="AREA"
     %}{% endchart %}
 </div>
 ```
@@ -213,7 +213,7 @@ The `chart` tag should now look something like the following.
 Copy the example values file to a new template named `hello-world.json`.
 
 ```bash
-cp ./examples/values.json ./examples/hello-world.json
+cp ./examples/values.json ./include/hello-world.json
 ```
 
 ### Update the example values file
@@ -233,7 +233,7 @@ The values file is a JSON file with a flat structure that is a set of key/value
 pairs. All we've done above is separate out the account ID and application name
 so it isn't hardcoded in the template.
 
-### Re-run the report
+### Re-run the template report
 
 First, delete the previous report so we can be sure this run re-creates a new
 one.
@@ -246,7 +246,7 @@ Now, run the report using the following command, noting the addition of the `-v`
 option that is used to specify the path to the values file.
 
 ```bash
-./nr-reports-cli/bin/nr-reports.sh -p examples -n hello-world.html -v examples/hello-world.json 
+./nr-reports-cli/bin/nr-reports.sh -n hello-world.html -v include/hello-world.json 
 ```
 
 Now there should be a new PDF file in the current directory called
@@ -257,7 +257,7 @@ actually change the values.
 ### Run a dashboard report
 
 So far we have been running template reports, i.e. reports based on a template
-file. Reports supports another report type called dashboard reports.
+file. New Relic Reports supports another report type called dashboard reports.
 Dashboard reports are much simpler. You specify a list of dashboard GUIDs and
 the report engine will use Nerdgraph to download a dashboard snapshot PDF for
 each dashboard and optionally combine multiple snapshots in a single PDF.
@@ -278,7 +278,7 @@ The easiest way to find the GUID for a dashboard is via the NR1 UI.
 5. Hover over the string of numbers and letters and click on the clipboard icon
    that appears. The dashboard GUID will now be copied in the clipboard.
 
-### Run the report
+### Run the dashboard report
 
 Now run the report using the following command, replacing the string
 `ABCDEF123456` with your dashboard GUID.
@@ -291,6 +291,80 @@ Now there should be a new PDF file in the current directory called
 `dashboard-[DASHBOARD_GUID].pdf` where `[DASHBOARD_GUID]` is the GUID of your
 dashboard. Open it up and it should look like a snapshot of dashboard for the
 last 60 minutes.
+
+### Run a report using a manifest file
+
+Now let's see how we can run multiple reports at once using a
+[manifest file](#manifest-file). A manifest file is a JSON file containing an
+array of report definitions. We will use a manifest file to run the template
+report and dashboard report from above all at once.
+
+### Cleanup previous reports
+
+First, delete the previous report so we can be sure this run re-creates a new
+one.
+
+```bash
+rm ./hello-world.pdf dashboard-[DASHBOARD_GUID].pdf
+```
+
+Make sure to replace `[DASHBOARD_GUID]` with the GUID of your dashboard.
+
+### Copy the example manifest file
+
+Copy the example manifest file to a new manifest file named `manifest.json`.
+
+```bash
+cp ./examples/manifest.json ./include/manifest.json
+```
+
+### Update the example manifest file
+
+Next, delete everything in the new manifest file and replace it with the
+following content, making sure to replace `Shop Service` with an appropriate
+APM service name, `1234567` with the account ID for the service, and
+`ABCDEF123456` with your dashboard GUID. Then save the template.
+
+```json
+[
+  {
+    "name": "hello-world",
+    "templateName": "hello-world.html",
+    "parameters": {
+      "accountId": 1234567,
+      "appName": "Shop Service"
+    },
+    "channels": []
+  },
+  {
+    "name": "performance-summary-dashboard",
+    "dashboards": [
+      "ABCDEF123456"
+    ],
+    "channels": []
+  }
+]
+```
+
+Again, don't worry for now what all that means. It looks more complicated than
+it is and will be explained [in the manifest file section](#manifest-file).
+
+### Run the report using the manifest file
+
+Now run the report using the following command.
+
+```bash
+./nr-reports-cli/bin/nr-reports.sh
+```
+
+Now there should be both a `hello-world.pdf` file in the current directory
+_and_ a PDF file called `dashboard-[DASHBOARD_GUID].pdf` in the current
+directory. Using the manifest file we were able to generate both reports at
+once!
+
+Notice that we did not specify any arguments to the command! That is because the
+reporting engine will load the [manifest file](#manifest-file) located at
+`include/manifest.json` by default.
 
 ### Summary
 
@@ -305,11 +379,21 @@ Here's what we just did.
    template and the values file from steps 1 and 2.
 4. Without knowing it, used the `file` channel to store the resulting PDF
    report in the current directory.
+5. Used the CLI script to run an ad-hoc report at the command line using a
+   dashboard entity GUID.
+6. Without knowing it, used the `file` channel to store the resulting PDF
+   report in the current directory.
+7. Created a [manifest file](#manifest-file) with report definitions for the
+   HTML template report and dashboard report from the previous steps.
+8. Used the CLI script to run an ad-hoc report at the command line using the
+   default manifest file located at `include/manifest.json`.
+9. Without knowing it, used the `file` channel to store the resulting PDF
+   reports in the current directory.
 
 Though useful during template development, in most cases, you won't be
-generating reports by running the CLI directly. Rather, Reports provides
-mechanisms for you to automate the generation and delivery of these reports.
-See [the usage section](#usage) for more details.
+generating reports by running the CLI directly. Instead, you will use one of the
+provided mechanisms for automating the generation and delivery of reports. See
+[the usage section](#usage) for more details.
 
 ## Usage
 
@@ -345,8 +429,7 @@ contain HTML or Markdown or XML. As long as it is a text file, Nunjucks will
 scan for template expressions and attempt to process them.
 
 That said, with the exception of template files with the extension `.md`,
-Reports passes the template file directly to the Nunjucks engine, and passes
-the output from the engine directly to a headless Chrome instance for rendering.
+the reporting engine passes the template file directly to the Nunjucks engine.
 Template files with a `.md` extension are assumed to contain Markdown and are
 converted to HTML using [the `showdown` module](https://github.com/showdownjs/showdown)
 prior to being processed by the Nunjucks engine.
@@ -388,19 +471,19 @@ specifying the template name `templates/hello-world.html` would make the failing
 case above work fine.
 
 The default template path will always include the current working directory and
-the directory `templates` relative to the current working directory.
+the directories `include` and `templates` relative to the current working
+directory. In addition, the `TEMPLATE_PATH` environment variable may be set to
+a list of additional directories separated by the system path separator. These
+directories will also be added to the template path. Finally, the `templatePath`
+[engine option](#engine-options), may also be used to specify additional
+directories separated by the system path separator.
 
-When running the CLI directly (typically done only during template development),
-the [`-p`](#cli-usage) option can be used to specify additional directories for the template
-path. When building one of the CLI docker images, all templates from the
-template directory specified using the `--template-dir` option when building the
-image will be copied into the `templates` directory in the image. So there is
-no need to customize the template path.
-
-When building the Lambda image, all templates from the local `templates`
-directory relative to the current working directory at build time will be
-copied into the `templates` directory in the image. So, again, there is no need
-to customize the template path.
+When building _any_ of the docker images, all templates (and all other files)
+in the [`include`](./include) directory are copied into the `include` directory
+of the image (`/app/nr-reports-cli/include`). Note that files in the `include`
+directory are `git` ignored. To include files in this directory in `git`, either
+remove the line `include/*` from the [`gitignore`](./gitignore) file or add
+negation patterns for the files to be committed.
 
 ### Template Parameters
 
@@ -471,25 +554,20 @@ specifies 3 template parameters: 1 string, 1 number, and 1 array of strings.
 }
 ```
 
-The mechanism for specifying template parameters depends on the way in which
-a report is run.
+When rendering a template, the template engine builds the set of template
+parameters to use as follows.
 
-When a report is run using the CLI, template parameters can be specified either
-using [a manifest file](#manifest-file) or, if a manifest file is not
-specified, using a values file. A values file is simply a JSON file containing
-the same JSON that would be used to specify the template parameters in the
-manifest file (like the JSON sample above).
-
-When a report is run from a Lambda function, template parameters are specified
-in one of the following ways, listed in order of decreasing precedence. In all
-cases, the JSON structure is the same as the sample above. The only difference
-is how it is passed to the Lambda.
-
-* A JSON string in the `REPORT_PARAMS` environment variable
-* The `body` property of the `event` arugment passed to the handler function
-* The `params` property of the `event` argument passed to the handler function
-
-Manifest file support for Lambda functions is on [the todo list](./TODO.md).
+* If a [manifest file](#manifest-file) is specified, add all properties from
+  the `parameters` property for the template report being rendered to the set.
+* If no [manifest file](#manifest-file) is specified and a [values file](#values-file)
+  is specified, add all properties from the top-level JSON object in the values
+  file to the set.
+* If the report is being run [from a Lambda](#using-the-aws-lambda-function)
+  function,
+  * If a `body` property is present in the `event` object passed to the
+    handler function, add all properties from the `body` property to the set.
+  * If a `body` property is _not_ present in the `event` object passed to the
+    handler function, add all properties from the `event` object to the set.
 
 ### Channels
 
@@ -497,9 +575,11 @@ After a report has been run, the generated outputs are distributed via channels.
 A channel provides an implementation that sends report outputs to one or more
 destinations. The following channels are supported:
 
-* [File](#file-channel)
+* [File](#file-channel) (the default when running [from the CLI](#using-the-cli))
 * [Email](#email-channel)
-* [S3](#s3-channel)
+* [S3](#s3-channel) (the default when running [from a Lambda](#using-the-aws-lambda-function))
+
+#### Channel parameters
 
 All channels support configuration parameters that are used by the channel
 implementation to distribute reports via that channel. For example, the file
@@ -511,16 +591,33 @@ be used to connect to the SMTP server.
 Channel configuration parameters can be specified via [a manifest file](#manifest-file),
 via environment variables, or using a combination of both. The recommended way
 is to use a manifest file as it makes it very clear what values will be used and
-it allows for multiple channels of the same type to use different value. For
+it allows for multiple channels of the same type to use different values. For
 more details on the supported channel configuration parameters see the specific
 sections below.
 
+#### Channel parameter interpolation
+
+Some channel parameters support [template parameter](#template-parameters)
+interpolation. That is, the value of the channel parameter is interpolated
+using the template engine prior to being used by the channel implementation.
+The interpolated string may reference any channel configuration parameter as
+well as any report parameter. For example, the "Subject" property of the
+[email channel](#email-channel) is interpolated prior to passing it to the
+[Nodemailer](https://nodemailer.com/about/) transport. Consequently, the `from`
+channel parameter could be included in the "Subject" property by setting the
+`subject` channel parameter to `Report generated for {{ from }}`. If the value
+of the `from` channel parameter was `alice@newrelic.com`, the resulting subject
+would be `Report generated for alice@newrelic.com`.
+
+#### Specifying channels
+
 When a report is run using the CLI, the channels to use are specified at the
-command line. For example, the CLI command used in the [Run a report](#run-a-report)
-section could have explicitly specified the file channel as follows.
+command line. For example, the CLI command used in the
+[Run the template report](#run-the-template-report) section could have
+explicitly specified the file channel as follows.
 
 ```bash
-./nr-reports-cli/bin/nr-reports.sh -p examples -n hello-world.html -c file
+./nr-reports-cli/bin/nr-reports.sh -n hello-world.html -c file
 ```
 
 This is not necessary since the [file channel](#file-channel) is the default.
@@ -528,19 +625,12 @@ However, if we wanted to use the [email channel](#email-channel) instead, we
 would have to specify it as follows.
 
 ```bash
-./nr-reports-cli/bin/nr-reports.sh -p examples -n hello-world.html -c email
+./nr-reports-cli/bin/nr-reports.sh -n hello-world.html -c email
 ```
 
 In both of the above cases, the respective channel implementation will attempt
 to locate the configuration parameters it needs in the environment and will
-default any optional parameters and skip sending the report if any required
-parameters can not be found (for example if the `EMAIL_SMTP_HOST` value is
-missing or empty).
-
-When a report is run from a lambda function, channel configuration parameters
-_must_ be specified using environment variables.
-
-Manifest file support for Lambda functions is on [the todo list](./TODO.md).
+default any optional parameters.
 
 #### File Channel
 
@@ -573,6 +663,8 @@ Here is an example of specifying a file channel configuration in a
 ]
 ```
 
+The `file` channel is the default channel when running [from the CLI](#using-the-cli).
+
 #### Email Channel
 
 The `email` channel generates a single email from a template (not to be
@@ -584,17 +676,17 @@ The following configuration parameters are supported for the email channel. Note
 that all options can be specified via environment variables and some options can
 be specified via channel configuration in a [manifest file](#manifest-file).
 
-| Name | Description | Source | Required | Default |
-| --- | --- | --- | --- | --- |
-| Recipient(s) | "To" addresses | `to` property in channel config, `EMAIL_TO` environment variable | Y | |
-| Sender | "From" address | `from` property in channel config, `EMAIL_FROM` environment variable | Y | |
-| Subject | "Subject" line - May contain template expressions! | `subject` property in channel config, `EMAIL_SUBJECT` environment variable | N | `''` |
-| Template name | Name of _email_ template for generating email body. [Resolved](#template-resolution) against the template path at run time. | `template` property in channel config, `EMAIL_TEMPLATE` environment variable | N | `''` |
-| SMTP Host | SMTP server hostname | `EMAIL_SMTP_SERVER` environment variable | Y | |
-| SMTP Port | SMTP server port | `EMAIL_SMTP_PORT` environment variable | N | 587 |
-| SMTP Secure | SMTP TLS option - true/yes/on/1 forces TLS, anything else defaults to no TLS unless the server upgrades with `STARTTLS` | `EMAIL_SMTP_SECURE` environment variable | N | true |
-| SMTP User | Username for SMTP authentication | `EMAIL_SMTP_USER` environment variable | N | |
-| SMTP Password | Password for SMTP authentication - only used if SMTP User is also specified | `EMAIL_SMTP_PASS` environment variable | N | |
+| Name | Description | Source | Interpolated | Required | Default |
+| --- | --- | --- | --- | --- | --- |
+| Recipient(s) | "To" addresses | `to` property in channel config, `EMAIL_TO` environment variable | N | Y | |
+| Sender | "From" address | `from` property in channel config, `EMAIL_FROM` environment variable | N | Y | |
+| Subject | "Subject" line | `subject` property in channel config, `EMAIL_SUBJECT` environment variable | Y | N | `''` |
+| Template name | Name of _email_ template for generating email body. [Resolved](#template-resolution) against the template path at run time. | `template` property in channel config, `EMAIL_TEMPLATE` environment variable | N | N | `''` |
+| SMTP Host | SMTP server hostname | `EMAIL_SMTP_SERVER` environment variable | N | Y | |
+| SMTP Port | SMTP server port | `EMAIL_SMTP_PORT` environment variable | N | N | 587 |
+| SMTP Secure | SMTP TLS option - true/yes/on/1 forces TLS, anything else defaults to no TLS unless the server upgrades with `STARTTLS` | `EMAIL_SMTP_SECURE` environment variable | N | N | true |
+| SMTP User | Username for SMTP authentication | `EMAIL_SMTP_USER` environment variable | N | N | |
+| SMTP Password | Password for SMTP authentication - only used if SMTP User is also specified | `EMAIL_SMTP_PASS` environment variable | N | N | |
 
 Here is an example of specifying an email channel configuration in a
 [manifest file](#manifest-file).
@@ -616,11 +708,11 @@ Here is an example of specifying an email channel configuration in a
 Along with the supported configuration parameters listed above, any number
 of additional parameters may be specified. _All_ parameters, including the
 supported ones, as well as all [template parameters](#template-parameters) (if
-running a template report)  will be made available to the email template when it
+running a template report) will be made available to the email template when it
 is rendered.
 
-An [example email template](./examples/email-template.html) is provided in the
-`examples` directory.
+The [default email template](./templates/email/message.html) is located in the
+`templates/email` directory.
 
 Because why not? Everyone needs more email.
 
@@ -629,7 +721,13 @@ Because why not? Everyone needs more email.
 The `s3` channel uploads all generated report outputs to an S3 bucket. The
 destination bucket must be specified either using the `bucket` property in the
 `s3` channel configuration from [the manifest file](#manifest-file) or using the
-`S3_DEST_BUCKET` environment variable.
+value of the `S3_DEST_BUCKET` environment variable. If neither are specified
+and the report is being run [from a Lambda](#using-the-aws-lambda-function)
+function, the destination bucket will default to the `sourceBucket` property
+of the engine options or the value of the `S3_SOURCE_BUCKET` environment
+variable. If the report is being run [from the CLI](#using-the-cli), the
+destination bucket will default to the value of the `S3_SOURCE_BUCKET`
+environment variable.
 
 Here is an example of specifying an s3 channel configuration in a
 [manifest file](#manifest-file).
@@ -648,6 +746,8 @@ Here is an example of specifying an s3 channel configuration in a
    }
 ]
 ```
+
+The `s3` channel is the default channel when running [from a Lambda](#using-the-aws-lambda-function).
 
 ### Manifest File
 
@@ -677,22 +777,63 @@ The following properties are common to all report types.
 
 | Property Name | Description | Type | Required | Default |
 | --- | --- | --- | --- | --- |
-| template | The template _name_. Must be available on the [template path](#template-resolution) | string | Y | |
+| templateName | The template _name_. Must be available on the [template path](#template-resolution) | string | Y | |
 | parameters | The [template parameters](#template-parameters) to use for this report | object | N | `{}` |
-| isMarkdown | `true` if the template is written in Markdown, `false` if the template is HTML, or omit for "auto" detection by file extension | boolean | N | undefined (auto detect) |
+| isMarkdown | `true` if the template is written in Markdown, `false` if the template is HTML, or omit for "auto" detection by file extension of the template name | boolean | N | undefined (auto detect) |
 
 #### Dashboard Report Properties
 
 | Property Name | Description | Type | Required | Default |
 | --- | --- | --- | --- | --- |
-| parameters | Only used by the email channel. The parameters to use when rendering the email template | object | N | `{}` |
+| dashboards | An array of dashboard entity GUIDs | array | Y | |
 | combinePdfs | `true` to combine all PDFs whan more than one dashboard is specified or `false` to use separate PDFs. | boolean | N | undefined |
+
+### Values File
+
+A values file is a JSON file containing [template parameters](#template-parameters)
+to use when rendering a template report, specified [as JSON](#specifying-template-parameters).
+Values files are only used when a manifest file is not specified. If both a
+values file and manifest file are specified, the values file is ignored.
+
+### Engine Options
+
+The reporting engine supports several options which control various aspects of
+it's behavior. When running [from the CLI](#using-the-cli), these options can be
+specified using the CLI options. When running
+[from a Lambda](#using-the-aws-lambda-function), these options can
+be specified in the `options` object in the `event` object (or `event.body`
+object) passed to the handler function. In both cases, these options can also
+be specified via environment variables. Options specified via CLI options or the
+event payload take precedence over environment variables.
+
+The following options are supported. For more information on the CLI options,
+see the section [Using the CLI](#using-the-cli). For more information on the
+Lambda options, see the section [Using the AWS Lambda Function](#using-the-aws-lambda-function).
+
+| Option | Description | CLI Option | Lambda Option | Environment Variable |
+| --- | --- | --- | --- | --- |
+| Log Level | Enging log verbosity | `-v` / `-d` | `logLevel` | `LOG_LEVEL` |
+| Manifest file | Path to a manifest file | `-f` | `manifestFilePath` | `MANIFEST_FILE` |
+| Template name | A template name | `-n` | `templateName` | `TEMPLATE_NAME` |
+| Template path | Additional paths to search during [template resolution](#template-resolution)  | `-p` | `templatePath` | `TEMPLATE_PATH` |
+| Values file | Path to a manifest file | `-v` | `valuesFilePath` | `VALUES_FILE` |
+| Dashboard IDs | List of dashboard entity GUIDs  | `-d` | `dashboardIds` | `DASHBOARD_IDS` |
+| Channel IDs | List of channel IDs | `-c` | `channelIds` | `CHANNEL_IDS` |
+| S3 Source Bucket | Name of S3 bucket to read manifest file/template from. _Unsupported in CLI._ | Unsupported | `sourceBucket` | `SOURCE_BUCKET` |
 
 ### Using the CLI
 
+The CLI (command line interface) is used to run reports by [the CLI image](#using-the-cli-image)
+and by [the CRON image](#using-the-cron-image). Reports can also be run directly
+from the command line using [the provided wrapper script](nr-reports-cli/bin/nr-reports.sh).
+The latter is mostly meant to be used locally for development and testing
+purposes. The CLI is used as follows.
+
 ```sh
-node index.js ([-f manifest-file] | ([-n name -v values-file] [-p template-path] | [-d dashboards]) [-c channels]) [--verbose] [--debug] [--full-chrome])
+node index.js ([-f manifest-file] | ([-n name -v values-file] [-p template-path] | [-d dashboard-ids]) [-c channel-ids]) [--verbose] [--debug] [--full-chrome])
 ```
+
+The CLI accepts the following options.
 
 | Option | Description | Example |
 | --- | --- | --- |
@@ -700,29 +841,29 @@ node index.js ([-f manifest-file] | ([-n name -v values-file] [-p template-path]
 | `-n name` | Render the template named `name`. `name` must be a template on the template path. Takes precedence over `-d`. | `-n my-report.html` |
 | `-p name` | Additional directories for the template path (delimited by the system path separator) | `-p examples:another-dir` |
 | `-v values-file` | Run the report using template parameter values defined in the JSON file `values-file`. Ignored with `-f` or `-d`.  | `-v values.json` |
-| `-d dashboards` | Download dashboard snapshots for all dashboard GUIDs listed in `dashboards` (comma delimited). Ignored with `-f` or `-n`. | `-d abc123,xyz456` |
-| `-c channels` | Send report output files to the channels listed in `channels` (comma delimited) | `-c file,email` |
+| `-d dashboard-ids` | Download dashboard snapshots for all dashboard GUIDs listed in `dashboards` (comma delimited). Ignored with `-f` or `-n`. | `-d abc123,xyz456` |
+| `-c channel-ids` | Send report output files to the channels listed in `channels` (comma delimited) | `-c file,email` |
 | `--verbose` | Enable verbose mode | |
 | `--debug` | Enable debug mode (be very verbose) | |
 | `--full-chrome` | Don't launch Chromium in headless mode (useful for testing templates) | |
 
 #### CLI Examples
 
-The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh`
-wrapper.
+The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
 
 * Run all reports using the defaults (read reports from `manifest.json` in the
-  current working directory)
+  `include` directory)
 
   `./nr-reports-cli/bin/nr-reports.sh`
 
-* Run all reports defined in the manifest file `my-manifest.json`
+* Run all reports defined in the manifest file `my-manifest.json` in the current
+  working directory
 
   `./nr-reports-cli/bin/nr-reports.sh -f my-manifest.json`
 
 * Run a report using the template named `my-report.html` in the current working
-  directory with the values file `my-report-values.json` and copies the result
-  report into the current working directory
+  directory with the values file `my-report-values.json` in the current working
+  directory and copy the result report into the current working directory
 
   `./nr-reports-cli/bin/nr-reports.sh -n my-report.html -v my-report-values.json`
 
@@ -743,16 +884,22 @@ wrapper.
 ### Using the CLI image
 
 A [Dockerfile](./nr-reports-cli/Dockerfile) is provided to build a Docker
-image that provides an `ENTRYPOINT` that runs the CLI with no arguments. This
-image is meant to be used in conjuction with external scheduled task mechanisms
-such as [AWS ECS Scheduled Tasks](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/scheduled_tasks.html)
+image that provides an `ENTRYPOINT` that runs the CLI with no arguments.
+Arguments can be passed to the the CLI via arguments to the `docker run`
+command. [Engine options](#engine-options) can also be specified as environment
+variables. This image is meant to be used in conjuction with external scheduled
+task mechanisms such as [AWS ECS Scheduled Tasks](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/scheduled_tasks.html)
 to run reports on a schedule without the need to keep the CRON image running
-all the time, since most reports likely run infrequently. It _can_ also be used
-as a way to test and debug reports locally without needing to have everything
-required to run the CLI available on the local machnine. This can be more
-inconvenient than running the CLI directly on the local machine but has the
-benefit that it will produce reports in the exact environment they will be run
-when the image is deployed.
+all the time, since most reports likely run infrequently. It can also be used
+as a base image. It _can_ also be used as a way to test and debug reports
+locally without needing to have everything required to run the CLI available on
+the local machnine. This can be more inconvenient than running the CLI directly
+on the local machine but has the benefit that it will produce reports in the
+exact environment they will be run when the image is deployed.
+
+As mentioned in the section [template-resolution](#template-resolution), all
+files in the[`include`](./include) directory are copied into the application
+root of the image (`/app/nr-reports-cli`).
 
 #### Building the CLI image
 
@@ -762,41 +909,127 @@ following options.
 
 | Option | Description | Example |
 | --- | --- | --- |
-| `--manifest-file manifest-file` | A local [manifest file](#manifest-file) that specifies reports to run. Will be copied into the images `/app/nr-reports-cli` directory. | `--manifest-file manifest.json` |
-| `--template-dir template-dir` | A local directory containing the templates to copy into the images `/app/nr-reports-cli/templates` directory. | `--template-dir templates` |
 | `--image-repo image-repository` | The repository to use when tagging the image. Defaults to `nr-reports`. | `--image-repo nr-reports` |
-| `--image-tag image-tag` | The tag to use whtn tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
+| `--image-tag image-tag` | The tag to use when tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
 
 You can either run the script directly or use the `npm run build` command while
 in the `./nr-reports-cli` directory.
 
 Here are a few examples.
 
-* Build an image using all the defaults.
+* Build an image using all the defaults. The image will be tagged with
+  `nr-reports:latest` in the local Docker registry.
   
   ```bash
   cd ./nr-reports-cli
   npm run build
   ```
 
-  The only way this image is useful is if you are going to pass _all_ arguments
-  into it when run. In addition, if you are generating any template reports or
-  want to use a Manifest file, you would need to mount directories into the
-  container when it is run.
-
-* Build an image that will run all reports in `./examples/manifest.json` and
-  will include all templates from `./examples` in the image. The image will be
-  tagged with `nr-reports:latest` in the local Docker registry.
+* Build an image with a custom image name. The image will be tagged with
+  `my-great-reports:1.1` in the local Docker registry.
   
   ```bash
   cd ./nr-reports-cli
-  npm run build -- --manifest-file ./examples/manifest.json --template-dir ./examples
+  npm run build -- --image-repo my-great-reports --image-tag 1.1
   ```
+
+#### Running the CLI image
+
+The following examples show how you can run reports using the CLI image. Though
+the image is intended to be used in conjuction with a scheduled task mechanism,
+it can be helpful for testing and debugging reports in the exact environment
+they will be run when the image is deployed rather than running in a local
+environment which may not be consistent with the deployed image.
+
+**NOTE:** The Docker option `--cap-add=SYS_ADMIN` is used in the examples below
+to work around [the `Error: Failed to launch the browser process!` message](#error-failed-to-launch-the-browser-process).
+This option would only be necessary if you are running template reports and you
+encounter this error message. The option should be used _carefully_ as it
+provides **_`root`_** access to the underlying host OS. In general it should
+only be used locally when testing and developing templates.
+
+**NOTE:** In the examples below, the [AWS configuration and credential files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
+in the local `.aws` directory are mounted into the home directory of the
+`pptruser` in the container so that the [AWS SDK for Node.js](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started-nodejs.html)
+has access to the AWS configuration and credentials without having to pass those via
+arguments on the command line.
+
+##### Running a report using a template name with the CLI image
+
+The example below uses the [`email`](#email-channel) and [`s3`](#s3-channel)
+channels. The example specifies the channel IDs [engine option](#engine-options)
+and the [channel parmeters](#channel-parameters) via environment variables and
+runs a simple template report that does not use a manifest file and assumes the
+template `hello-world.html` is available on [the template path](#template-resolution).
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e CHANNEL_IDS='email,s3' \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -e EMAIL_FROM='[YOUR_FROM_EMAIL]' \
+    -e EMAIL_TO='[YOUR_TO_EMAIL]' \
+    -e S3_DEST_BUCKET='[A_S3_BUCKET_NAME]' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports -n hello-world.html
+```
+
+##### Running a report using the default manifest file with the CLI image
+
+The example below uses the default [manifest file](#manifest-file) located at
+`include/manifest.json`. The channels and the channel configuration parameters
+are specified in the manifest file, except for the ones that are only supported
+via environment variables.
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports
+```
+
+##### Running a report using a custom manifest file with the CLI image
+
+The example below uses a custom [manifest file](#manifest-file) located at
+`include/custom-manifest.json`. The channels and the channel configuration
+parameters are specified in the manifest file, except for the ones that are only
+supported via environment variables.
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports -f include/custom-manifest.json
+```
 
 ### Using the CRON image
 
 The Dockerfile [`Dockerfile-cron`](./nr-reports-cli/Dockerfile-cron) is
-provided to build a Docker image that runs reports on a schedule using `cron`.
+provided to build a Docker image that runs [the CLI](#using-the-cli) on a
+schedule using `cron`. The containers `CMD` runs `crond` with the `-f` flag to
+keep it in the foreground, which keeps the container up and running. Because
+of this, arguments can _only_ be passed to the the CLI when
+[the container is built](#building-the-cron-image). Arguments are specified
+by invoking the [`build-cron.sh` script (or `npm run build-cron`)](./nr-reports-cli/scripts/build-cron.sh)
+with the `--cli-args` option. If the `--cli-args` option is not specified, the
+default [Engine options](#engine-options) are used when running the container
+unless overriden by [Engine options](#engine-options) specified as environment
+variables.
+
+As mentioned in the section [template-resolution](#template-resolution), all
+files in the[`include`](./include) directory are copied into the application
+root of the image (`/app/nr-reports-cli`).
 
 #### Building the CRON image
 
@@ -805,59 +1038,267 @@ provided to simplify building a CRON image. It supports the following options.
 
 | Option | Description | Example |
 | --- | --- | --- |
-| `--manifest-file manifest-file` | A local [manifest file](#manifest-file) that specifies reports to run. Will be copied into the images `/app/nr-reports-cli` directory. Defaults to `manifest.json`. | `--manifest-file manifest.json` |
-| `--template-dir template-dir` | A local directory containing the template to copy into the images `/app/nr-reports-cli/templates` directory. | `--template-dir templates` |
+| `--cli-args 'arguments'` | Arguments to pass to the CLI on each invocation by `crond`. Make sure to quote the arguments string.  | `--cli-args '-n hello-world.html'` |
 | `--cron-entry crontab-entry` | A crontab instruction specifying the cron schedule. Defaults to `0 * * * *`. Make sure to quote the entry string. | `--cron-entry "*     *     *     *     *"` |
 | `--image-repo image-repository` | The repository to use when tagging the image. Defaults to `nr-reports-cron`. | `--image-repo nr-reports-cron` |
-| `--image-tag image-tag` | The tag to use whtn tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
+| `--image-tag image-tag` | The tag to use when tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
 
 You can either run the script directly or use the `npm run build-cron` command
 while in the `./nr-reports-cli` directory.
 
 Here are a few examples.
 
-* Build an image using all the defaults.
+* Build an image using all the defaults. The image will be tagged with
+  `nr-reports-cron:latest` in the local Docker registry.
   
   ```bash
   cd ./nr-reports-cli
   npm run build-cron
   ```
 
-  This will build an image that will run all reports the `./manifest.json` once
-  an hour. The image will be tagged with `nr-reports-cron:latest` in the local
-  Docker registry. Note that if a `manifest.json` file does not exist in the
-  current working directory, the build will fail. A manifest file is required
-  for the CRON image.
+* Build an image that will run all reports in the `include/custom-manifest.json`
+  every day at 04:00. The image will be tagged with `nr-reports-cron:latest` in
+  the local Docker registry.
 
-* Build an image that will run all reports in `./examples/manifest.json` every
-  day at 04:00 and will include all templates from `./examples` in the image.
-  The image will be tagged with `nr-reports-cron:latest` in the local Docker
-  registry.
+  ```bash
+  cd ./nr-reports-cli
+  npm run build-cron -- --cli-args '-f include/custom-manifest.json' --cron-entry "0     4     *     *     *`
+  ```
 
-  `./nr-reports-cli/scripts/build-cron.sh --manifest-file ./examples/manifest.json --template-dir ./examples --cron-entry "0     4     *     *     *`
+#### Running the CRON image
+
+The following examples show how you can run reports using the CRON image.
+Because CLI arguments can be passed to the container when it is _built_, and
+because [engine options](#engine-options) specified via CLI options take
+precedence over environment variables, the behavior of the rendering engine when
+a container is run depends both on the environment variables specified when the
+container is launched and the CLI arguments specified to build the image used to
+run the container. Use of both could make it difficult to determine what options
+are actually being used by the rendering engine. Therefore, in the examples
+below, both the way the containers are run and the way the images used by those
+containers are built are called out.
+
+**NOTE:** The Docker option `--cap-add=SYS_ADMIN` is used in the examples below
+to work around [the `Error: Failed to launch the browser process!` message](#error-failed-to-launch-the-browser-process).
+This option would only be necessary if you are running template reports and you
+encounter this error message. The option should be used _carefully_ as it
+provides **_`root`_** access to the underlying host OS. In general it should
+only be used locally when testing and developing templates.
+
+**NOTE:** In the examples below, the [AWS configuration and credential files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
+in the local `.aws` directory are mounted into the home directory of the
+`pptruser` in the container so that the [AWS SDK for Node.js](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started-nodejs.html)
+has access to the AWS configuration and credentials without having to pass those via
+arguments on the command line.
+
+##### Running a report using a template name with the CRON image - Variation 1
+
+This example runs a simple template report that does not use a manifest
+file. The report is run using an image built with all defaults. The template
+name and channel IDs [engine options](#engine-options) are specified via
+**environment variables**. The [channel parmeters](#channel-parameters) for both
+channels are also specified via **environment variables**.  The generated report
+is published to the [`email`](#email-channel) and [`s3`](#s3-channel) channels.
+Finally, it assumes that the template `hello-world.html` is available on
+[the template path](#template-resolution).
+
+_Build command:_
+
+```bash
+npm run build-cron
+```
+
+_Run command:_
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e TEMPLATE_NAME='hello-world.html' \
+    -e CHANNEL_IDS='email,s3' \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -e EMAIL_FROM='[YOUR_FROM_EMAIL]' \
+    -e EMAIL_TO='[YOUR_TO_EMAIL]' \
+    -e S3_DEST_BUCKET='[A_S3_BUCKET_NAME]' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports-cron
+```
+
+##### Running a report using a template name with the CRON image - Variation 2
+
+This example runs a simple template report that does not use a manifest
+file. The report is run using an image built with CLI arguments for the template
+name and channels specified via the `--cli-args` option. The generated report
+is published to the [`email`](#email-channel) and [`s3`](#s3-channel) channels.
+The [channel parmeters](#channel-parameters) for both channels are specified via
+**environment variables** since these cannot be specified at the command line.
+Finally, it assumes that the template `hello-world.html` is available on
+[the template path](#template-resolution).
+
+_Build command:_
+
+```bash
+npm run build-cron -- --cli-args '-n hello-world.html -c email,s3'
+```
+
+_Run command:_
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -e EMAIL_FROM='[YOUR_FROM_EMAIL]' \
+    -e EMAIL_TO='[YOUR_TO_EMAIL]' \
+    -e S3_DEST_BUCKET='[A_S3_BUCKET_NAME]' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports-cron
+```
+
+##### Running a report using a default manifest file with the CRON image
+
+There are no major differences between CRON images built to run reports
+using the default manifest file. This is because no option or environment
+variable is needed to run the CLI with the default manifest file.
+
+##### Running a report using a custom manifest file with the CRON image - Variation 1
+
+This example runs reports using a custom [manifest file](#manifest-file) located
+at `include/custom-manifest.json`. Reports are run using an image built with all
+defaults. The manifest file is specified via an **environment variables**. All
+other values are specified in the manifest file, except for the ones that are
+only supported via **environment variables**.
+
+_Build command:_
+
+```bash
+npm run build-cron
+```
+
+_Run command:_
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e MANIFEST_FILE='include/custom-manifest.json' \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports-cron
+```
+
+##### Running a report using a custom manifest file with the CRON image - Variation 2
+
+This example runs reports using a custom [manifest file](#manifest-file) located
+at `include/custom-manifest.json`. Reports are run using an image that is built
+using the `--cli-args` option to specify the manifest file. All other values are
+specified in the manifest file, except for the ones that are only supported via
+**environment variables**.
+
+_Build command:_
+
+```bash
+npm run build-cron -- --cli-args '-f include/custom-manifest.json'
+```
+
+_Run command:_
+
+```bash
+docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    --cap-add=SYS_ADMIN \
+    --name nr-reports \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_SECURE='true or false' \
+    -v /path/to/.aws:/home/pptruser/.aws \
+    nr-reports-cron
+```
 
 ### Using the AWS Lambda function
 
-Reports can be deployed as an AWS Lambda function. The Lambda function can be
-combined with other AWS services to trigger report generation in a variety of
-ways. For example, an AWS EventBridge trigger can be used to run reports on a
-schedule. Or, an Application Load Balancer trigger can be used to expose an
-HTTP endpoint for generating reports on demand by making a request to the
-endpoint.
+The reporting engine can be also be deployed as an AWS Lambda function.
+The Lambda function can be combined with other AWS services to trigger report
+generation in a variety of ways. For example, an AWS EventBridge trigger can be
+used to run reports on a schedule. Or, an Application Load Balancer trigger can
+be used to expose an HTTP endpoint for generating reports on demand by making a
+request to the endpoint.
 
-#### AWS Lambda Limitations
+The AWS Lambda function is deployed and managed as a
+[CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html).
+using the scripts provided in [the scripts directory](./nr-reports-lambda/scripts).
+These scripts require the AWS CLI to be installed as it is used to create and
+manage the CloudFormation stack.
 
-The AWS Lambda function has several limitations currently.
+#### The AWS Lambda function "package name"
 
-* The Lambda function does not support using a [manifest file](#manifest-file).
-* The Lambda function does not support using Markdown templates.
-* The Lambda function does not support channels. The generated report output is
-  always written back to the specified S3 bucket.
-* The Lambda function does not support dashboard reports.
+Each of the scripts in in [the scripts directory](./nr-reports-lambda/scripts)
+require the `--package-name` argument to be specified. The "package name" serves
+a dual purpose. First, it is used as the name of the CloudFormation stack that
+includes the AWS Lambda function and associated resources. Second, it is used
+as the name for the AWS Lambda function Docker image in your _local_ Docker
+registry.
 
-These limitations will be addressed in future versions.
+**NOTE:** The image version used as the image _tag_ in your local Docker
+registry is taken from the `ImageTag` parameter specified in your
+`cf-params.json` file. This value is also used to tag the image when it is
+pushed to the ECR container registry during deployment of the Lambda function.
 
-#### Preparing to deploy or update the Lambda function
+#### The AWS Lambda function and S3
+
+The AWS Lambda function supports reading manifest, template, and values files
+from Amazon S3 if the `sourceBucket` [engine option](#engine-options) is set.
+For example, if the `sourceBucket` option is set to `my-in-bucket` and the
+`manifestFile` option is set to `my-manifest.json`, the AWS Lambda function will
+load the object with the key `my-manifest.json` in the S3 bucket `my-in-bucket`.
+
+In addition, if a source bucket is specified and no channel is specified for a
+report, the default being `s3`, or `s3` is specified as a channel without a
+destination bucket, the AWS Lambda function will default the destination bucket
+to the source bucket.
+
+#### Building the AWS Lambda image
+
+A Dockerfile [`Dockerfile`](./nr-reports-cli/Dockerfile-cron) is
+provided to build a Docker image that can be
+[deployed as a Lambda container image](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html).
+The image is built from an [AWS base image for Node.js](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html#nodejs-image-base).
+By default, [version 14](https://github.com/aws/aws-lambda-base-images/blob/nodejs14.x/Dockerfile.nodejs14.x)
+is used but this can be customized by specifying the `AWS_LAMBDA_VER` argument
+when building the image. The image automatically includes the
+[New Relic Lambda Extension Layer](https://github.com/newrelic/newrelic-lambda-extension)
+corresponding to the version of the base image that is specified. Like the
+[CLI image](#using-the-cli-image) and the [CRON image](#using-the-cron-image),
+all files in the[`include`](./include) directory are also included in the Lambda
+container image.
+
+The [`build.sh`](./nr-reports-labda/scripts/build.sh) script is
+provided to simplify building the AWS Lambda image image. It supports the
+following options.
+
+| Option | Description | Example |
+| --- | --- | --- |
+| `--package-name package-name` | The name used as the stack name as well as the name used to tag the image in your local Docker registry. | `--package-name nr-reports-lambda` |
+
+You can either run the script directly or use the `npm run build` command
+while in the `./nr-reports-lambda` directory. For example, to build the image
+using the NPM script, you would run the following command.
+
+```bash
+npm run build -- --package-name nr-reports-lambda
+```
+
+**NOTE:** While the [`build.sh`](./nr-reports-labda/scripts/build.sh) _can_ be
+invoked on it's own, the [`deploy.sh`](./nr-reports-labda/scripts/deploy.sh) and
+the [`update.sh`](./nr-reports-labda/scripts/update.sh) scripts invoke it for
+you prior to deployment.
+
+#### Preparing to deploy or update the AWS Lambda function
 
 Prior to working with the Lambda function, you will need to ensure that you have
 the following.
@@ -866,17 +1307,10 @@ the following.
    [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile)
 2. A [function execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)
    that the Lambda function will assume when the function is invoked
-3. An S3 bucket that the Lambda function can read from
-4. An S3 bucket that the Lambda function can write to
-5. Optionally, a Secrets Manager secret in which to store the New Relic User
+3. Optionally, a Secrets Manager secret in which to store the New Relic User
    API key used by the Lambda
 
-#### Deploying the Lambda function
-
-The Reports AWS Lambda function can be deployed and managed using the scripts
-defined in [the scripts directory](./nr-reports-lambda/scripts). These scripts
-require the AWS CLI to be installed. It is used to create and manage the AWS
-resources required by the Reports Lambda function.
+#### Deploying the AWS Lambda function
 
 The Lambda function is deployed using [a CloudFormation template](./nr-reports-lambda/cf-template.yaml).
 The CloudFormation template accepts a number of parameters which must be
@@ -917,16 +1351,22 @@ comments. For example, here is the documentation for the `UserApiKey` parameter.
 ```
 
 [The `deploy.sh` script](./nr-reports-lambda/scripts/deploy.sh) is used
-to deploy the Reports Lambda function. This script will first invoke
-[the `build.sh` script](./nr-reports-lambda/scripts/build.sh) to build the
-Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
+to deploy the Lambda function. This script will first invoke [the `build.sh` script](./nr-reports-lambda/scripts/build.sh)
+to build the Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
 The script will then push the image from the local Docker registry to the
 registry defined in the `./nr-reports-lambda/cf-params.json` file and use the
 `aws cloudformation deploy` command to create the stack using
 [the CloudFormation template](./nr-reports-lambda/cf-template.yaml).
 
-To deploy the Lambdda function using the `deploy.sh` script, perform the
-following steps.
+You can either run the script directly or use the `npm run deploy` command
+while in the `./nr-reports-lambda` directory. For example, to deploy the AWS
+Lambda function using the NPM script, you would run the following command.
+
+```bash
+npm run deploy -- --package-name nr-reports-lambda
+```
+
+To deploy the AWS Lambda function, perform the following steps.
 
 1. Ensure you are logged into AWS ECR using `aws ecr get-login-password`.
 2. Copy the [./nr-reports-lambda/cf-params.sample.json](./nr-reports-lambda/cf-params.sample.json)
@@ -938,12 +1378,9 @@ following steps.
 
 3. Update the values in the file `./nr-reports-lambda/cf-params.json` as
    appropriate for your environment.
-4. Run [The `deploy.sh` script](./nr-reports-lambda/scripts/deploy.sh).
+4. Run the `deploy` script.
 
-   `./nr-reports-lambda/scripts/deploy.sh --package-name nr-report-builder`
-
-   The "package-name" will be used as the stack name as well as the image name
-   used to tag the image in your local Docker registry.
+   `npm run deploy -- --package-name nr-reports-lambda`
 
 You should now have a Lambda function named `RunNewRelicReport` (unless you
 customized it in the `cf-params.json` file). You can confirm this by looking
@@ -956,70 +1393,41 @@ in the AWS Lambda console or running the following command in your terminal.
    --color on
  ```
 
-#### Running reports using the Lambda function
-
-As noted in [the limitations section](#aws-lambda-limitations), currently the
-AWS Lambda function does not support using a [manifest file](#manifest-file). As
-such, the Lambda function can only be used to run one report at a time.
-Additionally, the Lambda function only supports running template reports. In
-other words, at this time, the AWS Lambda function can only be used to run
-one template report at a time. That said, the Lambda function is not limited
-to using a single report template. The report template to use can be specified
-dynamically via the payload of the event that triggers a given invocation.
-
-##### Specifying the Lambda template and output paths
-
-Currently, the AWS Lambda function only supports reading templates from Amazon
-S3 and writing generated report outputs back into Amazon S3. On each invocation,
-the Lambda function resolves the location of the source template and the
-location for the generated output using the following properties.
-
-| Name | Description | Source | Required | Default |
-| --- | --- | --- | --- | --- |
-| Source Bucket Name | Name of the S3 bucket containing the template object | `templateBucket` property in the template parameters, `S3_SOURCE_BUCKET` environment variable | Y | `newrelic` |
-| Source Template Key | Key for the template object within the source bucket | `templatePathKey` property in the template parameters, `S3_SOURCE_PATH_KEY` environment variable | Y | `report.html` |
-| Destination Bucket Name | Name of the S3 bucket to write generated output into | `reportBucket` property in the template parameters, `S3_DEST_BUCKET` environment variable | N | `newrelic` |
-| Destination Output Key | Key to use for the generated output object within the destination bucket | `reportPathKey` property in the template parameters, `S3_DEST_PATH_KEY` environment variable | N | `report.pdf` |
-
-##### Specifying the Lambda template parameters
-
-The AWS Lambda function looks for [template parameters](#template-parameters) in
-the following locations, listed in order of precedence.
-
-* The `REPORT_PARAMS` environment variable (as a serialized JSON string)
-* The `body` property of the `event` parameter passed to the handler function
-* The `params` property of the `event` parameter passed to the handler function
-
-The following properties in the template parameters have special meaning when
-used in the AWS Lambda function.
-
-| Name | Description |
-| --- | --- |
-| `templateBucket` | Name of the S3 bucket containing the template object |
-| `templatePathKey` | Key for the template object within the source  |
-| `reportBucket` | Name of the S3 bucket to write generated output into |
-| `reportPathKey` | Key to use for the generated output object within the destination bucket |
-
 #### Update the Lambda function
 
 [The `update.sh` script](./nr-reports-lambda/scripts/deploy.sh) is used
-to update the Reports Lambda function. This script first invokes
-[the `build.sh` script](./nr-reports-lambda/scripts/build.sh) to build the
-Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
+to update the Lambda function. This script first invokes [the `build.sh` script](./nr-reports-lambda/scripts/build.sh)
+to build the Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
 The script will then push the image from the local Docker registry to the
 registry defined in the `./nr-reports-lambda/cf-params.json` file and use the
 `aws lambda update-function-code` command to update the Lambda to point to the
 new image. Note that you _must_ increment the value of the `ImageTag` parameter
 specified in your `./nr-reports-lambda/cf-params.json` file.
 
-At this time, updating the Lambda function is of little use unless you make
-changes to the actual Reports code. This script will be useful once the Lambda
-function supports [manifest files](#manifest-file) and bundled template files.
+This script can be used to update the Lambda function image to include new
+or updated [manifest files](#manifest-file), [template files](#templates),
+and/or [values files](#values-file).
+
+You can either run the script directly or use the `npm run update` command
+while in the `./nr-reports-lambda` directory. For example, to update the AWS
+Lambda function using the NPM script, you would run the following command.
+
+```bash
+npm run update -- --package-name nr-reports-lambda
+```
 
 #### Deleting the Lambda function
 
 [The `delete.sh` script](./nr-reports-lambda/scripts/delete.sh) is used
 to delete the Reports Lambda function and the associated CloudFormation stack.
+
+You can either run the script directly or use the `npm run delete` command
+while in the `./nr-reports-lambda` directory. For example, to delete the AWS
+Lambda function using the NPM script, you would run the following command.
+
+```bash
+npm run delete -- --package-name nr-reports-lambda
+```
 
 ## Troubleshooting
 
@@ -1032,7 +1440,9 @@ example, on ECS, the container must have the privileged container capability,
 i.e. `com.amazonaws.ecs.capability.privileged-container`. When running locally,
 you may need to add `--cap-add=SYS_ADMIN`. See
 [this documentation](https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-in-docker)
-for more details.
+for more details. Note that this option should be used _carefully_ as it provides
+**_`root`_** access to the underlying host OS. In general it should only be used
+locally when testing and developing templates.
 
 ```bash
 Error: Failed to launch the browser process!

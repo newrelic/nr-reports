@@ -24,10 +24,10 @@ function staticChartUrl(chart) {
   nonDestructiveMerge(
     chart,
     {
-      type: 'LINE',
-      format: 'PNG',
-      width: 640,
-      height: 480,
+      type: chart.type || 'LINE',
+      format: chart.format || 'PNG',
+      width: typeof chart.width === 'number' ? chart.width : 640,
+      height: typeof chart.height === 'number' ? chart.height : 480,
     },
   )
 

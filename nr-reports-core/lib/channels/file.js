@@ -3,7 +3,7 @@
 const fs = require('fs').promises,
   path = require('path')
 
-async function copyToDestDir(channelConfig, files) {
+async function copyToDestDir(report, channelConfig, files) {
   const destDir = channelConfig.destDir || process.env.FILE_DEST_DIR || '.'
 
   await fs.mkdir(destDir, { recursive: true })
@@ -16,4 +16,7 @@ async function copyToDestDir(channelConfig, files) {
   }
 }
 
-module.exports = copyToDestDir
+module.exports = {
+  publish: copyToDestDir,
+  getChannelDefaults: () => ({}),
+}

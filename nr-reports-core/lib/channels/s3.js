@@ -2,9 +2,10 @@
 
 const fs = require('fs'),
   path = require('path'),
-  { putS3Object } = require('../aws-util')
+  { putS3Object } = require('../aws-util'),
+  { getOption } = require('../util')
 
-async function uploadToS3(channelConfig, files) {
+async function uploadToS3(report, channelConfig, files) {
   const bucket = channelConfig.bucket || process.env.S3_DEST_BUCKET
 
   for (let index = 0; index < files.length; index += 1) {
@@ -16,4 +17,12 @@ async function uploadToS3(channelConfig, files) {
   }
 }
 
-module.exports = uploadToS3
+module.exports = {
+  publish: uploadToS3,
+  getChannelDefaults: options => ({
+    bucket: (
+      process.env.S3_DEST_BUCKET ||
+      getOption(options, 'sourceBucket', 'S3_SOURCE_BUCKET')
+    ),
+  }),
+}

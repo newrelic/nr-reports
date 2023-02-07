@@ -1,6 +1,6 @@
 'use strict'
 const logger = require('./lib/logger'),
-  Engine = require('./lib/engine'),
+  engine = require('./lib/engine'),
   nerdgraph = require('./lib/nerdgraph'),
   util = require('./lib/util'),
   awsUtil = require('./lib/aws-util')
@@ -10,5 +10,5 @@ module.exports = {
   ...nerdgraph,
   ...util,
   ...awsUtil,
-  Engine,
+  ...engine,
 }

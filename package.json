@@ -1,8 +1,12 @@
 {
   "name": "nr-reports",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "sdewitt@newrelic.com",
   "description": "New Relic Reports is a report generation and automation framework for New Relic.",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/newrelic-experimental/nr-reports"
@@ -11,7 +15,6 @@
     "lint": "npx eslint .",
     "preinstall": "cd nr-reports-core && npm install && cd ../nr-reports-cli && npm install && cd ../nr-reports-lambda && npm install"
   },
-  "license": "Apache-2.0",
   "devDependencies": {
     "eslint": "^8.3.0",
     "eslint-config-eslint": "^7.0.0",

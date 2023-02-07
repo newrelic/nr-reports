@@ -1,9 +1,10 @@
 FROM alpine:3.14
 
 # Build args
-ARG MANIFEST_FILE
-ARG TEMPLATE_DIR
+ARG CLI_ARGS
 ARG CRON_ENTRY
+
+# Install required packages
 RUN apk add --no-cache \
       chromium \
       nss \
@@ -30,8 +31,7 @@ RUN apk add --no-cache \
 COPY nr-reports-core /app/nr-reports-core/
 COPY nr-reports-cli /app/nr-reports-cli/
 COPY templates /app/nr-reports-cli/templates/
-COPY ${TEMPLATE_DIR} /app/nr-reports-cli/templates/
-COPY ${MANIFEST_FILE} /app/nr-reports-cli/manifest.json
+COPY include /app/nr-reports-cli/include
 
 # Tell Puppeteer to skip installing Chrome. We'll be using the installed package.
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
@@ -42,7 +42,7 @@ RUN addgroup -S pptruser && adduser -S -g pptruser pptruser \
     && mkdir -p /home/pptruser/Downloads /app \
     && chown -R pptruser:pptruser /home/pptruser \
     && chown -R pptruser:pptruser /app && \
-    echo "${CRON_ENTRY}    cd /app/nr-reports-cli && node index.js" > /crontab.txt && \
+    echo "${CRON_ENTRY}    cd /app/nr-reports-cli && node index.js ${CLI_ARGS}" > /crontab.txt && \
     /usr/bin/crontab -u pptruser /crontab.txt && \
     cd /app/nr-reports-core && \
     npm install --production && \

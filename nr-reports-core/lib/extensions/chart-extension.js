@@ -87,7 +87,7 @@ function ChartExtension(apiKey) {
           accountId,
           env.renderString(query, vars),
           {
-            timeout: 5,
+            timeout: options.timeout || 5,
             chart: chartOptions,
           },
         ),

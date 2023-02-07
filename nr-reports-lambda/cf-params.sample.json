@@ -44,19 +44,35 @@
         "ParameterValue": "INFO"
     },
     {
-        "ParameterKey": "S3SourceBucket",
-        "ParameterValue": "mybucket"
+        "ParameterKey": "ManifestFile",
+        "ParameterValue": "manifest.json"
     },
     {
-        "ParameterKey": "S3SourcePathKey",
-        "ParameterValue": "report.html"
+        "ParameterKey": "TemplateName",
+        "ParameterValue": "hello-world.html"
+    },
+    {
+        "ParameterKey": "TemplatePath",
+        "ParameterValue": "/var/db/extra-templates:common-templates"
+    },
+    {
+        "ParameterKey": "ValuesFile",
+        "ParameterValue": "values.json"
+    },
+    {
+        "ParameterKey": "DashboardIDs",
+        "ParameterValue": "AABBCC445566:FFEEDD112233"
+    },
+    {
+        "ParameterKey": "ChannelIDs",
+        "ParameterValue": "email,s3"
+    },
+    {
+        "ParameterKey": "S3SourceBucket",
+        "ParameterValue": "my-in-bucket"
     },
     {
         "ParameterKey": "S3DestBucket",
-        "ParameterValue": "mybucket"
-    },
-    {
-        "ParameterKey": "S3DestPathKey",
-        "ParameterValue": "report.pdf"
+        "ParameterValue": "my-out-bucket"
     }
 ]
