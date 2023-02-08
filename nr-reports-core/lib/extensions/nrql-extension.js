@@ -38,7 +38,8 @@ function NrqlExtension(apiKey) {
   }
 
   this.run = async function(context, ...args) {
-    const vars = context.getVariables(),
+    const env = context.env,
+      vars = context.getVariables(),
       nerdgraph = new NerdgraphClient(),
       callback = args[args.length - 1],
       errorBody = args[args.length - 2],
@@ -80,7 +81,10 @@ function NrqlExtension(apiKey) {
       const result = await nerdgraph.runNrql(
         this.apiKey,
         accountId,
-        query,
+        env.renderString(query, vars),
+        {
+          timeout: options.timeout || 5,
+        },
       )
 
       context.setVariable(
@@ -100,7 +104,7 @@ function NrqlExtension(apiKey) {
       }
 
       // eslint-disable-next-line node/callback-return
-      callback(null, new nunjucks.runtime.SafeString('This chart could not be displayed.'))
+      callback(null, new nunjucks.runtime.SafeString(err.message))
     }
   }
 }

@@ -4,7 +4,7 @@ const nunjucks = require('nunjucks'),
   fetch = require('node-fetch'),
   PDFMerger = require('pdf-merger-js'),
   showdown = require('showdown'),
-  { createWriteStream } = require('fs'),
+  fs = require('fs'),
   path = require('path'),
   { pipeline } = require('stream'),
   { promisify } = require('util'),
@@ -23,12 +23,16 @@ const nunjucks = require('nunjucks'),
     getOption,
     DEFAULT_CHANNEL,
     splitPaths,
+    shouldRender,
+    getDefaultOutputFilename,
   } = require('./util'),
   {
     getS3ObjectAsString,
   } = require('./aws-util')
 
-const logger = createLogger('engine'),
+const { createWriteStream } = fs,
+  { writeFile } = fs.promises,
+  logger = createLogger('engine'),
   converter = new showdown.Converter({
     ghCompatibleHeaderId: true,
     strikethrough: true,
@@ -79,9 +83,9 @@ async function renderPdf(browser, content, file) {
   })
 }
 
-function renderTemplateFromFile(file, context = {}) {
+function processTemplateFile(file, context = {}) {
   return new Promise((resolve, reject) => {
-    logger.verbose(`Rendering file template named ${file}...`)
+    logger.verbose(`Processing template file ${file}...`)
 
     logger.debug((log, format) => {
       log(format('Context:'))
@@ -99,9 +103,9 @@ function renderTemplateFromFile(file, context = {}) {
   })
 }
 
-function renderTemplateFromString(template, context = {}) {
+function processTemplateString(template, context = {}) {
   return new Promise((resolve, reject) => {
-    logger.verbose('Rendering template content...')
+    logger.verbose('Processing template string...')
 
     logger.debug((log, format) => {
       log(format('Context:'))
@@ -374,27 +378,33 @@ async function discoverReports(context, args) {
   )
 }
 
-async function renderTemplateReport(
+async function processTemplateReport(
   report,
   tempDir,
   browser,
-  renderer,
+  processor,
 ) {
   const {
       templateName,
       parameters,
       isMarkdown,
+      outputFileName,
     } = report,
-    templateParameters = parameters || {}
+    templateParameters = parameters || {},
+    shouldRenderPdf = shouldRender(report)
   let templateIsMarkdown = isMarkdown
 
   try {
-    const output = path.join(
-      tempDir,
-      getFilenameWithNewExtension(templateName, 'pdf'),
+    const output = outputFileName ? path.join(tempDir, outputFileName) : (
+      path.join(
+        tempDir,
+        shouldRenderPdf ? (
+          getFilenameWithNewExtension(templateName, 'pdf')
+        ) : getDefaultOutputFilename(templateName),
+      )
     )
 
-    logger.verbose(`Rendering ${templateName} to ${output}...`)
+    logger.verbose(`Processing template ${templateName}...`)
 
     if (typeof templateIsMarkdown === 'undefined') {
       templateIsMarkdown = (path.extname(templateName.toLowerCase()) === '.md')
@@ -404,20 +414,24 @@ async function renderTemplateReport(
 
     templateParameters.isMarkdown = templateIsMarkdown
 
-    let content = await renderer(templateName, templateParameters)
+    let content = await processor(templateName, templateParameters)
 
     if (templateIsMarkdown) {
-      content = await renderTemplateFromString(
+      content = await processTemplateString(
         `{% extends "base/report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
         templateParameters,
       )
     }
 
-    await renderPdf(
-      browser,
-      content,
-      output,
-    )
+    if (shouldRenderPdf) {
+      await renderPdf(
+        browser,
+        content,
+        output,
+      )
+    } else {
+      await writeFile(output, content)
+    }
 
     await publish(report, [output])
   } catch (err) {
@@ -439,23 +453,23 @@ class Engine {
   }
 
   async runTemplateReport(report, tempDir) {
-    await renderTemplateReport(
+    await processTemplateReport(
       report,
       tempDir,
       this.browser,
       async (templateName, parameters) => (
-        await renderTemplateFromFile(templateName, parameters)
+        await processTemplateFile(templateName, parameters)
       ),
     )
   }
 
   async runTemplateReportWithContent(report, templateContent, tempDir) {
-    await renderTemplateReport(
+    await processTemplateReport(
       report,
       tempDir,
       this.browser,
       async (templateName, parameters) => (
-        await renderTemplateFromString(templateContent, parameters)
+        await processTemplateString(templateContent, parameters)
       ),
     )
   }
@@ -526,9 +540,7 @@ class EngineRunner {
         log(reports)
       })
 
-      const reportIndex = reports.findIndex(report => (
-          report.templateName && (!report.type || report.type === 'text/html')
-        )),
+      const reportIndex = reports.findIndex(shouldRender),
         engineOptions = {
           apiKey: this.context.apiKey,
           templatesPath: buildTemplatePath(args),
@@ -541,7 +553,7 @@ class EngineRunner {
       })
 
       if (reportIndex >= 0) {
-        logger.debug('Found 1 or more template reports. Launching browser...')
+        logger.debug('Found 1 or more PDF reports. Launching browser...')
 
         const puppetArgs = await this.context.getPuppetArgs()
 
