@@ -213,6 +213,15 @@ function getFilenameWithNewExtension(templateName, ext) {
   return `${name}.${ext}`
 }
 
+function getDefaultOutputFilename(templateName) {
+  const {
+    name,
+    ext,
+  } = path.parse(templateName)
+
+  return `${name}.out${ext}`
+}
+
 function stringToBoolean(str) {
   const lower = str.toLowerCase()
 
@@ -221,6 +230,12 @@ function stringToBoolean(str) {
   }
 
   return false
+}
+
+function shouldRender(report) {
+  return report.templateName && (
+    typeof report.render === 'undefined' || report.render
+  )
 }
 
 module.exports = {
@@ -238,7 +253,9 @@ module.exports = {
   parseJson,
   splitPaths,
   getFilenameWithNewExtension,
+  getDefaultOutputFilename,
   stringToBoolean,
   withTempDir,
+  shouldRender,
   DEFAULT_CHANNEL,
 }
