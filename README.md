@@ -32,10 +32,17 @@ The New Relic Reports engine supports two types of reports: template reports and
 dashboard reports.
 
 Template based reports use the [Nunjucks](https://mozilla.github.io/nunjucks/)
-template engine to process user defined templates. Templates can be authored
-using HTML or Markdown. Custom extensions are provided that make it easy to
-integrate New Relic charts and data in the report. Report output is rendered
-into a PDF using headless Chrome.
+template engine to process user defined templates. A template is just text
+content that contains special "instructions" that can be processed by a template
+engine to translate the original content into new content by doing things like
+executing logic or dynamically replacing variables. Templates are often written
+in HTML or Markdown but the template engine doesn't care about the content type.
+It just looks for instructions it recognizes and executess those instructions.
+Custom extensions are provided that make it easy to integrate New Relic charts
+and data in the report. By default, report output is rendered into a PDF using
+headless Chrome. But you can also tell the New Relic Reports engine not to do
+so. You might do this if you are producing a CSV file or you want to send raw
+HTML instead of rendered HTML.
 
 Dashboard based reports use Nerdgraph to collect snapshot URLs from one or more
 user specified dashboard GUIDs. Snapshot URLs are downloaded as PDFs. When more
@@ -44,15 +51,15 @@ single PDF.
 
 ### Channel Types
 
-A variety of mechanisms are supported for delivering generated reports. These
+A variety of mechanisms are supported for delivering report output. These
 mechanisms are referred to as channels. The following types of channels are
 supported.
 
-* File: PDFs are copied to a destination directory on the local filesystem.
-  Mostly meant for development and testing purposes.
-* Email: PDFs are attached to an email using a user defined email template and
-  sent via SMTP using SMTP settings defined as environment variables.
-* S3: PDFs are uploaded to an S3 bucket specified as an environment variable.
+* File: Report output is saved to a file and copied to a destination directory
+  on the local filesystem. Mostly meant for development and testing purposes.
+* Email: Report output is included inline or as attachments to an email using a
+  user defined email template and sent via SMTP.
+* S3: Report output is saved to a file and uploaded to an S3 bucket.
 
 ### Running Reports
 
@@ -783,7 +790,8 @@ The following properties are common to all report types.
 | --- | --- | --- | --- | --- |
 | templateName | The template _name_. Must be available on the [template path](#template-resolution) | string | Y | |
 | parameters | The [template parameters](#template-parameters) to use for this report | object | N | `{}` |
-| isMarkdown | `true` if the template is written in Markdown, `false` if the template is HTML, or omit for "auto" detection by file extension of the template name | boolean | N | undefined (auto detect) |
+| isMarkdown | `true` if the template is written in Markdown, `false` if the template is any other content type, or omit for "auto" detection by file extension of the template name | boolean | N | undefined (auto detect) |
+| render | `true` if the report output should be rendered using headless chrome, otherwise `false` | boolean | true |
 
 #### Dashboard Report Properties
 
