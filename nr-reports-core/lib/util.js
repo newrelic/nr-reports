@@ -3,6 +3,7 @@
 const fs = require('fs'),
   os = require('os'),
   path = require('path'),
+  YAML = require('yaml'),
   { createLogger } = require('./logger')
 
 const logger = createLogger('util'),
@@ -145,13 +146,29 @@ async function loadFile(filePath) {
   return await readFile(filePath, { encoding: 'utf-8' })
 }
 
-function parseManifest(contents, defaultChannel = null) {
+function isYaml(fileName) {
+  let {
+    ext,
+  } = path.parse(fileName)
+
+  if (!ext || ext.length <= 1) {
+    return false
+  }
+
+  ext = ext.slice(1).toLowerCase()
+
+  return ext === 'yml' || ext === 'yaml'
+}
+
+function parseManifest(manifestFile, contents, defaultChannel = null) {
   logger.debug((log, format) => {
     log(format('Parsing manifest:'))
     log(contents)
   })
 
-  const data = JSON.parse(contents)
+  const data = isYaml(manifestFile) ? (
+    YAML.parse(contents)
+  ) : JSON.parse(contents)
 
   logger.debug((log, format) => {
     log(format('Parsed manifest:'))
@@ -185,16 +202,18 @@ function parseManifest(contents, defaultChannel = null) {
   })
 }
 
-function parseJson(contents) {
+function parseJaml(fileName, contents) {
   logger.debug((log, format) => {
-    log(format('Parsing values:'))
+    log(format('Parsing JSON/YML:'))
     log(contents)
   })
 
-  const data = JSON.parse(contents)
+  const data = isYaml(fileName) ? (
+    YAML.parse(contents)
+  ) : JSON.parse(contents)
 
   logger.debug((log, format) => {
-    log(format('Parsed values:'))
+    log(format('Parsed JSON/YML:'))
     log(JSON.stringify(data, null, 2))
   })
 
@@ -250,7 +269,7 @@ module.exports = {
   makeChannel,
   loadFile,
   parseManifest,
-  parseJson,
+  parseJson: parseJaml,
   splitPaths,
   getFilenameWithNewExtension,
   getDefaultOutputFilename,

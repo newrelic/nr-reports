@@ -17,7 +17,7 @@ const nunjucks = require('nunjucks'),
   {
     loadFile,
     parseManifest,
-    parseJson,
+    parseJaml,
     getFilenameWithNewExtension,
     withTempDir,
     getOption,
@@ -233,6 +233,7 @@ async function loadManifest(
   extras,
 ) {
   return (parseManifest(
+    manifestFile,
     await fileLoader(manifestFile),
     defaultChannel,
   )).map(report => {
@@ -293,7 +294,10 @@ async function discoverReportsHelper(
 
       // Do not allow values file to override options
       // eslint-disable-next-line no-unused-vars
-      const { options: ignore, ...rest } = parseJson(await fileLoader(valuesFile))
+      const { options: ignore, ...rest } = parseJaml(
+        valuesFile,
+        await fileLoader(valuesFile),
+      )
 
       return [{
         templateName,

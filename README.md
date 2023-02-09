@@ -229,7 +229,8 @@ name and `1234567` with the account ID for the service. Then save the file.
 }
 ```
 
-The values file is a JSON file with a flat structure that is a set of key/value
+The values file is a [JSON](https://www.json.org/json-en.html) or
+[YAML](https://yaml.org/) file with a flat structure that is a set of key/value
 pairs. All we've done above is separate out the account ID and application name
 so it isn't hardcoded in the template.
 
@@ -295,9 +296,10 @@ last 60 minutes.
 ### Run a report using a manifest file
 
 Now let's see how we can run multiple reports at once using a
-[manifest file](#manifest-file). A manifest file is a JSON file containing an
-array of report definitions. We will use a manifest file to run the template
-report and dashboard report from above all at once.
+[manifest file](#manifest-file). A manifest file is a [JSON](https://www.json.org/json-en.html)
+or [YAML](https://yaml.org/) file containing an array of report definitions.
+We will use a manifest file to run the template report and dashboard report
+from above all at once.
 
 ### Cleanup previous reports
 
@@ -543,8 +545,9 @@ Nice to meet you, {{ your_name }}.
 
 #### Specifying template parameters
 
-Template parameters are specified using JSON. For example, the following JSON
-specifies 3 template parameters: 1 string, 1 number, and 1 array of strings.
+Template parameters are specified as a [JSON](https://www.json.org/json-en.html)
+or [YAML](https://yaml.org/) object. For example, the following JSON specifies
+3 template parameters: 1 string, 1 number, and 1 array of strings.
 
 ```json
 {
@@ -560,8 +563,8 @@ parameters to use as follows.
 * If a [manifest file](#manifest-file) is specified, add all properties from
   the `parameters` property for the template report being rendered to the set.
 * If no [manifest file](#manifest-file) is specified and a [values file](#values-file)
-  is specified, add all properties from the top-level JSON object in the values
-  file to the set.
+  is specified, add all properties from the top-level object in the values file
+  to the set.
 * If the report is being run [from a Lambda](#using-the-aws-lambda-function)
   function,
   * If a `body` property is present in the `event` object passed to the
@@ -752,11 +755,12 @@ The `s3` channel is the default channel when running [from a Lambda](#using-the-
 ### Manifest File
 
 The recommended way to specify reports to run when invoking the engine is via a
-manifest file. A manifest file is a JSON file containing an array of report
-definitions. Each report definition is a JSON object with a set of common
-properties and one or more additional properties that are particular to the
-report type. The following sections show the supported common properties and the
-properties supported by each report type.
+manifest file. A manifest file is a [JSON](https://www.json.org/json-en.html) or
+[YAML](https://yaml.org/) file containing an array of report definitions. Each
+report definition is an object with a set of common properties and one or more
+additional properties that are particular to the report type. The following
+sections show the supported common properties and the properties supported by
+each report type.
 
 An [example manifest file](./examples/manifest.json) is provided in the
 `examples` directory that shows how to define both a template report and a
@@ -790,10 +794,11 @@ The following properties are common to all report types.
 
 ### Values File
 
-A values file is a JSON file containing [template parameters](#template-parameters)
-to use when rendering a template report, specified [as JSON](#specifying-template-parameters).
-Values files are only used when a manifest file is not specified. If both a
-values file and manifest file are specified, the values file is ignored.
+A values file is a [JSON](https://www.json.org/json-en.html) or
+[YAML](https://yaml.org/) file containing [template parameters](#template-parameters)
+to use when rendering a template report. Values files are only used when a
+manifest file is not specified. If both a values file and manifest file are
+specified, the values file is ignored.
 
 ### Engine Options
 
@@ -837,10 +842,10 @@ The CLI accepts the following options.
 
 | Option | Description | Example |
 | --- | --- | --- |
-| `-f manifest-file` | Render all reports defined in the JSON manifest file `manifest-file`. Takes precedence over `-n` and `-d` and defaults to `manifest.json` if neither `-n` nor `-d` are specified. | `-f manifest.json` |
+| `-f manifest-file` | Render all reports defined in the manifest file `manifest-file`. Takes precedence over `-n` and `-d` and defaults to `manifest.json` if neither `-n` nor `-d` are specified. | `-f manifest.json` |
 | `-n name` | Render the template named `name`. `name` must be a template on the template path. Takes precedence over `-d`. | `-n my-report.html` |
 | `-p name` | Additional directories for the template path (delimited by the system path separator) | `-p examples:another-dir` |
-| `-v values-file` | Run the report using template parameter values defined in the JSON file `values-file`. Ignored with `-f` or `-d`.  | `-v values.json` |
+| `-v values-file` | Run the report using template parameter values defined in the file `values-file`. Ignored with `-f` or `-d`.  | `-v values.json` |
 | `-d dashboard-ids` | Download dashboard snapshots for all dashboard GUIDs listed in `dashboards` (comma delimited). Ignored with `-f` or `-n`. | `-d abc123,xyz456` |
 | `-c channel-ids` | Send report output files to the channels listed in `channels` (comma delimited) | `-c file,email` |
 | `--verbose` | Enable verbose mode | |
