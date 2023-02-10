@@ -121,6 +121,7 @@ dist
 
 # Output reports
 *.pdf
+*.csv
 
 # Any "local" files
 *.local.*

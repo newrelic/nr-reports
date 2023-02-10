@@ -3,10 +3,16 @@
 const fs = require('fs'),
   path = require('path'),
   { putS3Object } = require('../aws-util'),
-  { getOption } = require('../util')
+  { getOption, getProperty } = require('../util')
 
-async function uploadToS3(report, channelConfig, files) {
-  const bucket = channelConfig.bucket || process.env.S3_DEST_BUCKET
+async function uploadToS3(manifest, report, channelConfig, files) {
+  const bucket = getProperty(
+    'bucket',
+    'S3_DEST_BUCKET',
+    null,
+    channelConfig,
+    manifest.config.s3,
+  )
 
   for (let index = 0; index < files.length; index += 1) {
     const file = files[index],

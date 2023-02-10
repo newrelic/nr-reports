@@ -85,16 +85,22 @@ function getEnv(envName, defaultValue = null) {
   return defaultValue
 }
 
-function getOption(options, optionName, envName = null, defaultValue = null) {
-  if (options) {
-    const type = options && typeof options[optionName]
+function getProperty(propName, envName, defaultValue, ...objs) {
+  for (const obj of objs) {
+    if (obj) {
+      const type = typeof obj[propName]
 
-    if (type !== 'undefined') {
-      return type === 'string' ? options[optionName].trim() : options[optionName]
+      if (type !== 'undefined') {
+        return type === 'string' ? obj[propName].trim() : obj[propName]
+      }
     }
   }
 
   return envName ? getEnv(envName, defaultValue) : defaultValue
+}
+
+function getOption(options, optionName, envName = null, defaultValue = null) {
+  return getProperty(optionName, envName, defaultValue, options)
 }
 
 function makeChannel(type) {
@@ -208,6 +214,10 @@ function parseManifest(manifestFile, contents, defaultChannel = null) {
     data.variables = {}
   }
 
+  if (!data.config) {
+    data.config = {}
+  }
+
   return data
 }
 
@@ -275,10 +285,11 @@ module.exports = {
   getArgv,
   getEnv,
   getOption,
+  getProperty,
   makeChannel,
   loadFile,
   parseManifest,
-  parseJson: parseJaml,
+  parseJaml,
   splitPaths,
   getFilenameWithNewExtension,
   getDefaultOutputFilename,

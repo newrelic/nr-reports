@@ -304,6 +304,7 @@ async function discoverReportsHelper(
       )
 
       return {
+        config: {},
         variables: {},
         reports: [{
           templateName,
@@ -315,6 +316,7 @@ async function discoverReportsHelper(
     }
 
     return {
+      config: {},
       variables: {},
       reports: [{
         templateName,
@@ -337,7 +339,8 @@ async function discoverReportsHelper(
       channels = getChannels(defaultChannelType, options)
 
     return {
-      variablds: {},
+      config: {},
+      variables: {},
       reports: [{
         dashboards: dashboardGuids,
         channels,
@@ -396,6 +399,7 @@ async function discoverReports(context, args) {
 }
 
 async function processTemplateReport(
+  manifest,
   report,
   tempDir,
   browser,
@@ -407,7 +411,7 @@ async function processTemplateReport(
       isMarkdown,
       outputFileName,
     } = report,
-    templateParameters = parameters || {},
+    templateParameters = { ...manifest.variables, ...parameters },
     shouldRenderPdf = shouldRender(report)
   let templateIsMarkdown = isMarkdown
 
@@ -450,7 +454,7 @@ async function processTemplateReport(
       await writeFile(output, content)
     }
 
-    await publish(report, [output])
+    await publish(manifest, report, [output])
   } catch (err) {
     logger.error(err)
   }
@@ -471,14 +475,12 @@ class Engine {
 
   async runTemplateReport(manifest, report, tempDir) {
     await processTemplateReport(
+      manifest,
       report,
       tempDir,
       this.browser,
       async (templateName, parameters) => (
-        await processTemplateFile(
-          templateName,
-          { ...manifest.variables, ...parameters },
-        )
+        await processTemplateFile(templateName, parameters)
       ),
     )
   }
@@ -490,14 +492,12 @@ class Engine {
     tempDir,
   ) {
     await processTemplateReport(
+      manifest,
       report,
       tempDir,
       this.browser,
       async (templateName, parameters) => (
-        await processTemplateString(
-          templateContent,
-          { ...manifest.variables, ...parameters },
-        )
+        await processTemplateString(templateContent, parameters)
       ),
     )
   }
@@ -524,6 +524,7 @@ class Engine {
       }
 
       await publish(
+        manifest,
         report,
         combinePdfs ? [consolidatedPdf] : dashboardPdfs,
       )
