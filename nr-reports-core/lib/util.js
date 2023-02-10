@@ -85,16 +85,22 @@ function getEnv(envName, defaultValue = null) {
   return defaultValue
 }
 
-function getOption(options, optionName, envName = null, defaultValue = null) {
-  if (options) {
-    const type = options && typeof options[optionName]
+function getProperty(propName, envName, defaultValue, ...objs) {
+  for (const obj of objs) {
+    if (obj) {
+      const type = typeof obj[propName]
 
-    if (type !== 'undefined') {
-      return type === 'string' ? options[optionName].trim() : options[optionName]
+      if (type !== 'undefined') {
+        return type === 'string' ? obj[propName].trim() : obj[propName]
+      }
     }
   }
 
   return envName ? getEnv(envName, defaultValue) : defaultValue
+}
+
+function getOption(options, optionName, envName = null, defaultValue = null) {
+  return getProperty(optionName, envName, defaultValue, options)
 }
 
 function makeChannel(type) {
@@ -166,7 +172,7 @@ function parseManifest(manifestFile, contents, defaultChannel = null) {
     log(contents)
   })
 
-  const data = isYaml(manifestFile) ? (
+  let data = isYaml(manifestFile) ? (
     YAML.parse(contents)
   ) : JSON.parse(contents)
 
@@ -175,11 +181,16 @@ function parseManifest(manifestFile, contents, defaultChannel = null) {
     log(JSON.stringify(data, null, 2))
   })
 
-  if (!Array.isArray(data)) {
-    throw new Error('Manifest must start with an array')
+  if (Array.isArray(data)) {
+    logger.verbose('Manifest starts with array')
+    data = {
+      reports: data,
+    }
+  } else if (!Array.isArray(data.reports)) {
+    throw new Error('Manifest is missing "reports" array or it is not an array')
   }
 
-  return data.map((report, index) => {
+  data.reports.forEach((report, index) => {
     if (!report.name) {
       throw new Error(`Report ${index} must include a 'name' property`)
     }
@@ -197,9 +208,17 @@ function parseManifest(manifestFile, contents, defaultChannel = null) {
     if (!report.channels || report.channels.length === 0) {
       report.channels = [getDefaultChannel(report, defaultChannel)]
     }
-
-    return report
   })
+
+  if (!data.variables) {
+    data.variables = {}
+  }
+
+  if (!data.config) {
+    data.config = {}
+  }
+
+  return data
 }
 
 function parseJaml(fileName, contents) {
@@ -266,10 +285,11 @@ module.exports = {
   getArgv,
   getEnv,
   getOption,
+  getProperty,
   makeChannel,
   loadFile,
   parseManifest,
-  parseJson: parseJaml,
+  parseJaml,
   splitPaths,
   getFilenameWithNewExtension,
   getDefaultOutputFilename,

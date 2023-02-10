@@ -232,11 +232,13 @@ async function loadManifest(
   values,
   extras,
 ) {
-  return (parseManifest(
+  const manifest = parseManifest(
     manifestFile,
     await fileLoader(manifestFile),
     defaultChannel,
-  )).map(report => {
+  )
+
+  manifest.reports = manifest.reports.map(report => {
     if (report.templateName) {
       if (values && values[report.name]) {
         return {
@@ -256,6 +258,8 @@ async function loadManifest(
 
     return report
   })
+
+  return manifest
 }
 
 async function discoverReportsHelper(
@@ -299,20 +303,28 @@ async function discoverReportsHelper(
         await fileLoader(valuesFile),
       )
 
-      return [{
-        templateName,
-        parameters: { ...rest, ...values },
-        channels,
-        ...extras,
-      }]
+      return {
+        config: {},
+        variables: {},
+        reports: [{
+          templateName,
+          parameters: { ...rest, ...values },
+          channels,
+          ...extras,
+        }],
+      }
     }
 
-    return [{
-      templateName,
-      parameters: values || {},
-      channels,
-      ...extras,
-    }]
+    return {
+      config: {},
+      variables: {},
+      reports: [{
+        templateName,
+        parameters: values || {},
+        channels,
+        ...extras,
+      }],
+    }
   }
 
   const dashboards = getOption(options, 'dashboardIds', 'DASHBOARD_IDS')
@@ -326,11 +338,15 @@ async function discoverReportsHelper(
       ),
       channels = getChannels(defaultChannelType, options)
 
-    return [{
-      dashboards: dashboardGuids,
-      channels,
-      ...extras,
-    }]
+    return {
+      config: {},
+      variables: {},
+      reports: [{
+        dashboards: dashboardGuids,
+        channels,
+        ...extras,
+      }],
+    }
   }
 
   logger.debug('Using default manifest.')
@@ -383,6 +399,7 @@ async function discoverReports(context, args) {
 }
 
 async function processTemplateReport(
+  manifest,
   report,
   tempDir,
   browser,
@@ -394,7 +411,7 @@ async function processTemplateReport(
       isMarkdown,
       outputFileName,
     } = report,
-    templateParameters = parameters || {},
+    templateParameters = { ...manifest.variables, ...parameters },
     shouldRenderPdf = shouldRender(report)
   let templateIsMarkdown = isMarkdown
 
@@ -437,7 +454,7 @@ async function processTemplateReport(
       await writeFile(output, content)
     }
 
-    await publish(report, [output])
+    await publish(manifest, report, [output])
   } catch (err) {
     logger.error(err)
   }
@@ -456,8 +473,9 @@ class Engine {
     this.browser = options.browser
   }
 
-  async runTemplateReport(report, tempDir) {
+  async runTemplateReport(manifest, report, tempDir) {
     await processTemplateReport(
+      manifest,
       report,
       tempDir,
       this.browser,
@@ -467,8 +485,14 @@ class Engine {
     )
   }
 
-  async runTemplateReportWithContent(report, templateContent, tempDir) {
+  async runTemplateReportWithContent(
+    manifest,
+    report,
+    templateContent,
+    tempDir,
+  ) {
     await processTemplateReport(
+      manifest,
       report,
       tempDir,
       this.browser,
@@ -478,7 +502,7 @@ class Engine {
     )
   }
 
-  async runDashboardReport(report, tempDir) {
+  async runDashboardReport(manifest, report, tempDir) {
     let consolidatedPdf
 
     try {
@@ -500,6 +524,7 @@ class Engine {
       }
 
       await publish(
+        manifest,
         report,
         combinePdfs ? [consolidatedPdf] : dashboardPdfs,
       )
@@ -529,22 +554,27 @@ class EngineRunner {
     let browser
 
     try {
-      const reports = await discoverReports(this.context, args)
+      const manifest = await discoverReports(this.context, args)
 
-      if (!reports || reports.length === 0) {
+      logger.debug((log, format) => {
+        log(format('Final manifest:'))
+        log(manifest)
+      })
+
+      if (!manifest || manifest.reports.length === 0) {
         // eslint-disable-next-line no-console
         console.error('No reports selected.')
         throw new Error('No reports selected.')
       }
 
-      logger.verbose(`Running ${reports.length} reports...`)
+      logger.verbose(`Running ${manifest.reports.length} reports...`)
 
       logger.debug((log, format) => {
         log(format('Reports:'))
-        log(reports)
+        log(manifest.reports)
       })
 
-      const reportIndex = reports.findIndex(shouldRender),
+      const reportIndex = manifest.reports.findIndex(shouldRender),
         engineOptions = {
           apiKey: this.context.apiKey,
           templatesPath: buildTemplatePath(args),
@@ -574,8 +604,8 @@ class EngineRunner {
       await withTempDir(async tempDir => {
         const engine = new Engine(engineOptions)
 
-        for (let index = 0; index < reports.length; index += 1) {
-          const report = reports[index]
+        for (let index = 0; index < manifest.reports.length; index += 1) {
+          const report = manifest.reports[index]
 
           logger.verbose(`Running report ${report.name || index}...`)
 
@@ -587,6 +617,7 @@ class EngineRunner {
               )
 
               await engine.runTemplateReportWithContent(
+                manifest,
                 report,
                 template,
                 tempDir,
@@ -594,10 +625,10 @@ class EngineRunner {
               continue
             }
 
-            await engine.runTemplateReport(report, tempDir)
+            await engine.runTemplateReport(manifest, report, tempDir)
             continue
           } else if (report.dashboards) {
-            await engine.runDashboardReport(report, tempDir)
+            await engine.runDashboardReport(manifest, report, tempDir)
             continue
           }
 

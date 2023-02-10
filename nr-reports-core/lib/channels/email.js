@@ -2,7 +2,7 @@
 
 const nodemailer = require('nodemailer'),
   nunjucks = require('nunjucks'),
-  { stringToBoolean } = require('../util')
+  { getProperty, stringToBoolean } = require('../util')
 
 function createSmtpTransport() {
   const smtpConfig = {
@@ -25,17 +25,41 @@ function createSmtpTransport() {
   return nodemailer.createTransport(smtpConfig)
 }
 
-async function sendEmail(report, channelConfig, files) {
+async function sendEmail(manifest, report, channelConfig, files) {
   const { parameters } = report,
-    renderContext = { ...channelConfig, ...parameters },
+    manifestConfig = manifest.config.email,
+    renderContext = {
+      ...manifestConfig,
+      ...manifest.variables,
+      ...channelConfig,
+      ...parameters,
+    },
     transporter = createSmtpTransport(),
-    from = channelConfig.from || process.env.EMAIL_FROM,
-    to = channelConfig.to || process.env.EMAIL_TO,
+    from = getProperty(
+      'from',
+      'EMAIL_FROM',
+      null,
+      channelConfig,
+      manifestConfig,
+    ),
+    to = getProperty('to', 'EMAIL_TO', null, channelConfig, manifestConfig),
     subject = nunjucks.renderString(
-      channelConfig.subject || process.env.EMAIL_SUBJECT || '',
+      getProperty(
+        'subject',
+        'EMAIL_SUBJECT',
+        '',
+        channelConfig,
+        manifestConfig,
+      ),
       renderContext,
     ),
-    template = channelConfig.template || process.env.EMAIL_TEMPLATE || 'email/message.html',
+    template = getProperty(
+      'template',
+      'EMAIL_TEMPLATE',
+      'email/message.html',
+      channelConfig,
+      manifestConfig,
+    ),
     body = nunjucks.render(template, renderContext)
 
   await transporter.sendMail({

@@ -451,7 +451,7 @@ for more information on the Nunjucks syntax.
 
 #### Template Resolution
 
-When rendering a template, the template engine uses
+When processing a template, the template engine uses
 [the Nunjucks FileSystemLoader](https://mozilla.github.io/nunjucks/api.html#filesystemloader)
 to load template files from the local filesystem. The `FileSystemLoader`
 resolves the _template name_ passed to the engine into the _template file_ very
@@ -564,11 +564,12 @@ or [YAML](https://yaml.org/) object. For example, the following JSON specifies
 }
 ```
 
-When rendering a template, the template engine builds the set of template
+When processing a template, the template engine builds the set of template
 parameters to use as follows.
 
 * If a [manifest file](#manifest-file) is specified, add all properties from
-  the `parameters` property for the template report being rendered to the set.
+  the `variables` section at the top-level and all properties from the
+  `parameters` property for the template report being processed to the set.
 * If no [manifest file](#manifest-file) is specified and a [values file](#values-file)
   is specified, add all properties from the top-level object in the values file
   to the set.
@@ -719,7 +720,7 @@ Along with the supported configuration parameters listed above, any number
 of additional parameters may be specified. _All_ parameters, including the
 supported ones, as well as all [template parameters](#template-parameters) (if
 running a template report) will be made available to the email template when it
-is rendered.
+is processed.
 
 The [default email template](./templates/email/message.html) is located in the
 `templates/email` directory.
@@ -763,8 +764,66 @@ The `s3` channel is the default channel when running [from a Lambda](#using-the-
 
 The recommended way to specify reports to run when invoking the engine is via a
 manifest file. A manifest file is a [JSON](https://www.json.org/json-en.html) or
-[YAML](https://yaml.org/) file containing an array of report definitions. Each
-report definition is an object with a set of common properties and one or more
+[YAML](https://yaml.org/) file with the one of the following formats.
+
+#### Standard Manifest File
+
+A standard manifest file contains a single top-level object with the following
+properties.
+
+| Property Name | Description | Type | Required | Default |
+| --- | --- | --- | --- | --- |
+| config | A map of well defined configuration properties with specific meaning to the reporting engine. | object | N | {} |
+| variables | A map of "global" properties that are added to the execution context of all reports. | object | N | {} |
+| reports | An array of report definitions. | array | N | [] |
+
+A YAML example is shown below.
+
+```yaml
+config:
+  email:
+    from: me@nowhere.local
+variables:
+  accountId: 9999999
+  accountName: NEWRELIC_ACCOUNT_NAME
+  appName: NEWRELIC_APPLICATION_NAME
+reports:
+  - name: golden-signals
+    templateName: golden-signals.html
+    parameters:
+      title: New Relic Golden Signals Weekly Report
+      author: Alice Reli
+      authorTitle: SRE
+    channels:
+      - type: email
+        to: you@nowhere.local
+        subject: "{{ title }}"
+```
+
+The `config` map contains a set of properties that can be used to configure
+certain aspects of the reporting engine. The following properties are
+recognized. All other properties are ignored.
+
+| Property Name | Description | Type | Required | Default |
+| --- | --- | --- | --- | --- |
+| email | Default [email channel](#email-channel) configuration properties. Excludes those that can only be set via environment variables.  | object | N | {} |
+| file | Default [email channel](#email-channel) configuration properties. Excludes those that can only be set via environment variables. | object | N | {} |
+| s3 | An array of report definitions. Excludes those that can only be set via environment variables. | array | N | [] |
+
+The `variable` map can contain any properties. These properties are added to the
+execution context of all reports. This means they are available during the
+processing of any [templates](#templates), including the processing of email
+templates.
+
+#### Simplified Manifest File
+
+A simplified manifest file simply contains an array of report definitions. It is
+the equivalent of the value of the `reports` property in a
+[standard manifest file](#standard-manifest-file).
+
+#### Report Definitions
+
+A report definition is an object with a set of common properties and one or more
 additional properties that are particular to the report type. The following
 sections show the supported common properties and the properties supported by
 each report type.
@@ -773,9 +832,7 @@ An [example manifest file](./examples/manifest.json) is provided in the
 `examples` directory that shows how to define both a template report and a
 dashboard report.
 
-_Note:_ The manifest file _must_ start with an array and not an object.
-
-#### Common Properties
+##### Common Properties
 
 The following properties are common to all report types.
 
@@ -784,7 +841,7 @@ The following properties are common to all report types.
 | name | The report name/identifier | string | Y | |
 | channels | The list of channel configurations to use to distribute report outputs. See the individual sections above for supported configuration values for each channel. | object | N | `[ { "type": "file" }]` |
 
-#### Template Report Properties
+##### Template Report Properties
 
 | Property Name | Description | Type | Required | Default |
 | --- | --- | --- | --- | --- |
@@ -793,7 +850,7 @@ The following properties are common to all report types.
 | isMarkdown | `true` if the template is written in Markdown, `false` if the template is any other content type, or omit for "auto" detection by file extension of the template name | boolean | N | undefined (auto detect) |
 | render | `true` if the report output should be rendered using headless chrome, otherwise `false` | boolean | true |
 
-#### Dashboard Report Properties
+##### Dashboard Report Properties
 
 | Property Name | Description | Type | Required | Default |
 | --- | --- | --- | --- | --- |
@@ -804,7 +861,7 @@ The following properties are common to all report types.
 
 A values file is a [JSON](https://www.json.org/json-en.html) or
 [YAML](https://yaml.org/) file containing [template parameters](#template-parameters)
-to use when rendering a template report. Values files are only used when a
+to use when processing a template report. Values files are only used when a
 manifest file is not specified. If both a values file and manifest file are
 specified, the values file is ignored.
 
@@ -850,7 +907,7 @@ The CLI accepts the following options.
 
 | Option | Description | Example |
 | --- | --- | --- |
-| `-f manifest-file` | Render all reports defined in the manifest file `manifest-file`. Takes precedence over `-n` and `-d` and defaults to `manifest.json` if neither `-n` nor `-d` are specified. | `-f manifest.json` |
+| `-f manifest-file` | Run all reports defined in the manifest file `manifest-file`. Takes precedence over `-n` and `-d` and defaults to `manifest.json` if neither `-n` nor `-d` are specified. | `-f manifest.json` |
 | `-n name` | Render the template named `name`. `name` must be a template on the template path. Takes precedence over `-d`. | `-n my-report.html` |
 | `-p name` | Additional directories for the template path (delimited by the system path separator) | `-p examples:another-dir` |
 | `-v values-file` | Run the report using template parameter values defined in the file `values-file`. Ignored with `-f` or `-d`.  | `-v values.json` |
@@ -1083,11 +1140,11 @@ Here are a few examples.
 The following examples show how you can run reports using the CRON image.
 Because CLI arguments can be passed to the container when it is _built_, and
 because [engine options](#engine-options) specified via CLI options take
-precedence over environment variables, the behavior of the rendering engine when
+precedence over environment variables, the behavior of the reporting engine when
 a container is run depends both on the environment variables specified when the
 container is launched and the CLI arguments specified to build the image used to
 run the container. Use of both could make it difficult to determine what options
-are actually being used by the rendering engine. Therefore, in the examples
+are actually being used by the reporting engine. Therefore, in the examples
 below, both the way the containers are run and the way the images used by those
 containers are built are called out.
 

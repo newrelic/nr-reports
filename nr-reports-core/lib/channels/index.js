@@ -12,7 +12,7 @@ const publishers = {
   },
   logger = createLogger('publisher')
 
-async function publish(report, files) {
+async function publish(manifest, report, files) {
   const { channels } = report
 
   logger.debug((log, format) => {
@@ -38,7 +38,7 @@ async function publish(report, files) {
     })
 
     try {
-      await publisher.publish(report, channel, files)
+      await publisher.publish(manifest, report, channel, files)
       logger.verbose(`${files.length} files published to channel ${channel.type}.`)
     } catch (err) {
       logger.error(`Publishing ${files.length} files to channel ${channel.type} failed with the following error. Publishing will continue with remaining channels.`)

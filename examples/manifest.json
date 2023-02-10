@@ -29,9 +29,6 @@
       "DASHBOARD_ENTITY_GUID_1"
     ],
     "combinePdfs": false,
-    "parameters": {
-      "title": "New Relic Weekly Dashboards"
-    },
     "channels": [{
       "type": "email",
       "from": "me@nowhere.local",

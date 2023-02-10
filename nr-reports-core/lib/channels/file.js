@@ -1,10 +1,17 @@
 'use strict'
 
 const fs = require('fs').promises,
-  path = require('path')
+  path = require('path'),
+  { getProperty } = require('../util')
 
-async function copyToDestDir(report, channelConfig, files) {
-  const destDir = channelConfig.destDir || process.env.FILE_DEST_DIR || '.'
+async function copyToDestDir(manifest, report, channelConfig, files) {
+  const destDir = getProperty(
+    'destDir',
+    'FILE_DEST_DIR',
+    '.',
+    channelConfig,
+    manifest.config.file,
+  )
 
   await fs.mkdir(destDir, { recursive: true })
 
