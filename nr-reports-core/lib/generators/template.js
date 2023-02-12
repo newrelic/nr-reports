@@ -3,10 +3,15 @@ const fs = require('fs'),
   path = require('path'),
   nunjucks = require('nunjucks'),
   showdown = require('showdown'),
+  NrqlExtension = require('../extensions/nrql-extension'),
+  ChartExtension = require('../extensions/chart-extension'),
+  DumpContextExtension = require('../extensions/dump-context-extension'),
   {
     getFilenameWithNewExtension,
     shouldRender,
     getDefaultOutputFilename,
+    getOption,
+    splitPaths,
   } = require('../util'),
   {
     getS3ObjectAsString,
@@ -204,6 +209,34 @@ async function generateTemplateReport(
   )
 }
 
+function configureNunjucks(apiKey, templatePath) {
+  logger.verbose('Configuring Nunjucks...')
+
+  const templatesPath = ['.', 'include', 'templates']
+
+  if (templatePath) {
+    splitPaths(templatePath).forEach(p => {
+      if (p) {
+        templatesPath.push(p)
+      }
+    })
+  }
+
+  logger.debug((log, format) => {
+    log(format('Final template path:'))
+    log(templatesPath)
+  })
+
+  const env = nunjucks.configure(templatesPath)
+
+  env.addExtension('NrqlExtension', new NrqlExtension(apiKey))
+  env.addExtension('ChartExtension', new ChartExtension(apiKey))
+  env.addExtension('DumpContextExtension', new DumpContextExtension())
+
+  return env
+}
+
 module.exports = {
   generate: generateTemplateReport,
+  configureNunjucks,
 }
