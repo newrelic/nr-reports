@@ -25,10 +25,15 @@ const nunjucks = require('nunjucks'),
     splitPaths,
     shouldRender,
     getDefaultOutputFilename,
+    getProperty,
   } = require('./util'),
   {
     getS3ObjectAsString,
-  } = require('./aws-util')
+  } = require('./aws-util'),
+  {
+    query: queryGenerator,
+  } = require('./generators')
+
 
 const { createWriteStream } = fs,
   { writeFile } = fs.promises,
@@ -629,6 +634,23 @@ class EngineRunner {
             continue
           } else if (report.dashboards) {
             await engine.runDashboardReport(manifest, report, tempDir)
+            continue
+          } else if (report.query) {
+            const outputs = await queryGenerator.generate(
+              engineOptions,
+              manifest,
+              report,
+              tempDir,
+            )
+
+            if (outputs) {
+              await publish(
+                manifest,
+                report,
+                outputs,
+              )
+            }
+
             continue
           }
 

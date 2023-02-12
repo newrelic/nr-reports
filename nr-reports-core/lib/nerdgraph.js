@@ -34,6 +34,10 @@ function staticChartUrl(chart) {
   return `staticChartUrl(chartType: ${chart.type}, format: ${chart.format}, width: ${chart.width}, height: ${chart.height})`
 }
 
+function nrqlResults(metadata) {
+  return metadata ? ' results metadata { facets eventTypes } ' : ' results '
+}
+
 class NerdgraphClient {
   constructor() {
     this.logger = createLogger('nerdgraph')
@@ -175,6 +179,7 @@ class NerdgraphClient {
       headers: {},
       timeout: 5,
       chart: null,
+      metadata: false,
     },
   ) {
     const results = await this.query(
@@ -184,7 +189,7 @@ class NerdgraphClient {
         actor {
           account(id: $accountId) {
             nrql(query: $query, timeout: $timeout) {
-              ${options.chart ? staticChartUrl(options.chart) : 'results'}
+              ${options.chart ? staticChartUrl(options.chart) : nrqlResults(options.metadata)}
             }
           }
         }
@@ -206,6 +211,13 @@ class NerdgraphClient {
 
     if (options.chart) {
       return nrql.staticChartUrl
+    }
+
+    if (options.metadata) {
+      return nrql.results.length > 0 ? ({
+        metadata: nrql.metadata,
+        results: nrql.results,
+      }) : null
     }
 
     return nrql.results.length > 0 ? nrql.results : null

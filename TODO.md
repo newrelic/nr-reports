@@ -10,11 +10,11 @@ Stuff and things.
 - [X] Manifest and bundled template support in lambda
 - [X] Add channel support in lambda
 - [X] Markdown support in lambda
-- [ ] Document Lambda environment variables
+- [X] Document Lambda environment variables
 - [X] Report channels - Email
 - [X] Report channels - S3
-- [ ] Add ability to do other types of files, e.g. CSV
-- [ ] Add option to skip PDF render and send raw file
+- [X] Add ability to do other types of files, e.g. CSV
+- [X] Add option to skip PDF render and send raw file
 - [ ] YAML report engine
 - [X] Rename Dockerfile-cli to Dockerfile
 - [ ] Specify time period for dashboard reports
@@ -26,7 +26,9 @@ Stuff and things.
 - [ ] Rename channels to destinations
 - [ ] Add generic sources
 - [ ] Add ability to specify channel params at CLI using ;key=value
-- [ ] Honor template path when rendering email templates
+- [X] Honor template path when rendering email templates
+- [ ] Send report summary custom events
+- [ ] Switch from `Promise.all` to custom concurrent promise handler
 
 ## Things
 
