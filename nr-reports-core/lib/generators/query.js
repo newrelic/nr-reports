@@ -5,7 +5,7 @@ const path = require('path'),
   { getProperty, writeCsv, getFormattedDateTime } = require('../util'),
   { NerdgraphClient } = require('../nerdgraph')
 
-const logger = createLogger('publisher')
+const logger = createLogger('query-generator')
 
 async function generateQueryReport(engineOptions, manifest, report, tempDir) {
   try {
@@ -18,7 +18,7 @@ async function generateQueryReport(engineOptions, manifest, report, tempDir) {
     )
 
     if (!accountId) {
-      logger.warn(`Missing account id for query report ${report.name}.`)
+      logger.warn('Missing account id for query report.')
       return null
     }
 
@@ -47,9 +47,14 @@ async function generateQueryReport(engineOptions, manifest, report, tempDir) {
     const {
         metadata,
         results,
+        outputFileName,
       } = result,
-      outputFileName = `${report.name}-${getFormattedDateTime()}.csv`,
-      outputFilePath = path.join(tempDir, outputFileName),
+      output = outputFileName ? path.join(tempDir, outputFileName) : (
+        path.join(
+          tempDir,
+          `${report.name || 'query-report'}-${getFormattedDateTime()}.csv`,
+        )
+      ),
       columns = [],
       rows = []
 
@@ -58,7 +63,9 @@ async function generateQueryReport(engineOptions, manifest, report, tempDir) {
     }
 
     Object.getOwnPropertyNames(results[0])
-      .filter(r => r !== 'facet')
+      .filter(r => (
+        r !== 'facet' && !(columns.length === 1 && r === columns[0])
+      ))
       .forEach(name => columns.push(name))
 
     results.forEach(r => {
@@ -76,9 +83,9 @@ async function generateQueryReport(engineOptions, manifest, report, tempDir) {
       rows.push(row)
     })
 
-    await writeCsv(outputFilePath, columns, rows)
+    await writeCsv(output, columns, rows)
 
-    return [outputFilePath]
+    return [output]
   } catch (err) {
     logger.error(err)
   }

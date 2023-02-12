@@ -4,7 +4,7 @@ const yargs = require('yargs/yargs'),
   puppeteer = require('puppeteer'),
   {
     rootLogger,
-    EngineRunner,
+    Engine,
     getArgv,
     getEnv,
     getOption,
@@ -73,7 +73,7 @@ async function main() {
   logger.isDebug = getOption(argv, 'debug', null, logLevel === 'DEBUG')
 
   try {
-    const runner = new EngineRunner({
+    const engine = new Engine({
         apiKey: getApiKey(),
         getPuppetArgs: async () => ({
           args: ['--disable-dev-shm-usage'],
@@ -101,7 +101,7 @@ async function main() {
         },
       }
 
-    await runner.run(values)
+    await engine.run(values)
   } catch (err) {
     logger.error('Uncaught exception:')
     logger.error(err)

@@ -29,6 +29,8 @@ Stuff and things.
 - [X] Honor template path when rendering email templates
 - [ ] Send report summary custom events
 - [ ] Switch from `Promise.all` to custom concurrent promise handler
+- [ ] Add support for output filename from env var and document `outputFilename`
+- [ ] Support non-file output
 
 ## Things
 

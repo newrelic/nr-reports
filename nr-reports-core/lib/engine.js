@@ -1,185 +1,31 @@
 'use strict'
 
 const nunjucks = require('nunjucks'),
-  fetch = require('node-fetch'),
-  PDFMerger = require('pdf-merger-js'),
-  showdown = require('showdown'),
-  fs = require('fs'),
-  path = require('path'),
-  { pipeline } = require('stream'),
-  { promisify } = require('util'),
   { publish, getChannelDefaults } = require('./channels'),
   { createLogger } = require('./logger'),
   NrqlExtension = require('./extensions/nrql-extension'),
   ChartExtension = require('./extensions/chart-extension'),
   DumpContextExtension = require('./extensions/dump-context-extension'),
-  { NerdgraphClient } = require('./nerdgraph'),
   {
     loadFile,
     parseManifest,
     parseJaml,
-    getFilenameWithNewExtension,
     withTempDir,
     getOption,
     DEFAULT_CHANNEL,
     splitPaths,
     shouldRender,
-    getDefaultOutputFilename,
-    getProperty,
   } = require('./util'),
   {
     getS3ObjectAsString,
   } = require('./aws-util'),
   {
+    dashboard: dashboardGenerator,
     query: queryGenerator,
+    template: templateGenerator,
   } = require('./generators')
 
-
-const { createWriteStream } = fs,
-  { writeFile } = fs.promises,
-  logger = createLogger('engine'),
-  converter = new showdown.Converter({
-    ghCompatibleHeaderId: true,
-    strikethrough: true,
-    tables: true,
-    tablesHeaderId: true,
-    tasklists: true,
-    openLinksInNewWindow: true,
-    backslashEscapesHTMLTags: true,
-  }),
-  streamPipeline = promisify(pipeline)
-
-converter.setFlavor('github')
-
-async function renderPdf(browser, content, file) {
-  logger.verbose(`Creating new browser page to render PDF to ${file}...`)
-
-  const page = await browser.newPage()
-
-  page
-    .on('console', message => logger.verbose(`chrome-console: ${message.type().slice(0, 3).toUpperCase()} ${message.text()}`))
-    .on('pageerror', ({ message }) => logger.error(`chrome-pageerror: ${message}`))
-    .on('response', response => logger.verbose(`chrome-response: ${response.status()} ${response.url()}`))
-    .on('requestfailed', request => logger.error(`chrome-requestfailed: ${request.failure()} ${request.url()}`))
-
-  logger.debug((log, format) => {
-    log(format('Dumping HTML content:'))
-    log(content)
-  })
-
-  await page.setContent(
-    content,
-    {
-      waitUntil: ['load', 'domcontentloaded', 'networkidle0'],
-    },
-  )
-
-  logger.verbose(`Saving PDF to ${file}...`)
-
-  await page.pdf({
-    path: file,
-    format: 'Letter',
-    margin: {
-      top: '20px',
-      left: '40px',
-      bottom: '20px',
-      right: '40px',
-    },
-  })
-}
-
-function processTemplateFile(file, context = {}) {
-  return new Promise((resolve, reject) => {
-    logger.verbose(`Processing template file ${file}...`)
-
-    logger.debug((log, format) => {
-      log(format('Context:'))
-      log(context)
-    })
-
-    nunjucks.render(file, context, (err, res) => {
-      if (err) {
-        reject(err)
-        return
-      }
-
-      resolve(res)
-    })
-  })
-}
-
-function processTemplateString(template, context = {}) {
-  return new Promise((resolve, reject) => {
-    logger.verbose('Processing template string...')
-
-    logger.debug((log, format) => {
-      log(format('Context:'))
-      log(context)
-    })
-
-    nunjucks.renderString(template, context, (err, res) => {
-      if (err) {
-        reject(err)
-        return
-      }
-
-      resolve(res)
-    })
-  })
-}
-
-async function downloadDashboardPdf(apiKey, dashboard, downloadDir) {
-  const query = `{
-      dashboardCreateSnapshotUrl(guid: $guid)
-    }`,
-    options = {
-      nextCursonPath: null,
-      mutation: true,
-      headers: {},
-    },
-    nerdgraph = new NerdgraphClient(),
-    results = await nerdgraph.query(
-      apiKey,
-      query,
-      { guid: ['EntityGuid!', dashboard] },
-      options,
-    ),
-    dashboardPdfFileName = path.join(
-      downloadDir,
-      `dashboard-${dashboard}.pdf`,
-    ),
-    dashboardUrl = results[0].dashboardCreateSnapshotUrl
-
-  // todo: check for errors
-
-  logger.verbose(`Fetching dashboard ${dashboardUrl}...`)
-
-  const response = await fetch(dashboardUrl)
-
-  if (!response.ok) {
-    throw new Error(`Download PDF at ${dashboardUrl} failed: status=${response.status}`)
-  }
-
-  logger.verbose(`Writing PDF to ${dashboardPdfFileName}...`)
-  await streamPipeline(response.body, createWriteStream(dashboardPdfFileName))
-  logger.verbose(`Wrote PDF to ${dashboardPdfFileName}...`)
-
-  return dashboardPdfFileName
-}
-
-async function mergePdfs(dashboardPdfs, consolidatedPdf) {
-  const merger = new PDFMerger()
-
-  logger.verbose((log, format) => {
-    log(format(`Merging ${dashboardPdfs.length} PDFs to ${consolidatedPdf}...`))
-    dashboardPdfs.forEach(pdf => log(format(pdf)))
-  })
-
-  dashboardPdfs.forEach(dashboard => merger.add(dashboard))
-
-  logger.verbose(`Creating consolidated PDF ${consolidatedPdf}...`)
-  await merger.save(consolidatedPdf)
-}
+const logger = createLogger('engine')
 
 function buildTemplatePath(args) {
   const templatePath = getOption(args.options, 'templatePath', 'TEMPLATE_PATH'),
@@ -312,6 +158,7 @@ async function discoverReportsHelper(
         config: {},
         variables: {},
         reports: [{
+          name: `report-${templateName}`,
           templateName,
           parameters: { ...rest, ...values },
           channels,
@@ -324,6 +171,7 @@ async function discoverReportsHelper(
       config: {},
       variables: {},
       reports: [{
+        name: `report-${templateName}`,
         templateName,
         parameters: values || {},
         channels,
@@ -403,143 +251,26 @@ async function discoverReports(context, args) {
   )
 }
 
-async function processTemplateReport(
-  manifest,
-  report,
-  tempDir,
-  browser,
-  processor,
-) {
-  const {
-      templateName,
-      parameters,
-      isMarkdown,
-      outputFileName,
-    } = report,
-    templateParameters = { ...manifest.variables, ...parameters },
-    shouldRenderPdf = shouldRender(report)
-  let templateIsMarkdown = isMarkdown
+function configureNunjucks(context, args) {
+  logger.verbose('Configuring Nunjucks...')
 
-  try {
-    const output = outputFileName ? path.join(tempDir, outputFileName) : (
-      path.join(
-        tempDir,
-        shouldRenderPdf ? (
-          getFilenameWithNewExtension(templateName, 'pdf')
-        ) : getDefaultOutputFilename(templateName),
-      )
-    )
+  const templatesPath = buildTemplatePath(args)
 
-    logger.verbose(`Processing template ${templateName}...`)
+  logger.debug((log, format) => {
+    log(format('Final template path:'))
+    log(templatesPath)
+  })
 
-    if (typeof templateIsMarkdown === 'undefined') {
-      templateIsMarkdown = (path.extname(templateName.toLowerCase()) === '.md')
-    }
+  const env = nunjucks.configure(templatesPath)
 
-    logger.verbose(`templateIsMarkdown: ${templateIsMarkdown}`)
+  env.addExtension('NrqlExtension', new NrqlExtension(context.apiKey))
+  env.addExtension('ChartExtension', new ChartExtension(context.apiKey))
+  env.addExtension('DumpContextExtension', new DumpContextExtension())
 
-    templateParameters.isMarkdown = templateIsMarkdown
-
-    let content = await processor(templateName, templateParameters)
-
-    if (templateIsMarkdown) {
-      content = await processTemplateString(
-        `{% extends "base/report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
-        templateParameters,
-      )
-    }
-
-    if (shouldRenderPdf) {
-      await renderPdf(
-        browser,
-        content,
-        output,
-      )
-    } else {
-      await writeFile(output, content)
-    }
-
-    await publish(manifest, report, [output])
-  } catch (err) {
-    logger.error(err)
-  }
+  return env
 }
 
 class Engine {
-  constructor(options) {
-    const env = nunjucks.configure(options.templatesPath || null)
-
-    env.addExtension('NrqlExtension', new NrqlExtension(options.apiKey))
-    env.addExtension('ChartExtension', new ChartExtension(options.apiKey))
-    env.addExtension('DumpContextExtension', new DumpContextExtension())
-
-    this.apiKey = options.apiKey
-    this.env = env
-    this.browser = options.browser
-  }
-
-  async runTemplateReport(manifest, report, tempDir) {
-    await processTemplateReport(
-      manifest,
-      report,
-      tempDir,
-      this.browser,
-      async (templateName, parameters) => (
-        await processTemplateFile(templateName, parameters)
-      ),
-    )
-  }
-
-  async runTemplateReportWithContent(
-    manifest,
-    report,
-    templateContent,
-    tempDir,
-  ) {
-    await processTemplateReport(
-      manifest,
-      report,
-      tempDir,
-      this.browser,
-      async (templateName, parameters) => (
-        await processTemplateString(templateContent, parameters)
-      ),
-    )
-  }
-
-  async runDashboardReport(manifest, report, tempDir) {
-    let consolidatedPdf
-
-    try {
-      const {
-        dashboards,
-        combinePdfs,
-      } = report
-
-      logger.verbose(`Running dashboard report for dashboards [${dashboards}]...`)
-
-      const promises = dashboards.map(async dashboard => (
-          await downloadDashboardPdf(this.apiKey, dashboard, tempDir)
-        )),
-        dashboardPdfs = await Promise.all(promises)
-
-      if (combinePdfs && dashboardPdfs.length > 1) {
-        consolidatedPdf = path.join(tempDir, 'consolidated_dashboards.pdf')
-        await mergePdfs(dashboardPdfs, consolidatedPdf)
-      }
-
-      await publish(
-        manifest,
-        report,
-        combinePdfs ? [consolidatedPdf] : dashboardPdfs,
-      )
-    } catch (err) {
-      logger.error(err)
-    }
-  }
-}
-
-class EngineRunner {
   constructor(context) {
     this.context = context
   }
@@ -582,14 +313,10 @@ class EngineRunner {
       const reportIndex = manifest.reports.findIndex(shouldRender),
         engineOptions = {
           apiKey: this.context.apiKey,
-          templatesPath: buildTemplatePath(args),
           browser: null,
         }
 
-      logger.debug((log, format) => {
-        log(format('Final template path:'))
-        log(engineOptions.templatesPath)
-      })
+      this.context.env = configureNunjucks(this.context, args)
 
       if (reportIndex >= 0) {
         logger.debug('Found 1 or more PDF reports. Launching browser...')
@@ -607,54 +334,40 @@ class EngineRunner {
       }
 
       await withTempDir(async tempDir => {
-        const engine = new Engine(engineOptions)
-
         for (let index = 0; index < manifest.reports.length; index += 1) {
           const report = manifest.reports[index]
+
+          let generator
 
           logger.verbose(`Running report ${report.name || index}...`)
 
           if (report.templateName) {
-            if (report.S3Bucket) {
-              const template = await getS3ObjectAsString(
-                report.S3Bucket,
-                report.templateName,
-              )
-
-              await engine.runTemplateReportWithContent(
-                manifest,
-                report,
-                template,
-                tempDir,
-              )
-              continue
-            }
-
-            await engine.runTemplateReport(manifest, report, tempDir)
-            continue
+            generator = templateGenerator
           } else if (report.dashboards) {
-            await engine.runDashboardReport(manifest, report, tempDir)
-            continue
+            generator = dashboardGenerator
           } else if (report.query) {
-            const outputs = await queryGenerator.generate(
-              engineOptions,
-              manifest,
-              report,
-              tempDir,
-            )
+            generator = queryGenerator
+          }
 
-            if (outputs) {
-              await publish(
-                manifest,
-                report,
-                outputs,
-              )
-            }
-
+          if (!generator) {
+            logger.warn(`Unrecognized report schema or missing required properties for report ${report.name || index}. Ignoring.`)
             continue
           }
 
-          logger.warn(`Unrecognized report schema or missing required properties for report ${report.name || index}. Ignoring.`)
+          const outputs = await generator.generate(
+            engineOptions,
+            manifest,
+            report,
+            tempDir,
+          )
+
+          if (Array.isArray(outputs) && outputs.length > 0) {
+            await publish(
+              manifest,
+              report,
+              outputs,
+            )
+          }
         }
       })
     } finally {
@@ -666,4 +379,4 @@ class EngineRunner {
 }
 
 
-module.exports = { EngineRunner, Engine }
+module.exports = { Engine }
