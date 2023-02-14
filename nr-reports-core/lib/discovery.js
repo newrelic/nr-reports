@@ -181,6 +181,32 @@ async function discoverReportsHelper(
     }
   }
 
+  const query = getOption(options, 'nrqlQuery', 'NRQL_QUERY')
+
+  // NRQL query
+  if (query) {
+    logger.debug(`Found query ${query}.`)
+
+    const accountId = getOption(options, 'accountId', 'NEW_RELIC_ACCOUNT_ID')
+
+    if (!accountId) {
+      throw new Error('Query report is missing account ID!')
+    }
+
+    const channels = getChannels(defaultChannelType, options)
+
+    return {
+      config: {},
+      variables: {},
+      reports: [{
+        accountId: Number.parseInt(accountId, 10),
+        query,
+        channels,
+        ...extras,
+      }],
+    }
+  }
+
   logger.debug('Using default manifest.')
 
   // Try to load a default manifest from local storage

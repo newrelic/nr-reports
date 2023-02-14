@@ -7,7 +7,7 @@ const path = require('path'),
 
 const logger = createLogger('query-generator')
 
-async function generateQueryReport(engineOptions, manifest, report, tempDir) {
+async function generateQueryReport(context, manifest, report, tempDir) {
   try {
     const accountId = getProperty(
       'accountId',
@@ -30,7 +30,7 @@ async function generateQueryReport(engineOptions, manifest, report, tempDir) {
     logger.verbose(`Running query report for query ${query}...`)
 
     const result = await nerdgraph.runNrql(
-      engineOptions.apiKey,
+      context.apiKey,
       accountId,
       query,
       {

@@ -28,26 +28,38 @@ of those reports via a variety of channels.
 
 ### Report Types
 
-The New Relic Reports engine supports two types of reports: template reports and
-dashboard reports.
+The New Relic Reports engine supports several different report types.
 
-Template based reports use the [Nunjucks](https://mozilla.github.io/nunjucks/)
+#### Template Reports
+
+Template reports use the [Nunjucks](https://mozilla.github.io/nunjucks/)
 template engine to process user defined templates. A template is just text
 content that contains special "instructions" that can be processed by a template
 engine to translate the original content into new content by doing things like
-executing logic or dynamically replacing variables. Templates are often written
-in HTML or Markdown but the template engine doesn't care about the content type.
-It just looks for instructions it recognizes and executess those instructions.
-Custom extensions are provided that make it easy to integrate New Relic charts
-and data in the report. By default, report output is rendered into a PDF using
-headless Chrome. But you can also tell the New Relic Reports engine not to do
-so. You might do this if you are producing a CSV file or you want to send raw
-HTML instead of rendered HTML.
+executing logic or dynamically replacing variables.
 
-Dashboard based reports use Nerdgraph to collect snapshot URLs from one or more
-user specified dashboard GUIDs. Snapshot URLs are downloaded as PDFs. When more
-than one dashboard is specified, the PDFs can optionally be concatenated into a
+Templates are often written in HTML or Markdown but the template engine doesn't
+care about the content type. It just looks for instructions it recognizes and
+executes those instructions. Custom extensions are provided that make it easy to
+integrate New Relic charts and data in the report. By default, report output is
+rendered into a PDF using headless Chrome. But you can also tell the New Relic
+Reports engine not to do so. You might do this if you are producing a CSV file
+or you want to send raw HTML instead of rendered HTML.
+
+#### Dashboard Reports
+
+Dashboard reports use Nerdgraph to collect snapshot URLs from one or more user
+specified dashboard GUIDs. Snapshot URLs are downloaded as PDFs. When more than
+one dashboard is specified, the PDFs can optionally be concatenated into a
 single PDF.
+
+#### Query Reports
+
+Query reports provide a mechanism to export the results of running a
+NRQL query by simply specifying the query. No additional configuration is
+required. By default, query results are exported to CSV but query results
+can also be exported as a simple HTML table or can be formatted using a
+[Nunjucks](https://mozilla.github.io/nunjucks/) template.
 
 ### Channel Types
 
@@ -300,6 +312,38 @@ Now there should be a new PDF file in the current directory called
 dashboard. Open it up and it should look like a snapshot of dashboard for the
 last 60 minutes.
 
+### Run a query report
+
+Now let's see how to run another report type called a query report. Query
+reports let you export the results of running a NRQL query without all the
+complexity of creating a template, using the `nrql` tag, and running the
+report. Instead, you just specify an NRQL query and the reporting engine will
+automatically run the query and, by default, write the results to a CSV file.
+
+Let's see how that works by running a simple query report to show the average
+latency of all APM services in your account grouped by application name and URL
+using the following NRQL.
+
+`SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri AS 'URL'`
+
+To do that, run the following command, replacing the string `1234567` with your
+account ID.
+
+```bash
+./nr-reports-cli/bin/nr-reports.sh -a 1234567 -q "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri AS 'URL'"
+
+Now there should be a new CSV file in the current directory called
+`query-report-[DATE_TIME].csv` where `[DATE_TIME]` is a date and time string
+for the current UTC time.  Open it up in a text editor and you should see
+something like the following.
+
+```csv
+Application Name,URL,Duration
+Shop Service,/api/v1/checkout,1.5191369267857142
+Shop Service,/api/v1/products,1.5092493357575756
+Shop Service,/api/v1/products/1234,1.4948035056074764
+```
+
 ### Run a report using a manifest file
 
 Now let's see how we can run multiple reports at once using a
@@ -392,11 +436,15 @@ Here's what we just did.
    dashboard entity GUID.
 6. Without knowing it, used the `file` channel to store the resulting PDF
    report in the current directory.
-7. Created a [manifest file](#manifest-file) with report definitions for the
+7. Used the CLI script to run an ad-hoc query report at the command line using
+   a simple NRQL query.
+8. Without knowing it, used the `file` channel to store the query results as a
+   CSV file in the current directory.
+9. Created a [manifest file](#manifest-file) with report definitions for the
    HTML template report and dashboard report from the previous steps.
-8. Used the CLI script to run an ad-hoc report at the command line using the
+10. Used the CLI script to run an ad-hoc report at the command line using the
    default manifest file located at `include/manifest.json`.
-9. Without knowing it, used the `file` channel to store the resulting PDF
+11. Without knowing it, used the `file` channel to store the resulting PDF
    reports in the current directory.
 
 Though useful during template development, in most cases, you won't be
@@ -857,6 +905,13 @@ The following properties are common to all report types.
 | dashboards | An array of dashboard entity GUIDs | array | Y | |
 | combinePdfs | `true` to combine all PDFs whan more than one dashboard is specified or `false` to use separate PDFs. | boolean | N | undefined |
 
+##### Query Report Properties
+
+| Property Name | Description | Type | Required | Default |
+| --- | --- | --- | --- | --- |
+| accountId | An account ID to run the query with. | number | Y | |
+| query | The NRQL query to run. | string | Y | |
+
 ### Values File
 
 A values file is a [JSON](https://www.json.org/json-en.html) or
@@ -888,6 +943,8 @@ Lambda options, see the section [Using the AWS Lambda Function](#using-the-aws-l
 | Template path | Additional paths to search during [template resolution](#template-resolution)  | `-p` | `templatePath` | `TEMPLATE_PATH` |
 | Values file | Path to a manifest file | `-v` | `valuesFilePath` | `VALUES_FILE` |
 | Dashboard IDs | List of dashboard entity GUIDs  | `-d` | `dashboardIds` | `DASHBOARD_IDS` |
+| Account ID | The account ID to use with a query report | `-a` | `accountId` | `NEW_RELIC_ACCOUNT_NAME` |
+| NRQL Query | An NRQL query | `-q` | `nrqlQuery` | `NRQL_QUERY` |
 | Channel IDs | List of channel IDs | `-c` | `channelIds` | `CHANNEL_IDS` |
 | S3 Source Bucket | Name of S3 bucket to read manifest file/template from. _Unsupported in CLI._ | Unsupported | `sourceBucket` | `SOURCE_BUCKET` |
 
@@ -900,7 +957,7 @@ The latter is mostly meant to be used locally for development and testing
 purposes. The CLI is used as follows.
 
 ```sh
-node index.js ([-f manifest-file] | ([-n name -v values-file] [-p template-path] | [-d dashboard-ids]) [-c channel-ids]) [--verbose] [--debug] [--full-chrome])
+node index.js ([-f manifest-file] | ([-n name -v values-file] [-p template-path] | [-d dashboard-ids] | [-a account-id -q nrql-query]) [-c channel-ids]) [--verbose] [--debug] [--full-chrome])
 ```
 
 The CLI accepts the following options.
@@ -912,6 +969,8 @@ The CLI accepts the following options.
 | `-p name` | Additional directories for the template path (delimited by the system path separator) | `-p examples:another-dir` |
 | `-v values-file` | Run the report using template parameter values defined in the file `values-file`. Ignored with `-f` or `-d`.  | `-v values.json` |
 | `-d dashboard-ids` | Download dashboard snapshots for all dashboard GUIDs listed in `dashboards` (comma delimited). Ignored with `-f` or `-n`. | `-d abc123,xyz456` |
+| `-a account-id` | Account ID to use with `<nrql-query>`. Required with `-q`. | `-a 12345671` |
+| `-q nrql-query` | Export results of `<nrql-query>` as a CSV. Requires `-a`. | `-q 'SELECT average(duration) FROM Transaction'` |
 | `-c channel-ids` | Send report output files to the channels listed in `channels` (comma delimited) | `-c file,email` |
 | `--verbose` | Enable verbose mode | |
 | `--debug` | Enable debug mode (be very verbose) | |
@@ -950,6 +1009,12 @@ The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
   the `EMAIL_*` environment variables
 
   `./nr-reports-cli/bin/nr-reports.sh -d A1234,B1234 -c file,email`
+
+* Run a report with the NRQL query `SELECT average(duration) FROM Transaction'`
+  against the account with ID `1234567` and upload the result CSV report to AWS
+  S3 using the bucket name defined in the `S3_DEST_BUCKET` environment variable.
+
+  `./nr-reports-cli/bin/nr-reports.sh -a 1234567 -q 'SELECT average(duration) FROM Transaction' -c s3`
 
 ### Using the CLI image
 

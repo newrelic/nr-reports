@@ -66,7 +66,7 @@ async function mergePdfs(dashboardPdfs, consolidatedPdf) {
 }
 
 async function generateDashboardReport(
-  engineOptions,
+  context,
   manifest,
   report,
   tempDir,
@@ -82,7 +82,7 @@ async function generateDashboardReport(
     logger.verbose(`Running dashboard report for dashboards [${dashboards}]...`)
 
     const promises = dashboards.map(async dashboard => (
-        await downloadDashboardPdf(engineOptions.apiKey, dashboard, tempDir)
+        await downloadDashboardPdf(context.apiKey, dashboard, tempDir)
       )),
       dashboardPdfs = await Promise.all(promises)
 

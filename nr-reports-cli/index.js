@@ -24,7 +24,7 @@ function getApiKey() {
 async function main() {
   const logger = rootLogger,
     yarggles = yargs(getArgv())
-      .usage('Usage: node index.js ([-f manifest-file] | ([-n name -v values-file] [-p template-path] | [-d dashboard-ids]) [-c channel-ids]) [--verbose] [--debug] [--full-chrome])')
+      .usage('Usage: node index.js ([-f manifest-file] | ([-n name -v values-file] [-p template-path] | [-d dashboard-ids] | [-a account-id -q nrql-query]) [-c channel-ids]) [--verbose] [--debug] [--full-chrome])')
       .option('n', {
         alias: 'template-name',
         type: 'string',
@@ -49,6 +49,16 @@ async function main() {
         alias: 'dashboard-ids',
         type: 'string',
         describe: 'Download dashboard snapshots for all dashboard GUIDs listed in <dashboard-ids> (comma delimited)',
+      })
+      .option('a', {
+        alias: 'account-id',
+        type: 'string',
+        describe: 'Account ID to use with <nrql-query>',
+      })
+      .option('q', {
+        alias: 'nrql-query',
+        type: 'string',
+        describe: 'Export results of <nrql-query> as a CSV',
       })
       .option('p', {
         alias: 'template-path',
@@ -97,6 +107,8 @@ async function main() {
           valuesFilePath: argv.v,
           dashboardIds: argv.d,
           channelIds: argv.c,
+          accountId: argv.a,
+          nrqlQuery: argv.q,
           sourceBucket: null, // TODO
         },
       }

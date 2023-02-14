@@ -36,8 +36,9 @@ Stuff and things.
 
 - [X] Cron Docker
 - [ ] CronJob Kubernetes
-- [X] Don't launch browser if no template reports are being runj
-- [ ] Don't create/configure nunjucks unless necessary
+- [X] Don't launch browser if no template reports are being run
+- [ ] Add commit hooks to lint
+- [ ] Add CHANGELOG
 - [ ] Add entity search extension
 - [ ] Add generic graphql extension
 - [ ] Development preview support

@@ -10,7 +10,6 @@ const fs = require('fs'),
     getFilenameWithNewExtension,
     shouldRender,
     getDefaultOutputFilename,
-    getOption,
     splitPaths,
   } = require('../util'),
   {
@@ -69,16 +68,16 @@ async function renderPdf(browser, content, file) {
   })
 }
 
-function processTemplateFile(file, context = {}) {
+function processTemplateFile(file, renderContext = {}) {
   return new Promise((resolve, reject) => {
     logger.verbose(`Processing template file ${file}...`)
 
     logger.debug((log, format) => {
-      log(format('Context:'))
-      log(context)
+      log(format('Render context:'))
+      log(renderContext)
     })
 
-    nunjucks.render(file, context, (err, res) => {
+    nunjucks.render(file, renderContext, (err, res) => {
       if (err) {
         reject(err)
         return
@@ -89,16 +88,16 @@ function processTemplateFile(file, context = {}) {
   })
 }
 
-function processTemplateString(template, context = {}) {
+function processTemplateString(template, renderContext = {}) {
   return new Promise((resolve, reject) => {
     logger.verbose('Processing template string...')
 
     logger.debug((log, format) => {
-      log(format('Context:'))
-      log(context)
+      log(format('Render context:'))
+      log(renderContext)
     })
 
-    nunjucks.renderString(template, context, (err, res) => {
+    nunjucks.renderString(template, renderContext, (err, res) => {
       if (err) {
         reject(err)
         return
@@ -176,7 +175,7 @@ async function processTemplateReport(
 }
 
 async function generateTemplateReport(
-  engineOptions,
+  context,
   manifest,
   report,
   tempDir,
@@ -191,7 +190,7 @@ async function generateTemplateReport(
       manifest,
       report,
       tempDir,
-      engineOptions.browser,
+      context.browser,
       async (templateName, parameters) => (
         await processTemplateString(template, parameters)
       ),
@@ -202,7 +201,7 @@ async function generateTemplateReport(
     manifest,
     report,
     tempDir,
-    engineOptions.browser,
+    context.browser,
     async (templateName, parameters) => (
       await processTemplateFile(templateName, parameters)
     ),
