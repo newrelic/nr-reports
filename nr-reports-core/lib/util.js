@@ -4,6 +4,7 @@ const fs = require('fs'),
   os = require('os'),
   path = require('path'),
   YAML = require('yaml'),
+  { stringify } = require('csv-stringify'),
   { createLogger } = require('./logger')
 
 const logger = createLogger('util'),
@@ -276,6 +277,107 @@ function shouldRender(report) {
   )
 }
 
+function pad(number, length) {
+  let str = `${number}`
+
+  while (str.length < length) {
+    str = `0${str}`
+  }
+
+  return str
+}
+
+function toDate(input) {
+  if (typeof input === 'undefined') {
+    return null
+  }
+
+  let date
+
+  if (typeof input === 'number') {
+    if (input > 0 && input < 1000000000000) {
+      date = new Date(input * 1000)
+    } else {
+      date = new Date(input)
+    }
+  } else if (Object.prototype.toString.call(input) !== '[object Date]') {
+    date = new Date(input)
+  } else {
+    date = input
+  }
+
+  if (isNaN(date.getDate()) || date.getTime() === 0) {
+    return null
+  }
+
+  return date
+}
+
+function getFormattedDateTime(input = new Date()) {
+  const date = toDate(input)
+
+  if (!date) {
+    return ''
+  }
+
+  const month = pad(date.getUTCMonth() + 1, 2),
+    day = pad(date.getUTCDate(), 2),
+    year = date.getUTCFullYear(),
+    hour = pad(date.getUTCHours(), 2),
+    minutes = pad(date.getUTCMinutes(), 2),
+    seconds = pad(date.getUTCSeconds(), 2)
+
+  return `${year}-${month}-${day}_${hour}${minutes}${seconds}`
+}
+
+function writeCsv(filePath, columns, rows) {
+  const file = fs.createWriteStream(filePath, { encoding: 'utf-8' }),
+    stringifier = stringify({
+      header: true,
+      columns,
+    })
+
+  logger.verbose(`Exporting ${rows.length} rows...`)
+  logger.debug(log => {
+    rows.forEach(row => log(JSON.stringify(row)))
+  })
+
+  return new Promise((resolve, reject) => {
+    stringifier.on('readable', () => {
+      let row = stringifier.read()
+
+      while (row) {
+        file.write(row)
+        row = stringifier.read()
+      }
+    })
+
+    stringifier.on('error', err => {
+      logger.error(err.message)
+      file.close(() => reject(err))
+    })
+
+    stringifier.on('finish', () => {
+      file.end()
+      logger.verbose(
+        `Finished writing ${filePath}!\n${rows.length} rows exported.`,
+      )
+      file.close(err => {
+        if (err) {
+          reject(err)
+        }
+        resolve()
+      })
+    })
+
+    rows.forEach(row => {
+      stringifier.write(row)
+    })
+
+    stringifier.end()
+  })
+}
+
 module.exports = {
   ENDPOINTS,
   HttpError,
@@ -296,5 +398,8 @@ module.exports = {
   stringToBoolean,
   withTempDir,
   shouldRender,
+  toDate,
+  getFormattedDateTime,
+  writeCsv,
   DEFAULT_CHANNEL,
 }

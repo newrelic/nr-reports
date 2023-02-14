@@ -4,7 +4,7 @@ const chromium = require('chrome-aws-lambda'),
   {
     rootLogger,
     FileHandler,
-    EngineRunner,
+    Engine,
     getEnv,
     getOption,
     getSecretValue,
@@ -67,7 +67,7 @@ async function handler(event) {
   }
 
   try {
-    const runner = new EngineRunner({
+    const engine = new Engine({
       apiKey: await getApiKey(),
       defaultChannelType: 's3',
       getPuppetArgs: async () => ({
@@ -85,7 +85,7 @@ async function handler(event) {
       ),
     })
 
-    await runner.run(values)
+    await engine.run(values)
 
     return lambdaResponse(
       200,
