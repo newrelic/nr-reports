@@ -56,7 +56,7 @@ async function mergePdfs(dashboardPdfs, consolidatedPdf) {
 
   logger.verbose((log, format) => {
     log(format(`Merging ${dashboardPdfs.length} PDFs to ${consolidatedPdf}...`))
-    dashboardPdfs.forEach(pdf => log(format(pdf)))
+    dashboardPdfs.forEach(pdf => log(pdf))
   })
 
   dashboardPdfs.forEach(dashboard => merger.add(dashboard))

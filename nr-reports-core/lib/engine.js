@@ -6,6 +6,7 @@ const { publish } = require('./channels'),
     withTempDir,
     shouldRender,
     getOption,
+    Context,
   } = require('./util'),
   {
     discoverReports,
@@ -19,14 +20,14 @@ const { publish } = require('./channels'),
 const logger = createLogger('engine')
 
 class Engine {
-  constructor(context) {
-    this.context = context
+  constructor(apiKey, defaultChannelType, callbacks) {
+    this.context = new Context({ apiKey, defaultChannelType })
+    this.callbacks = callbacks
   }
 
   async run(args) {
     logger.debug((log, format) => {
-      log(format('Invoked with context:'))
-      log({ ...this.context, apiKey: '[REDACTED]' })
+      this.context.dump('Invoked with context:')
 
       log(format('Invoked with arguments:'))
       log(args)
@@ -38,11 +39,14 @@ class Engine {
     let browser
 
     try {
-      const manifest = await discoverReports(this.context, args)
+      const manifest = await discoverReports(
+        args,
+        this.context.defaultChannelType,
+      )
 
       logger.debug((log, format) => {
         log(format('Final manifest:'))
-        log(manifest)
+        log(format(manifest))
       })
 
       if (!manifest || manifest.reports.length === 0) {
@@ -55,34 +59,33 @@ class Engine {
 
       logger.debug((log, format) => {
         log(format('Reports:'))
-        log(manifest.reports)
+        log(format(manifest.reports))
       })
 
       const reportIndex = manifest.reports.findIndex(shouldRender),
-        templatePath = getOption(args.options, 'templatePath', 'TEMPLATE_PATH'),
-        engineOptions = {
-          apiKey: this.context.apiKey,
-          browser: null,
-        }
+        templatePath = getOption(args.options, 'templatePath', 'TEMPLATE_PATH')
 
-      this.context.env = templateGenerator.configureNunjucks(
+      templateGenerator.configureNunjucks(
         this.context.apiKey,
         templatePath,
       )
 
+      const context = this.context.context({
+        browser: null,
+        ...manifest.variables,
+      })
+
       if (reportIndex >= 0) {
         logger.debug('Found 1 or more PDF reports. Launching browser...')
 
-        const puppetArgs = await this.context.getPuppetArgs()
+        const puppetArgs = await this.callbacks.getPuppetArgs()
 
         logger.debug((log, format) => {
           log(format('Launching browser using the following args:'))
-          log(puppetArgs)
+          log(format(puppetArgs))
         })
 
-        engineOptions.browser = browser = (
-          await this.context.openChrome(puppetArgs)
-        )
+        context.browser = browser = await this.callbacks.openChrome(puppetArgs)
       }
 
       await withTempDir(async tempDir => {
@@ -106,8 +109,14 @@ class Engine {
             continue
           }
 
+          const reportContext = context.context(report)
+
+          logger.debug(() => {
+            reportContext.dump('Report context:')
+          })
+
           const outputs = await generator.generate(
-            engineOptions,
+            reportContext,
             manifest,
             report,
             tempDir,
@@ -115,6 +124,7 @@ class Engine {
 
           if (Array.isArray(outputs) && outputs.length > 0) {
             await publish(
+              context,
               manifest,
               report,
               outputs,
@@ -124,7 +134,7 @@ class Engine {
       })
     } finally {
       if (browser) {
-        await this.context.closeChrome(browser)
+        await this.callbacks.closeChrome(browser)
       }
     }
   }

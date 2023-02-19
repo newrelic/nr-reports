@@ -2,25 +2,14 @@
 
 const path = require('path'),
   { createLogger } = require('../logger'),
-  { getProperty, writeCsv, getFormattedDateTime } = require('../util'),
+  { writeCsv, getFormattedDateTime, requireAccountIds } = require('../util'),
   { NerdgraphClient } = require('../nerdgraph')
 
 const logger = createLogger('query-generator')
 
 async function generateQueryReport(context, manifest, report, tempDir) {
   try {
-    const accountId = getProperty(
-      'accountId',
-      'NEW_RELIC_ACCOUNT_ID',
-      null,
-      report,
-      manifest.variables,
-    )
-
-    if (!accountId) {
-      logger.warn('Missing account id for query report.')
-      return null
-    }
+    const accountIds = requireAccountIds(context)
 
     const {
         query,
@@ -31,7 +20,7 @@ async function generateQueryReport(context, manifest, report, tempDir) {
 
     const result = await nerdgraph.runNrql(
       context.apiKey,
-      accountId,
+      accountIds,
       query,
       {
         timeout: report.timeout || 5,
@@ -47,8 +36,8 @@ async function generateQueryReport(context, manifest, report, tempDir) {
     const {
         metadata,
         results,
-        outputFileName,
       } = result,
+      outputFileName = context.outputFileName,
       output = outputFileName ? path.join(tempDir, outputFileName) : (
         path.join(
           tempDir,

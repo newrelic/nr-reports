@@ -46,6 +46,16 @@ rendered into a PDF using headless Chrome. But you can also tell the New Relic
 Reports engine not to do so. You might do this if you are producing a CSV file
 or you want to send raw HTML instead of rendered HTML.
 
+![User-Defined Template Warning](https://img.shields.io/badge/User_Defined_Template_Warning-Never_run_untrusted_templates!-critical?style=for-the-badge&labelColor=orange)
+
+Nunjucks does not sandbox execution so **it is not safe to run untrusted
+templates or inject user-defined content into template definitions**. Doing so
+can expose attack vectors for accessing sensitive data and remote code
+execution.
+
+See [this issue](https://github.com/mozilla/nunjucks-docs/issues/17)
+for more information.
+
 #### Dashboard Reports
 
 Dashboard reports use Nerdgraph to collect snapshot URLs from one or more user
@@ -909,7 +919,8 @@ The following properties are common to all report types.
 
 | Property Name | Description | Type | Required | Default |
 | --- | --- | --- | --- | --- |
-| accountId | An account ID to run the query with. | number | Y | |
+| accountId | An account ID to run the query with. One of the this property or the `accountIds` property must be specified. | number | Y | |
+| accountIds | A list of account IDs to run the query with. A maximum of 5 account IDs is allowed. One of the this property or the `accountId` property must be specified. | array | Y | |
 | query | The NRQL query to run. | string | Y | |
 
 ### Values File
@@ -943,10 +954,15 @@ Lambda options, see the section [Using the AWS Lambda Function](#using-the-aws-l
 | Template path | Additional paths to search during [template resolution](#template-resolution)  | `-p` | `templatePath` | `TEMPLATE_PATH` |
 | Values file | Path to a manifest file | `-v` | `valuesFilePath` | `VALUES_FILE` |
 | Dashboard IDs | List of dashboard entity GUIDs  | `-d` | `dashboardIds` | `DASHBOARD_IDS` |
-| Account ID | The account ID to use with a query report | `-a` | `accountId` | `NEW_RELIC_ACCOUNT_NAME` |
+| Account ID | The account ID to use with a query report. Multiple account IDs an be specified separated by commas (see note below).  | `-a` | `accountId` | `NEW_RELIC_ACCOUNT_ID` |
 | NRQL Query | An NRQL query | `-q` | `nrqlQuery` | `NRQL_QUERY` |
 | Channel IDs | List of channel IDs | `-c` | `channelIds` | `CHANNEL_IDS` |
 | S3 Source Bucket | Name of S3 bucket to read manifest file/template from. _Unsupported in CLI._ | Unsupported | `sourceBucket` | `SOURCE_BUCKET` |
+
+**NOTE:** As mentioned above, multiple account IDs can be specified via the `-a`
+option by separating each ID with a `,`. You should _not_ do this with the
+`NEW_RELIC_ACCOUNT_ID` environment variable as this variable is the same as that
+use by [the New Relic Node.js agent](https://docs.newrelic.com/docs/apm/agents/nodejs-agent/getting-started/introduction-new-relic-nodejs/).
 
 ### Using the CLI
 
@@ -969,7 +985,7 @@ The CLI accepts the following options.
 | `-p name` | Additional directories for the template path (delimited by the system path separator) | `-p examples:another-dir` |
 | `-v values-file` | Run the report using template parameter values defined in the file `values-file`. Ignored with `-f` or `-d`.  | `-v values.json` |
 | `-d dashboard-ids` | Download dashboard snapshots for all dashboard GUIDs listed in `dashboards` (comma delimited). Ignored with `-f` or `-n`. | `-d abc123,xyz456` |
-| `-a account-id` | Account ID to use with `<nrql-query>`. Required with `-q`. | `-a 12345671` |
+| `-a account-id` | Account ID to use with `<nrql-query>`. Multiple account IDs an be specified separated by commas. Required with `-q`. | `-a 12345671` |
 | `-q nrql-query` | Export results of `<nrql-query>` as a CSV. Requires `-a`. | `-q 'SELECT average(duration) FROM Transaction'` |
 | `-c channel-ids` | Send report output files to the channels listed in `channels` (comma delimited) | `-c file,email` |
 | `--verbose` | Enable verbose mode | |

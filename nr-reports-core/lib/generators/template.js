@@ -43,7 +43,7 @@ async function renderPdf(browser, content, file) {
     .on('requestfailed', request => logger.error(`chrome-requestfailed: ${request.failure()} ${request.url()}`))
 
   logger.debug((log, format) => {
-    log(format('Dumping HTML content:'))
+    log(format('HTML content:'))
     log(content)
   })
 
@@ -68,13 +68,12 @@ async function renderPdf(browser, content, file) {
   })
 }
 
-function processTemplateFile(file, renderContext = {}) {
+function processTemplateFile(file, renderContext) {
   return new Promise((resolve, reject) => {
     logger.verbose(`Processing template file ${file}...`)
 
-    logger.debug((log, format) => {
-      log(format('Render context:'))
-      log(renderContext)
+    logger.debug(() => {
+      renderContext.dump('Render context:')
     })
 
     nunjucks.render(file, renderContext, (err, res) => {
@@ -88,13 +87,12 @@ function processTemplateFile(file, renderContext = {}) {
   })
 }
 
-function processTemplateString(template, renderContext = {}) {
+function processTemplateString(template, renderContext) {
   return new Promise((resolve, reject) => {
     logger.verbose('Processing template string...')
 
-    logger.debug((log, format) => {
-      log(format('Render context:'))
-      log(renderContext)
+    logger.debug(() => {
+      renderContext.dump('Render context:')
     })
 
     nunjucks.renderString(template, renderContext, (err, res) => {
@@ -109,10 +107,9 @@ function processTemplateString(template, renderContext = {}) {
 }
 
 async function processTemplateReport(
-  manifest,
+  context,
   report,
   tempDir,
-  browser,
   processor,
 ) {
   const {
@@ -121,7 +118,7 @@ async function processTemplateReport(
       isMarkdown,
       outputFileName,
     } = report,
-    templateParameters = { ...manifest.variables, ...parameters },
+    renderContext = context.context(parameters),
     shouldRenderPdf = shouldRender(report)
   let templateIsMarkdown = isMarkdown
 
@@ -143,20 +140,20 @@ async function processTemplateReport(
 
     logger.verbose(`templateIsMarkdown: ${templateIsMarkdown}`)
 
-    templateParameters.isMarkdown = templateIsMarkdown
+    renderContext.isMarkdown = templateIsMarkdown
 
-    let content = await processor(templateName, templateParameters)
+    let content = await processor(templateName, renderContext)
 
     if (templateIsMarkdown) {
       content = await processTemplateString(
         `{% extends "base/report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
-        templateParameters,
+        renderContext,
       )
     }
 
     if (shouldRenderPdf) {
       await renderPdf(
-        browser,
+        context.browser,
         content,
         output,
       )
@@ -187,23 +184,21 @@ async function generateTemplateReport(
     )
 
     return await processTemplateReport(
-      manifest,
+      context,
       report,
       tempDir,
-      context.browser,
-      async (templateName, parameters) => (
-        await processTemplateString(template, parameters)
+      async (templateName, renderContext) => (
+        await processTemplateString(template, renderContext)
       ),
     )
   }
 
   return await processTemplateReport(
-    manifest,
+    context,
     report,
     tempDir,
-    context.browser,
-    async (templateName, parameters) => (
-      await processTemplateFile(templateName, parameters)
+    async (templateName, renderContext) => (
+      await processTemplateFile(templateName, renderContext)
     ),
   )
 }
@@ -223,7 +218,7 @@ function configureNunjucks(apiKey, templatePath) {
 
   logger.debug((log, format) => {
     log(format('Final template path:'))
-    log(templatesPath)
+    log(format(templatesPath))
   })
 
   const env = nunjucks.configure(templatesPath)
