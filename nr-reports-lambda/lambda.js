@@ -67,23 +67,25 @@ async function handler(event) {
   }
 
   try {
-    const engine = new Engine({
-      apiKey: await getApiKey(),
-      defaultChannelType: 's3',
-      getPuppetArgs: async () => ({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath,
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
-      }),
-      openChrome: async puppetArgs => (
-        await chromium.puppeteer.launch(puppetArgs)
-      ),
-      closeChrome: async browser => (
-        await browser.close()
-      ),
-    })
+    const engine = new Engine(
+      await getApiKey(),
+      's3',
+      {
+        getPuppetArgs: async () => ({
+          args: chromium.args,
+          defaultViewport: chromium.defaultViewport,
+          executablePath: await chromium.executablePath,
+          headless: chromium.headless,
+          ignoreHTTPSErrors: true,
+        }),
+        openChrome: async puppetArgs => (
+          await chromium.puppeteer.launch(puppetArgs)
+        ),
+        closeChrome: async browser => (
+          await browser.close()
+        ),
+      },
+    )
 
     await engine.run(values)
 

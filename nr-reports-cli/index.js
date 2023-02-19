@@ -8,6 +8,7 @@ const yargs = require('yargs/yargs'),
     getArgv,
     getEnv,
     getOption,
+    DEFAULT_CHANNEL,
   } = require('nr-reports-core')
 
 function getApiKey() {
@@ -83,22 +84,25 @@ async function main() {
   logger.isDebug = getOption(argv, 'debug', null, logLevel === 'DEBUG')
 
   try {
-    const engine = new Engine({
-        apiKey: getApiKey(),
-        getPuppetArgs: async () => ({
-          args: ['--disable-dev-shm-usage'],
-          headless: !fullChrome,
-          ignoreHTTPSErrors: true,
-        }),
-        openChrome: async puppetArgs => (
-          await puppeteer.launch(puppetArgs)
-        ),
-        closeChrome: async browser => {
-          if (!fullChrome) {
-            await browser.close()
-          }
+    const engine = new Engine(
+        getApiKey(),
+        DEFAULT_CHANNEL,
+        {
+          getPuppetArgs: async () => ({
+            args: ['--disable-dev-shm-usage'],
+            headless: !fullChrome,
+            ignoreHTTPSErrors: true,
+          }),
+          openChrome: async puppetArgs => (
+            await puppeteer.launch(puppetArgs)
+          ),
+          closeChrome: async browser => {
+            if (!fullChrome) {
+              await browser.close()
+            }
+          },
         },
-      }),
+      ),
       values = {
         options: {
           manifestFilePath: argv.f,

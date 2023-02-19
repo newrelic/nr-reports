@@ -4,11 +4,26 @@ const nunjucks = require('nunjucks'),
   { createLogger } = require('../logger'),
   {
     NerdgraphClient,
-  } = require('../nerdgraph')
+  } = require('../nerdgraph'),
+  { Context, requireAccountIds } = require('../util')
+
+const logger = createLogger('nrql-extension')
+
+function handleError(context, err, errorBody, callback) {
+  logger.error(err)
+  context.setVariable('error', err)
+
+  if (errorBody) {
+    callback(null, new nunjucks.runtime.SafeString(errorBody()))
+    return
+  }
+
+  // eslint-disable-next-line node/callback-return
+  callback(null, new nunjucks.runtime.SafeString('This chart could not be displayed.'))
+}
 
 function NrqlExtension(apiKey) {
   this.tags = ['nrql']
-  this.logger = createLogger('nrql-extension')
   this.apiKey = apiKey
 
   this.parse = function(parser, nodes, lexer) {
@@ -38,50 +53,55 @@ function NrqlExtension(apiKey) {
   }
 
   this.run = async function(context, ...args) {
-    const env = context.env,
-      vars = context.getVariables(),
-      nerdgraph = new NerdgraphClient(),
-      callback = args[args.length - 1],
-      errorBody = args[args.length - 2],
-      body = args[args.length - 3],
-      rest = args.slice(0, -3)
-    let query = null,
-      options = {}
-
-    rest.forEach(arg => {
-      if (!query && typeof arg === 'string') {
-        query = arg
-      // eslint-disable-next-line no-underscore-dangle
-      } else if (arg && typeof arg === 'object' && arg.__keywords) {
-        options = arg
-        if (options.query) {
-          query = options.query
-        }
-      }
-    })
-
-    if (!query) {
-      this.logger.warn('missing query')
-      callback(null, '')
-      return
-    }
-
-    const accountId = options.accountId || vars.accountId
-
-    if (!accountId) {
-      this.logger.warn('missing account ID')
-      callback(null, '')
-      return
-    }
-
     context.setVariable('error', null)
-    context.setVariable(options.var || 'result', null)
+
+    const env = context.env,
+      callback = args.pop(),
+      errorBody = args.pop(),
+      body = args.pop()
 
     try {
+      let query = null,
+        options = {}
+
+      logger.debug((log, format) => {
+        log(format('Extension args:'))
+        log(args)
+      })
+
+      args.forEach(arg => {
+        if (!query && typeof arg === 'string') {
+          query = arg
+        // eslint-disable-next-line no-underscore-dangle
+        } else if (arg && typeof arg === 'object' && arg.__keywords) {
+          options = arg
+          if (options.query) {
+            query = options.query
+          }
+        }
+      })
+
+      if (!query) {
+        logger.warn('missing query')
+        callback(null, '')
+        return
+      }
+
+      context.setVariable(options.var || 'result', null)
+
+      const vars = context.getVariables(),
+        newContext = new Context(vars, options),
+        accountIds = requireAccountIds(newContext),
+        nerdgraph = new NerdgraphClient()
+
+      logger.debug(() => {
+        newContext.dump('Extension render context')
+      })
+
       const result = await nerdgraph.runNrql(
         this.apiKey,
-        accountId,
-        env.renderString(query, vars),
+        accountIds,
+        env.renderString(query, newContext),
         {
           timeout: options.timeout || 5,
         },
@@ -89,22 +109,19 @@ function NrqlExtension(apiKey) {
 
       context.setVariable(
         options.var || 'result',
-        result.length > 1 ? result : result[0],
+        result,
       )
 
-      callback(null, new nunjucks.runtime.SafeString(body()))
-      return
+      body((err, src) => {
+        if (err) {
+          handleError(context, err, errorBody, callback)
+          return
+        }
+
+        callback(null, src)
+      })
     } catch (err) {
-      this.logger.error(err)
-      context.setVariable('error', err)
-
-      if (errorBody) {
-        callback(null, new nunjucks.runtime.SafeString(errorBody()))
-        return
-      }
-
-      // eslint-disable-next-line node/callback-return
-      callback(null, new nunjucks.runtime.SafeString(err.message))
+      handleError(context, err, errorBody, callback)
     }
   }
 }

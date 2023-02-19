@@ -8,6 +8,7 @@ const { getChannelDefaults } = require('./channels'),
     parseManifest,
     parseJaml,
     getOption,
+    requireAccountId,
   } = require('./util'),
   {
     getS3ObjectAsString,
@@ -22,7 +23,7 @@ function makeChannel(type, options) {
 function parseChannels(options, channels) {
   logger.debug((log, format) => {
     log(format('Parsing channels:'))
-    log(channels)
+    log(format(channels))
   })
 
   const data = channels.split(/[\s]*,[\s]*/u).map(
@@ -31,7 +32,7 @@ function parseChannels(options, channels) {
 
   logger.debug((log, format) => {
     log(format('Parsed channels:'))
-    log(JSON.stringify(data, null, 2))
+    log(format(data))
   })
 
   return data
@@ -100,7 +101,11 @@ async function discoverReportsHelper(
   defaultChannelType,
   extras,
 ) {
-  const manifestFile = getOption(options, 'manifestFilePath', 'MANIFEST_FILE_PATH')
+  const manifestFile = getOption(
+    options,
+    'manifestFilePath',
+    'MANIFEST_FILE_PATH',
+  )
 
   // Name of manifest file
   if (manifestFile) {
@@ -187,19 +192,14 @@ async function discoverReportsHelper(
   if (query) {
     logger.debug(`Found query ${query}.`)
 
-    const accountId = getOption(options, 'accountId', 'NEW_RELIC_ACCOUNT_ID')
-
-    if (!accountId) {
-      throw new Error('Query report is missing account ID!')
-    }
-
-    const channels = getChannels(defaultChannelType, options)
+    const accountId = requireAccountId(options),
+      channels = getChannels(defaultChannelType, options)
 
     return {
       config: {},
       variables: {},
       reports: [{
-        accountId: Number.parseInt(accountId, 10),
+        accountId,
         query,
         channels,
         ...extras,
@@ -219,7 +219,7 @@ async function discoverReportsHelper(
   )
 }
 
-async function discoverReports(context, args) {
+async function discoverReports(args, defaultChannelType) {
   if (Array.isArray(args)) {
     logger.debug('Args is an array of reports.')
     return args
@@ -240,9 +240,7 @@ async function discoverReports(context, args) {
       async filePath => await getS3ObjectAsString(sourceBucket, filePath),
       () => makeChannel('s3', options),
       's3',
-      {
-        S3Bucket: sourceBucket,
-      },
+      { S3Bucket: sourceBucket },
     )
   }
 
@@ -252,7 +250,8 @@ async function discoverReports(context, args) {
     options,
     values,
     async filePath => await loadFile(filePath),
-    () => makeChannel(context.defaultChannelType, options),
+    () => makeChannel(defaultChannelType, options),
+    defaultChannelType,
   )
 }
 

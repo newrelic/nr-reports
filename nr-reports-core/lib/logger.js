@@ -27,6 +27,22 @@ function write(handlers, type, msg) {
   })
 }
 
+function formatMessage(msg) {
+  if (typeof msg !== 'object') {
+    return msg
+  }
+
+  if (msg instanceof Error) {
+    if (msg.stack) {
+      return `\n${msg.stack}`
+    }
+
+    return msg.message
+  }
+
+  return `\n${JSON.stringify(msg, null, 2)}`
+}
+
 class Logger {
   constructor(clazz, parentLogger = null) {
     this.CLASS = clazz
@@ -42,40 +58,33 @@ class Logger {
       this.DEBUG = false
       this.logHandlers = [console]
     }
+
+    this.format = this.formatter()
   }
 
   formatter() {
     return msg => {
-      const now = new Date()
-      let message = msg
-
-      if (typeof msg === 'object') {
-        message = JSON.stringify(msg, null, 2)
-      }
-
-      if (msg instanceof Error && msg.stack) {
-        message += `\n${msg.stack}`
-      }
+      const now = new Date(),
+        message = formatMessage(msg)
 
       return `[${now.toUTCString()}] ${this.CLASS} ${message}`
     }
   }
 
   log(msg, type = 'log') {
+    if (typeof msg === 'function') {
+      const logHandlers = this.logHandlers
+
+      msg(message => write(logHandlers, type, message), this.format)
+      return
+    }
+
     if (!msg || msg.length === 0) {
       write(this.logHandlers, type, '')
       return
     }
-    const format = this.formatter()
 
-    if (typeof msg === 'function') {
-      const logHandlers = this.logHandlers
-
-      msg(message => write(logHandlers, type, message), format)
-      return
-    }
-
-    write(this.logHandlers, type, format(msg))
+    write(this.logHandlers, type, this.format(msg))
   }
 
   error(msg) {

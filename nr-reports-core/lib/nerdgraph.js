@@ -9,6 +9,8 @@ const fetch = require('node-fetch'),
     nonDestructiveMerge,
   } = require('./util')
 
+const logger = createLogger('nerdgraph')
+
 class ApiError extends Error {
 }
 
@@ -39,24 +41,18 @@ function nrqlResults(metadata) {
 }
 
 class NerdgraphClient {
-  constructor() {
-    this.logger = createLogger('nerdgraph')
-  }
-
   url(options) {
     return ENDPOINTS.GRAPHQL[(options.region || 'US').toUpperCase()]
   }
 
   headers(apiKey, headers = {}) {
-    return Object.assign(
-      {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'Accept-Charset': 'utf-8',
-        'API-Key': apiKey,
-      },
-      headers,
-    )
+    return {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'Accept-Charset': 'utf-8',
+      'API-Key': apiKey,
+      ...headers,
+    }
   }
 
   payload(
@@ -91,8 +87,9 @@ class NerdgraphClient {
   }
 
   async post(apiKey, payload, options = { headers: {} }) {
-    this.logger.debug((writer, formatter) => {
-      writer(formatter(JSON.stringify(payload)))
+    logger.debug((log, format) => {
+      log(format('GraphQL POST:'))
+      log(format(payload))
     })
 
     const response = await fetch(this.url(options), {
@@ -105,15 +102,15 @@ class NerdgraphClient {
 
     const responseJson = await response.json()
 
-    this.logger.debug(async (writer, formatter) => {
-      writer(formatter(JSON.stringify(responseJson)))
+    logger.debug((log, format) => {
+      log(format('GraphQL Response:'))
+      log(format(responseJson))
     })
-
 
     if (responseJson.errors) {
       const body = JSON.stringify(responseJson)
 
-      this.logger.error(
+      logger.error(
         `GraphQL post error for query: ${body}`,
       )
       throw new ApiError(
@@ -173,12 +170,57 @@ class NerdgraphClient {
 
   async runNrql(
     apiKey,
-    accountId,
+    accountIds,
     query,
     options = {
       headers: {},
       timeout: 5,
-      chart: null,
+      metadata: false,
+    },
+  ) {
+    const results = await this.query(
+      apiKey,
+      `
+      {
+        actor {
+          nrql(accounts: $accountIds, query: $query, timeout: $timeout) {
+            ${nrqlResults(options.metadata)}
+          }
+        }
+      }
+      `,
+      {
+        accountIds: ['[Int!]!', accountIds],
+        query: ['Nrql!', query],
+        timeout: ['Seconds', options.timeout],
+      },
+      options,
+    )
+
+    const nrql = results[0].actor.nrql
+
+    if (!nrql) {
+      return null
+    }
+
+    if (options.metadata) {
+      return nrql.results.length > 0 ? ({
+        metadata: nrql.metadata,
+        results: nrql.results,
+      }) : null
+    }
+
+    return nrql.results.length > 0 ? nrql.results : null
+  }
+
+  async getShareableChartUrl(
+    apiKey,
+    accountId,
+    query,
+    chart = {},
+    options = {
+      headers: {},
+      timeout: 5,
       metadata: false,
     },
   ) {
@@ -189,7 +231,7 @@ class NerdgraphClient {
         actor {
           account(id: $accountId) {
             nrql(query: $query, timeout: $timeout) {
-              ${options.chart ? staticChartUrl(options.chart) : nrqlResults(options.metadata)}
+              ${staticChartUrl(chart)}
             }
           }
         }
@@ -209,18 +251,7 @@ class NerdgraphClient {
       return null
     }
 
-    if (options.chart) {
-      return nrql.staticChartUrl
-    }
-
-    if (options.metadata) {
-      return nrql.results.length > 0 ? ({
-        metadata: nrql.metadata,
-        results: nrql.results,
-      }) : null
-    }
-
-    return nrql.results.length > 0 ? nrql.results : null
+    return nrql.staticChartUrl
   }
 
   async entitySearch(
@@ -248,10 +279,10 @@ class NerdgraphClient {
       }
       `,
       { query: ['String', query] },
-      Object.assign(
-        options,
-        { nextCursorPath: 'actor.entitySearch.results.nextCursor' },
-      ),
+      {
+        ...options,
+        nextCursorPath: 'actor.entitySearch.results.nextCursor',
+      },
     )
 
     let entities = []

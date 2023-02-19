@@ -21,16 +21,16 @@ Stuff and things.
 - [ ] Community report repository
 - [ ] Add Pino
 - [ ] Add New Relic agent support to CLI
-- [ ] Add slack channel
+- [ ] Add slack channel channel
 - [ ] Push reports to nerdstorage, generic nerdlet to show reports in nerdstorage
 - [ ] Rename channels to destinations
-- [ ] Add generic sources
 - [ ] Add ability to specify channel params at CLI using ;key=value
 - [X] Honor template path when rendering email templates
 - [ ] Send report summary custom events
 - [ ] Switch from `Promise.all` to custom concurrent promise handler
 - [ ] Add support for output filename from env var and document `outputFilename`
 - [ ] Support non-file output
+- [ ] Collect any caught errors during reports and surface them on response
 
 ## Things
 

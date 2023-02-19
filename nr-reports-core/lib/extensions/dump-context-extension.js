@@ -19,7 +19,12 @@ function DumpContextExtension() {
   }
 
   this.run = function(context) {
-    return new nunjucks.runtime.SafeString(`<code>${JSON.stringify(context.ctx)}</code>`)
+    return new nunjucks.runtime.SafeString(`
+      <h2>Environment</h2>
+      <code>${JSON.stringify(context.env, null, 2)}</code>
+      <h2>Variables</h2>
+      <code>${JSON.stringify(context.getVariables(), null, 2)}</code>
+      `)
   }
 }
 

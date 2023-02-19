@@ -86,22 +86,53 @@ function getEnv(envName, defaultValue = null) {
   return defaultValue
 }
 
-function getProperty(propName, envName, defaultValue, ...objs) {
-  for (const obj of objs) {
-    if (obj) {
-      const type = typeof obj[propName]
+function getOption(options, optionName, envName = null, defaultValue = null) {
+  if (options) {
+    const type = typeof options[optionName]
 
-      if (type !== 'undefined') {
-        return type === 'string' ? obj[propName].trim() : obj[propName]
-      }
+    if (type !== 'undefined') {
+      return type === 'string' ? options[optionName].trim() : options[optionName]
     }
   }
 
   return envName ? getEnv(envName, defaultValue) : defaultValue
 }
 
-function getOption(options, optionName, envName = null, defaultValue = null) {
-  return getProperty(optionName, envName, defaultValue, options)
+function obfuscateContext(context) {
+  return { ...context, apiKey: '[REDACTED]' }
+}
+
+class Context {
+  constructor(...objs) {
+    for (const obj of objs) {
+      if (obj) {
+        for (const prop of Object.getOwnPropertyNames(obj)) {
+          if (typeof this[prop] !== 'function') {
+            this[prop] = obj[prop]
+          }
+        }
+      }
+    }
+  }
+
+  context(obj) {
+    return new Context(this, obj)
+  }
+
+  get(propName, envName = null, defaultValue = null) {
+    return getOption(this, propName, envName, defaultValue)
+  }
+
+  dump(msg) {
+    logger.debug((log, format) => {
+      log(format(msg))
+      log(obfuscateContext(this))
+    })
+  }
+
+  stringify() {
+    return JSON.stringify(obfuscateContext(this), null, 2)
+  }
 }
 
 function makeChannel(type) {
@@ -179,7 +210,7 @@ function parseManifest(manifestFile, contents, defaultChannel = null) {
 
   logger.debug((log, format) => {
     log(format('Parsed manifest:'))
-    log(JSON.stringify(data, null, 2))
+    log(format(data))
   })
 
   if (Array.isArray(data)) {
@@ -234,7 +265,7 @@ function parseJaml(fileName, contents) {
 
   logger.debug((log, format) => {
     log(format('Parsed JSON/YML:'))
-    log(JSON.stringify(data, null, 2))
+    log(format(data))
   })
 
   return data
@@ -242,6 +273,10 @@ function parseJaml(fileName, contents) {
 
 function splitPaths(paths) {
   return paths.split(path.delimiter)
+}
+
+function splitStringAndTrim(str, delimiter = ',') {
+  return str.split(delimiter).map(s => s.trim())
 }
 
 function getFilenameWithNewExtension(templateName, ext) {
@@ -261,16 +296,6 @@ function getDefaultOutputFilename(templateName) {
   return `${name}.out${ext}`
 }
 
-function stringToBoolean(str) {
-  const lower = str.toLowerCase()
-
-  if (lower === 'true' || lower === 'on' || lower === 'yes' || lower === '1') {
-    return true
-  }
-
-  return false
-}
-
 function shouldRender(report) {
   return report.templateName && (
     typeof report.render === 'undefined' || report.render
@@ -287,6 +312,44 @@ function pad(number, length) {
   return str
 }
 
+function toBoolean(input) {
+  const type = typeof input
+
+  if (type === 'boolean') {
+    return input
+  }
+
+  if (Number.isInteger(input)) {
+    return input === 1
+  }
+
+  if (type === 'string') {
+    const lower = input.trim().toLowerCase()
+
+    if (lower === 'true' || lower === 'on' || lower === 'yes' || lower === '1') {
+      return true
+    }
+  }
+
+  return false
+}
+
+function toNumber(input) {
+  if (Number.isInteger(input)) {
+    return input
+  }
+
+  if (typeof input === 'string') {
+    const str = input.trim()
+
+    if (str.length > 0) {
+      return Number.parseInt(str, 10)
+    }
+  }
+
+  return null
+}
+
 function toDate(input) {
   if (typeof input === 'undefined') {
     return null
@@ -294,7 +357,7 @@ function toDate(input) {
 
   let date
 
-  if (typeof input === 'number') {
+  if (Number.isInteger(input)) {
     if (input > 0 && input < 1000000000000) {
       date = new Date(input * 1000)
     } else {
@@ -339,7 +402,7 @@ function writeCsv(filePath, columns, rows) {
 
   logger.verbose(`Exporting ${rows.length} rows...`)
   logger.debug(log => {
-    rows.forEach(row => log(JSON.stringify(row)))
+    rows.forEach(row => log(row))
   })
 
   return new Promise((resolve, reject) => {
@@ -378,28 +441,82 @@ function writeCsv(filePath, columns, rows) {
   })
 }
 
+function requireAccountId(obj) {
+  const accountId = getOption(obj, 'accountId', 'NEW_RELIC_ACCOUNT_ID')
+
+  if (!accountId) {
+    throw new Error('Missing account ID')
+  }
+
+  const n = toNumber(accountId)
+
+  if (!n) {
+    throw new Error(`'${n}' is not a valid account ID.`)
+  }
+
+  return n
+}
+
+function requireAccountIds(obj) {
+  let accountIds = getOption(obj, 'accountIds')
+
+  if (!accountIds) {
+    const accountId = getOption(obj, 'accountId', 'NEW_RELIC_ACCOUNT_ID')
+
+    if (!accountId) {
+      throw new Error('No valid account IDs found.')
+    }
+
+    accountIds = typeof accountId === 'string' ? (
+      splitStringAndTrim(accountId)
+    ) : [accountId]
+  } else if (typeof accountIds === 'string') {
+    accountIds = splitStringAndTrim(accountIds.trim())
+  }
+
+  if (Array.isArray(accountIds) && accountIds.length > 0) {
+    return accountIds.reduce((u, v) => {
+      const n = toNumber(v)
+
+      if (!n) {
+        throw new Error(`'${v}' is not a valid account ID.`)
+      }
+
+      u.push(n)
+
+      return u
+    }, [])
+  }
+
+  throw new Error('No valid account IDs found.')
+}
+
 module.exports = {
+  DEFAULT_CHANNEL,
   ENDPOINTS,
   HttpError,
+  Context,
   getNested,
   raiseForStatus,
   nonDestructiveMerge,
   getArgv,
   getEnv,
   getOption,
-  getProperty,
   makeChannel,
   loadFile,
   parseManifest,
   parseJaml,
   splitPaths,
+  splitStringAndTrim,
   getFilenameWithNewExtension,
   getDefaultOutputFilename,
-  stringToBoolean,
+  toBoolean,
   withTempDir,
   shouldRender,
+  toNumber,
   toDate,
   getFormattedDateTime,
   writeCsv,
-  DEFAULT_CHANNEL,
+  requireAccountId,
+  requireAccountIds,
 }

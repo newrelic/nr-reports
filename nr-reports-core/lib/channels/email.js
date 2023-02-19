@@ -2,17 +2,17 @@
 
 const nodemailer = require('nodemailer'),
   nunjucks = require('nunjucks'),
-  { getProperty, stringToBoolean } = require('../util')
+  { toBoolean, toNumber } = require('../util')
 
 function createSmtpTransport() {
   const smtpConfig = {
     host: process.env.EMAIL_SMTP_SERVER,
     port: process.env.EMAIL_SMTP_PORT ? (
-      parseInt(process.env.EMAIL_SMTP_PORT, 10)
+      toNumber(process.env.EMAIL_SMTP_PORT)
     ) : 587,
     secure: typeof process.env.EMAIL_SMTP_SECURE === 'undefined' ? (
       true
-    ) : stringToBoolean(process.env.EMAIL_SMTP_SECURE),
+    ) : toBoolean(process.env.EMAIL_SMTP_SECURE),
   }
 
   if (process.env.EMAIL_SMTP_USER) {
@@ -25,41 +25,17 @@ function createSmtpTransport() {
   return nodemailer.createTransport(smtpConfig)
 }
 
-async function sendEmail(manifest, report, channelConfig, files) {
+async function sendEmail(context, manifest, report, channelConfig, files) {
   const { parameters } = report,
-    manifestConfig = manifest.config.email,
-    renderContext = {
-      ...manifestConfig,
-      ...manifest.variables,
-      ...channelConfig,
-      ...parameters,
-    },
+    renderContext = context.context(parameters),
     transporter = createSmtpTransport(),
-    from = getProperty(
-      'from',
-      'EMAIL_FROM',
-      null,
-      channelConfig,
-      manifestConfig,
-    ),
-    to = getProperty('to', 'EMAIL_TO', null, channelConfig, manifestConfig),
+    from = context.get('from', 'EMAIL_FROM'),
+    to = context.get('to', 'EMAIL_TO'),
     subject = nunjucks.renderString(
-      getProperty(
-        'subject',
-        'EMAIL_SUBJECT',
-        '',
-        channelConfig,
-        manifestConfig,
-      ),
+      context.get('subject', 'EMAIL_SUBJECT', ''),
       renderContext,
     ),
-    template = getProperty(
-      'template',
-      'EMAIL_TEMPLATE',
-      'email/message.html',
-      channelConfig,
-      manifestConfig,
-    ),
+    template = context.get('template', 'EMAIL_TEMPLATE', 'email/message.html'),
     body = nunjucks.render(template, renderContext)
 
   await transporter.sendMail({
@@ -69,8 +45,6 @@ async function sendEmail(manifest, report, channelConfig, files) {
     html: body,
     attachments: files.map(file => ({ path: file })),
   })
-
-  // @todo handle errors, log success
 }
 
 module.exports = {
