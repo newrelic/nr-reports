@@ -18,6 +18,7 @@ Stuff and things.
 - [ ] YAML report engine
 - [X] Rename Dockerfile-cli to Dockerfile
 - [ ] Specify time period for dashboard reports
+- [ ] Specify time period for query reports
 - [ ] Community report repository
 - [ ] Add Pino
 - [ ] Add New Relic agent support to CLI
@@ -31,6 +32,11 @@ Stuff and things.
 - [ ] Add support for output filename from env var and document `outputFilename`
 - [ ] Support non-file output
 - [ ] Collect any caught errors during reports and surface them on response
+- [ ] Add variable substitution support to queries
+- [ ] Support global GraphQL/NRQL timeout in `config` section
+- [ ] Support global concurrency setting in `config`  section
+- [ ] Allow reports to throw exceptions rather than return null and
+  use try/catch in engine.
 
 ## Things
 

@@ -14,6 +14,7 @@ const logger = createLogger('util'),
       EU: 'https://api.eu.newrelic.com/graphql',
     },
   },
+  DEFAULT_CONCURRENCY = 4,
   { access, mkdtemp, readFile, rmdir } = fs.promises
 
 function getNestedHelper(val, arr = [], index = 0) {
@@ -312,6 +313,10 @@ function pad(number, length) {
   return str
 }
 
+function strToLower(input) {
+  return input.toLowerCase()
+}
+
 function toBoolean(input) {
   const type = typeof input
 
@@ -491,8 +496,50 @@ function requireAccountIds(obj) {
   throw new Error('No valid account IDs found.')
 }
 
+function doAsyncWork(items, max, fn, args, cb) {
+  return new Promise(resolve => {
+    const count = items.length
+
+    function doMoreWork(index) {
+      if (index >= count) {
+        resolve()
+        return
+      }
+
+      const u = items.slice(index, index + max),
+        results = u.map(() => ({ complete: false, data: null, error: null }))
+
+      u.forEach((v, uindex) => {
+        fn(v, index + uindex, items, ...args)
+          .then(result => {
+            results[uindex].data = result
+          })
+          .catch(err => {
+            results[uindex].error = err
+          })
+          .finally(() => {
+            results[uindex].complete = true
+
+            for (const result of results) {
+              if (!result.complete) {
+                return
+              }
+            }
+
+            // eslint-disable-next-line node/callback-return
+            cb(results)
+            doMoreWork(index + u.length)
+          })
+      })
+    }
+
+    doMoreWork(0)
+  })
+}
+
 module.exports = {
   DEFAULT_CHANNEL,
+  DEFAULT_CONCURRENCY,
   ENDPOINTS,
   HttpError,
   Context,
@@ -519,4 +566,6 @@ module.exports = {
   writeCsv,
   requireAccountId,
   requireAccountIds,
+  strToLower,
+  doAsyncWork,
 }

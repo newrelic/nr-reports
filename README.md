@@ -66,10 +66,11 @@ single PDF.
 #### Query Reports
 
 Query reports provide a mechanism to export the results of running a
-NRQL query by simply specifying the query. No additional configuration is
-required. By default, query results are exported to CSV but query results
-can also be exported as a simple HTML table or can be formatted using a
-[Nunjucks](https://mozilla.github.io/nunjucks/) template.
+NRQL query by simply specifying a query and one or more account IDs to run the
+query against. No additional configuration is required. By default, query
+results are exported to CSV but query results can also be exported as a simple
+HTML table or can be formatted using a [Nunjucks](https://mozilla.github.io/nunjucks/)
+template.
 
 ### Channel Types
 
@@ -922,6 +923,7 @@ The following properties are common to all report types.
 | accountId | An account ID to run the query with. One of the this property or the `accountIds` property must be specified. | number | Y | |
 | accountIds | A list of account IDs to run the query with. A maximum of 5 account IDs is allowed. One of the this property or the `accountId` property must be specified. | array | Y | |
 | query | The NRQL query to run. | string | Y | |
+| multiAccountMode | The method used to query multiple accounts when multiple account IDs are specified. Valid values are `cross-account`, `per-account`, and `per-account-concurrent` | string | N | cross-account |
 
 ### Values File
 
@@ -962,7 +964,7 @@ Lambda options, see the section [Using the AWS Lambda Function](#using-the-aws-l
 **NOTE:** As mentioned above, multiple account IDs can be specified via the `-a`
 option by separating each ID with a `,`. You should _not_ do this with the
 `NEW_RELIC_ACCOUNT_ID` environment variable as this variable is the same as that
-use by [the New Relic Node.js agent](https://docs.newrelic.com/docs/apm/agents/nodejs-agent/getting-started/introduction-new-relic-nodejs/).
+used by [the New Relic Node.js agent](https://docs.newrelic.com/docs/apm/agents/nodejs-agent/getting-started/introduction-new-relic-nodejs/).
 
 ### Using the CLI
 

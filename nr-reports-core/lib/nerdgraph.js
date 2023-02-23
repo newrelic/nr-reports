@@ -204,10 +204,7 @@ class NerdgraphClient {
     }
 
     if (options.metadata) {
-      return nrql.results.length > 0 ? ({
-        metadata: nrql.metadata,
-        results: nrql.results,
-      }) : null
+      return nrql.results.length > 0 ? nrql : null
     }
 
     return nrql.results.length > 0 ? nrql.results : null
