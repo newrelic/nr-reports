@@ -129,7 +129,11 @@ class Engine {
               report,
               outputs,
             )
+          } else {
+            logger.warn(`No outputs generated for report ${report.name || index}.`)
           }
+
+          logger.verbose(`Completed report ${report.name || index}.`)
         }
       })
     } finally {
