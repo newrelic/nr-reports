@@ -120,7 +120,13 @@ function runMultiConcurrentNrql(context, report, accountIds) {
         return
       }
 
-      nrqlResults.push(data)
+      const { accountId, nrqlResult } = data
+
+      if (!nrqlResult) {
+        return
+      }
+
+      nrqlResults.push({ ...nrqlResult, accountId })
     })
   }
 
@@ -131,7 +137,7 @@ function runMultiConcurrentNrql(context, report, accountIds) {
       accountIds,
       DEFAULT_CONCURRENCY,
       async accountId => {
-        const result = await nerdgraph.runNrql(
+        const nrqlResult = await nerdgraph.runNrql(
           context.apiKey,
           [accountId],
           query,
@@ -141,7 +147,7 @@ function runMultiConcurrentNrql(context, report, accountIds) {
           },
         )
 
-        return { ...result, accountId }
+        return { accountId, nrqlResult }
       },
       [],
       handleResults,
@@ -194,11 +200,12 @@ async function runMultiNrql(context, report, accountIds) {
   return accountIds.reduce((accumulator, accountId, index) => {
     const { nrql } = results[0][`NrqlQuery${index}`].account
 
-    if (!nrql) {
+    if (!nrql || nrql.results.length === 0) {
       return accumulator
     }
 
     accumulator.push({ ...nrql, accountId })
+
     return accumulator
   }, [])
 }
@@ -235,6 +242,10 @@ async function runNrql(context, report) {
       metadata: true,
     },
   )
+
+  if (!result) {
+    return null
+  }
 
   return [result]
 }

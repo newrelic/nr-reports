@@ -37,6 +37,8 @@ Stuff and things.
 - [ ] Support global concurrency setting in `config`  section
 - [ ] Allow reports to throw exceptions rather than return null and
   use try/catch in engine.
+- [ ] Run reports concurrently
+- [ ] Run manifest reports by name
 
 ## Things
 
