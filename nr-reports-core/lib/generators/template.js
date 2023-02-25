@@ -42,8 +42,8 @@ async function renderPdf(browser, content, file) {
     .on('response', response => logger.verbose(`chrome-response: ${response.status()} ${response.url()}`))
     .on('requestfailed', request => logger.error(`chrome-requestfailed: ${request.failure()} ${request.url()}`))
 
-  logger.debug((log, format) => {
-    log(format('HTML content:'))
+  logger.debug(log => {
+    log('HTML content:')
     log(content)
   })
 
@@ -216,9 +216,9 @@ function configureNunjucks(apiKey, templatePath) {
     })
   }
 
-  logger.debug((log, format) => {
-    log(format('Final template path:'))
-    log(format(templatesPath))
+  logger.debug(log => {
+    log('Final template path:')
+    log(templatesPath)
   })
 
   const env = nunjucks.configure(templatesPath)

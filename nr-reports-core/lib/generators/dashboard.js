@@ -54,8 +54,8 @@ async function downloadDashboardPdf(apiKey, dashboard, downloadDir) {
 async function mergePdfs(dashboardPdfs, consolidatedPdf) {
   const merger = new PDFMerger()
 
-  logger.verbose((log, format) => {
-    log(format(`Merging ${dashboardPdfs.length} PDFs to ${consolidatedPdf}...`))
+  logger.verbose(log => {
+    log(`Merging ${dashboardPdfs.length} PDFs to ${consolidatedPdf}...`)
     dashboardPdfs.forEach(pdf => log(pdf))
   })
 

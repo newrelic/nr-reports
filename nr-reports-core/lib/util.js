@@ -125,8 +125,8 @@ class Context {
   }
 
   dump(msg) {
-    logger.debug((log, format) => {
-      log(format(msg))
+    logger.debug(log => {
+      log(msg)
       log(obfuscateContext(this))
     })
   }
@@ -200,8 +200,8 @@ function isYaml(fileName) {
 }
 
 function parseManifest(manifestFile, contents, defaultChannel = null) {
-  logger.debug((log, format) => {
-    log(format('Parsing manifest:'))
+  logger.debug(log => {
+    log('Parsing manifest:')
     log(contents)
   })
 
@@ -209,9 +209,9 @@ function parseManifest(manifestFile, contents, defaultChannel = null) {
     YAML.parse(contents)
   ) : JSON.parse(contents)
 
-  logger.debug((log, format) => {
-    log(format('Parsed manifest:'))
-    log(format(data))
+  logger.debug(log => {
+    log('Parsed manifest:')
+    log(data)
   })
 
   if (Array.isArray(data)) {
@@ -255,8 +255,8 @@ function parseManifest(manifestFile, contents, defaultChannel = null) {
 }
 
 function parseJaml(fileName, contents) {
-  logger.debug((log, format) => {
-    log(format('Parsing JSON/YML:'))
+  logger.debug(log => {
+    log('Parsing JSON/YML:')
     log(contents)
   })
 
@@ -264,9 +264,9 @@ function parseJaml(fileName, contents) {
     YAML.parse(contents)
   ) : JSON.parse(contents)
 
-  logger.debug((log, format) => {
-    log(format('Parsed JSON/YML:'))
-    log(format(data))
+  logger.debug(log => {
+    log('Parsed JSON/YML:')
+    log(data)
   })
 
   return data

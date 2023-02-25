@@ -21,18 +21,18 @@ function makeChannel(type, options) {
 }
 
 function parseChannels(options, channels) {
-  logger.debug((log, format) => {
-    log(format('Parsing channels:'))
-    log(format(channels))
+  logger.debug(log => {
+    log('Parsing channels:')
+    log(channels)
   })
 
   const data = channels.split(/[\s]*,[\s]*/u).map(
     type => makeChannel(type, options),
   )
 
-  logger.debug((log, format) => {
-    log(format('Parsed channels:'))
-    log(format(data))
+  logger.debug(log => {
+    log('Parsed channels:')
+    log(data)
   })
 
   return data

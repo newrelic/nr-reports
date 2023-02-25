@@ -19,6 +19,8 @@
     "nodemailer": "^6.7.2",
     "nunjucks": "^3.2.3",
     "pdf-merger-js": "^3.3.2",
+    "pino": "^8.11.0",
+    "pino-pretty": "^9.4.0",
     "puppeteer-core": "^12.0.1",
     "showdown": "^1.9.1",
     "yaml": "^2.2.1"

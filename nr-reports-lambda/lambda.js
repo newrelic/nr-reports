@@ -3,14 +3,29 @@
 const chromium = require('chrome-aws-lambda'),
   {
     rootLogger,
-    FileHandler,
     Engine,
     getEnv,
-    getOption,
     getSecretValue,
+    strToLower,
   } = require('nr-reports-core')
 
 const logger = rootLogger
+
+function configureLogger() {
+  const logLevel = strToLower(getEnv('LOG_LEVEL', 'info'))
+
+  if (logLevel === 'debug') {
+    rootLogger.level = 'trace'
+  } else if (logLevel === 'verbose') {
+    rootLogger.level = 'debug'
+  }
+}
+
+// The root logger is a global object so all invocations will share the
+// same one until the lambda is reloaded. So we need to configure it once
+// globally.
+
+configureLogger()
 
 async function getApiKey() {
   const apiKey = getEnv('USER_API_KEY'),
@@ -55,16 +70,12 @@ function lambdaResponse(
 }
 
 async function handler(event) {
-  const values = event.body || event,
-    logLevel = getOption(values, 'logLevel', 'LOG_LEVEL', 'INFO'),
-    logFile = getEnv('LOG_FILE')
+  const values = event.body || event
 
-  logger.isVerbose = logLevel === 'VERBOSE'
-  logger.isDebug = logLevel === 'DEBUG'
-
-  if (logFile) {
-    logger.handlers = new FileHandler(logFile)
-  }
+  rootLogger.debug(log => {
+    log('Lambda event:')
+    log(event)
+  })
 
   try {
     const engine = new Engine(
