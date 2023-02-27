@@ -87,9 +87,9 @@ class NerdgraphClient {
   }
 
   async post(apiKey, payload, options = { headers: {} }) {
-    logger.debug((log, format) => {
-      log(format('GraphQL POST:'))
-      log(format(payload))
+    logger.debug(log => {
+      log('GraphQL POST:')
+      log(payload)
     })
 
     const response = await fetch(this.url(options), {
@@ -102,9 +102,9 @@ class NerdgraphClient {
 
     const responseJson = await response.json()
 
-    logger.debug((log, format) => {
-      log(format('GraphQL Response:'))
-      log(format(responseJson))
+    logger.debug(log => {
+      log('GraphQL Response:')
+      log(responseJson)
     })
 
     if (responseJson.errors) {

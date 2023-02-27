@@ -15,9 +15,9 @@ const publishers = {
 async function publish(context, manifest, report, files) {
   const { channels } = report
 
-  logger.debug((log, format) => {
-    log(format(`Publishing ${files.length} files to the following channels:`))
-    log(format(channels))
+  logger.debug(log => {
+    log(`Publishing ${files.length} files to the following channels:`)
+    log(channels)
   })
 
   for (let index = 0; index < channels.length; index += 1) {
@@ -35,13 +35,13 @@ async function publish(context, manifest, report, files) {
 
     logger.verbose(`Publishing ${files.length} files to channel ${channel.type}...`)
 
-    logger.debug((log, format) => {
+    logger.debug(log => {
       publishContext.dump('Publish Context:')
 
-      log(format('Channel:'))
-      log(format(channel))
+      log('Channel:')
+      log(channel)
 
-      log(format('Files:'))
+      log('Files:')
       files.forEach(f => log(f))
     })
 

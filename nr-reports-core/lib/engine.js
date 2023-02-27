@@ -26,13 +26,13 @@ class Engine {
   }
 
   async run(args) {
-    logger.debug((log, format) => {
+    logger.debug(log => {
       this.context.dump('Invoked with context:')
 
-      log(format('Invoked with arguments:'))
+      log('Invoked with arguments:')
       log(args)
 
-      log(format('Invoked with environment:'))
+      log('Invoked with environment:')
       log(process.env)
     })
 
@@ -44,9 +44,9 @@ class Engine {
         this.context.defaultChannelType,
       )
 
-      logger.debug((log, format) => {
-        log(format('Final manifest:'))
-        log(format(manifest))
+      logger.debug(log => {
+        log('Final manifest:')
+        log(manifest)
       })
 
       if (!manifest || manifest.reports.length === 0) {
@@ -57,9 +57,9 @@ class Engine {
 
       logger.verbose(`Running ${manifest.reports.length} reports...`)
 
-      logger.debug((log, format) => {
-        log(format('Reports:'))
-        log(format(manifest.reports))
+      logger.debug(log => {
+        log('Reports:')
+        log(manifest.reports)
       })
 
       const reportIndex = manifest.reports.findIndex(shouldRender),
@@ -80,9 +80,9 @@ class Engine {
 
         const puppetArgs = await this.callbacks.getPuppetArgs()
 
-        logger.debug((log, format) => {
-          log(format('Launching browser using the following args:'))
-          log(format(puppetArgs))
+        logger.debug(log => {
+          log('Launching browser using the following args:')
+          log(puppetArgs)
         })
 
         context.browser = browser = await this.callbacks.openChrome(puppetArgs)

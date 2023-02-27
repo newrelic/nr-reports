@@ -25,9 +25,9 @@ async function writeFile(context, output, nrqlResults) {
     rows = []
   let singleFacet
 
-  logger.debug((log, format) => {
-    log(format('NRQL results:'))
-    log(format(nrqlResults))
+  logger.debug(log => {
+    log('NRQL results:')
+    log(nrqlResults)
   })
 
   // If there is more than one result, the query was run per account so

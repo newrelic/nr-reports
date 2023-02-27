@@ -1,90 +1,33 @@
 /* eslint-disable no-console */
 'use strict'
 
-const fs = require('fs')
-
-class FileHandler {
-  constructor(fileName) {
-    this.out = fs.createWriteStream(fileName, { autoClose: true })
-  }
-
-  log(msg) {
-    this.out.write(`${msg}\n`)
-  }
-
-  error(msg) {
-    this.out.write(`${msg}\n`)
-  }
-
-  warn(msg) {
-    this.out.write(`${msg}\n`)
-  }
-}
-
-function write(handlers, type, msg) {
-  handlers.forEach(handler => {
-    handler[type](msg)
-  })
-}
-
-function formatMessage(msg) {
-  if (typeof msg !== 'object') {
-    return msg
-  }
-
-  if (msg instanceof Error) {
-    if (msg.stack) {
-      return `\n${msg.stack}`
-    }
-
-    return msg.message
-  }
-
-  return `\n${JSON.stringify(msg, null, 2)}`
-}
+const pino = require('pino')
 
 class Logger {
   constructor(clazz, parentLogger = null) {
-    this.CLASS = clazz
-    this.children = []
-
     if (parentLogger) {
-      this.VERBOSE = parentLogger.VERBOSE
-      this.DEBUG = parentLogger.DEBUG
+      this.logger = parentLogger.logger.child({ component: clazz })
       parentLogger.children.push(this)
-      this.logHandlers = parentLogger.logHandlers
     } else {
-      this.VERBOSE = false
-      this.DEBUG = false
-      this.logHandlers = [console]
-    }
+      const pinoOpts = { name: clazz },
+        logPretty = process.env.LOG_PRETTY_PRINT
 
-    this.format = this.formatter()
-  }
+      if (logPretty) {
+        pinoOpts.transport = { target: 'pino-pretty' }
+      }
 
-  formatter() {
-    return msg => {
-      const now = new Date(),
-        message = formatMessage(msg)
-
-      return `[${now.toUTCString()}] ${this.CLASS} ${message}`
+      this.logger = pino(pinoOpts)
+      this.children = []
     }
   }
 
-  log(msg, type = 'log') {
+  log(msg, type = 'info') {
     if (typeof msg === 'function') {
-      const logHandlers = this.logHandlers
-
-      msg(message => write(logHandlers, type, message), this.format)
+      msg(message => this.logger[type](message))
       return
     }
 
-    if (!msg || msg.length === 0) {
-      write(this.logHandlers, type, '')
-      return
-    }
-
-    write(this.logHandlers, type, this.format(msg))
+    this.logger[type](msg)
   }
 
   error(msg) {
@@ -96,40 +39,20 @@ class Logger {
   }
 
   verbose(msg) {
-    // eslint-disable-next-line no-unused-expressions
-    (this.VERBOSE || this.DEBUG) && this.log(msg)
+    this.log(msg, 'debug')
   }
 
   debug(msg) {
-    // eslint-disable-next-line no-unused-expressions
-    this.DEBUG && this.log(msg)
+    this.log(msg, 'trace')
   }
 
-  set isVerbose(verbose) {
-    this.VERBOSE = verbose
-    if (this.children.length > 0) {
+  set level(lvl) {
+    this.logger.level = lvl
+    if (this.children) {
       this.children.forEach(child => {
-        child.VERBOSE = verbose
+        child.logger.level = lvl
       })
     }
-  }
-
-  set isDebug(debug) {
-    this.DEBUG = debug
-    if (this.children.length > 0) {
-      this.children.forEach(child => {
-        child.DEBUG = debug
-      })
-    }
-  }
-
-  set handlers(handlers) {
-    if (Array.isArray(handlers)) {
-      this.logHandlers = handlers
-      return
-    }
-
-    this.logHandlers = [handlers]
   }
 }
 
@@ -138,5 +61,4 @@ const rootLogger = new Logger('nr-reports')
 module.exports = {
   rootLogger,
   createLogger: clazz => (new Logger(clazz, rootLogger)),
-  FileHandler,
 }

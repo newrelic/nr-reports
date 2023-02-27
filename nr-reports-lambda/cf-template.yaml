@@ -102,8 +102,6 @@ Parameters:
     Description: Log level for the New Relic Lamba extension.
     Default: INFO
     AllowedValues:
-      - ERROR
-      - WARN
       - INFO
       - DEBUG
   #

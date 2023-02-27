@@ -78,10 +78,21 @@ async function main() {
       .describe('full-chrome', 'Don\'t launch Chromium in headless mode (useful for testing templates)'),
     argv = yarggles.argv,
     fullChrome = argv.fullChrome,
-    logLevel = getEnv('LOG_LEVEL', 'INFO')
+    logLevel = getEnv('LOG_LEVEL', 'info'),
+    useVerbose = getOption(argv, 'verbose', null, logLevel === 'verbose'),
+    useDebug = getOption(argv, 'debug', null, logLevel === 'DEBUG')
 
-  logger.isVerbose = getOption(argv, 'verbose', null, logLevel === 'VERBOSE')
-  logger.isDebug = getOption(argv, 'debug', null, logLevel === 'DEBUG')
+  if (useDebug) {
+    rootLogger.level = 'trace'
+  } else if (useVerbose) {
+    rootLogger.level = 'debug'
+  }
+
+  rootLogger.debug(log => {
+    log(`CLI args: ${process.argv.slice(2).join(' ')}`)
+    log('Yargs argv:')
+    log(argv)
+  })
 
   try {
     const engine = new Engine(

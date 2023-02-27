@@ -64,8 +64,8 @@ function ChartExtension(apiKey) {
       let query = null,
         options = {}
 
-      logger.debug((log, format) => {
-        log(format('Extension args:'))
+      logger.debug(log => {
+        log('Extension args:')
         log(args)
       })
 
