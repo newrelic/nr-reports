@@ -14,18 +14,17 @@ code, the source code can be found at [https://github.com/newrelic-experimental/
 
 **[dependencies](#dependencies)**
 
-- [Third Party Notices](#third-party-notices)
-  - [Content](#content)
-  - [dependencies](#dependencies)
-    - [aws-sdk](#aws-sdk)
-    - [node-fetch](#node-fetch)
-    - [nodemailer](#nodemailer)
-    - [nunjucks](#nunjucks)
-    - [pdf-merger-js](#pdf-merger-js)
-    - [puppeteer-core](#puppeteer-core)
-    - [showdown](#showdown)
-  - [devDependencies](#devdependencies)
-    - [puppeteer](#puppeteer)
+* [aws-sdk](#aws-sdk)
+* [csv-stringify](#csv-stringify)
+* [node-fetch](#node-fetch)
+* [nodemailer](#nodemailer)
+* [nunjucks](#nunjucks)
+* [pdf-merger-js](#pdf-merger-js)
+* [pino-pretty](#pino-pretty)
+* [pino](#pino)
+* [puppeteer-core](#puppeteer-core)
+* [showdown](#showdown)
+* [yaml](#yaml)
 
 **[devDependencies](#devDependencies)**
 
@@ -36,7 +35,7 @@ code, the source code can be found at [https://github.com/newrelic-experimental/
 
 ### aws-sdk
 
-This product includes source derived from [aws-sdk](https://github.com/aws/aws-sdk-js) ([v2.1060.0](https://github.com/aws/aws-sdk-js/tree/v2.1060.0)), distributed under the [Apache-2.0 License](https://github.com/aws/aws-sdk-js/blob/v2.1060.0/LICENSE.txt):
+This product includes source derived from [aws-sdk](https://github.com/aws/aws-sdk-js) ([v2.1092.0](https://github.com/aws/aws-sdk-js/tree/v2.1092.0)), distributed under the [Apache-2.0 License](https://github.com/aws/aws-sdk-js/blob/v2.1092.0/LICENSE.txt):
 
 ```
 
@@ -244,6 +243,35 @@ This product includes source derived from [aws-sdk](https://github.com/aws/aws-s
 
 ```
 
+### csv-stringify
+
+This product includes source derived from [csv-stringify](https://github.com/adaltas/node-csv) ([v6.2.4](https://github.com/adaltas/node-csv/tree/v6.2.4)), distributed under the [MIT License](https://github.com/adaltas/node-csv/blob/v6.2.4/LICENSE):
+
+```
+The MIT License (MIT)
+
+Copyright (c) 2010 Adaltas
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+```
+
 ### node-fetch
 
 This product includes source derived from [node-fetch](https://github.com/bitinn/node-fetch) ([v2.6.7](https://github.com/bitinn/node-fetch/tree/v2.6.7)), distributed under the [MIT License](https://github.com/bitinn/node-fetch/blob/v2.6.7/LICENSE.md):
@@ -333,12 +361,75 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ### pdf-merger-js
 
-This product includes source derived from [pdf-merger-js](https://github.com/nbesli/pdf-merger-js) ([v3.3.2](https://github.com/nbesli/pdf-merger-js/tree/v3.3.2)), distributed under the [MIT License](https://github.com/nbesli/pdf-merger-js/blob/v3.3.2/LICENSE):
+This product includes source derived from [pdf-merger-js](https://github.com/nbesli/pdf-merger-js) ([v3.4.0](https://github.com/nbesli/pdf-merger-js/tree/v3.4.0)), distributed under the [MIT License](https://github.com/nbesli/pdf-merger-js/blob/v3.4.0/LICENSE):
 
 ```
 MIT License
 
 Copyright (c) 2018 nbesli
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+```
+
+### pino-pretty
+
+This product includes source derived from [pino-pretty](https://github.com/pinojs/pino-pretty) ([v9.4.0](https://github.com/pinojs/pino-pretty/tree/v9.4.0)), distributed under the [MIT License](https://github.com/pinojs/pino-pretty/blob/v9.4.0/LICENSE):
+
+```
+The MIT License (MIT)
+
+Copyright (c) 2019 the Pino team
+
+Pino team listed at https://github.com/pinojs/pino#the-team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+```
+
+### pino
+
+This product includes source derived from [pino](https://github.com/pinojs/pino) ([v8.11.0](https://github.com/pinojs/pino/tree/v8.11.0)), distributed under the [MIT License](https://github.com/pinojs/pino/blob/v8.11.0/LICENSE):
+
+```
+The MIT License (MIT)
+
+Copyright (c) 2016-2019 Matteo Collina, David Mark Clements and the Pino contributors
+
+Pino contributors listed at https://github.com/pinojs/pino#the-team and in
+the README file.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -612,12 +703,33 @@ software, even if advised of the possibility of such damage.
 
 ```
 
+### yaml
+
+This product includes source derived from [yaml](https://github.com/eemeli/yaml) ([v2.2.1](https://github.com/eemeli/yaml/tree/v2.2.1)), distributed under the [ISC License](https://github.com/eemeli/yaml/blob/v2.2.1/LICENSE):
+
+```
+Copyright Eemeli Aro <eemeli@gmail.com>
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice
+and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+
+```
+
 
 ## devDependencies
 
 ### puppeteer
 
-This product includes source derived from [puppeteer](https://github.com/puppeteer/puppeteer) ([v13.1.1](https://github.com/puppeteer/puppeteer/tree/v13.1.1)), distributed under the [Apache-2.0 License](https://github.com/puppeteer/puppeteer/blob/v13.1.1/LICENSE):
+This product includes source derived from [puppeteer](https://github.com/puppeteer/puppeteer) ([v13.5.1](https://github.com/puppeteer/puppeteer/tree/v13.5.1)), distributed under the [Apache-2.0 License](https://github.com/puppeteer/puppeteer/blob/v13.5.1/LICENSE):
 
 ```
 

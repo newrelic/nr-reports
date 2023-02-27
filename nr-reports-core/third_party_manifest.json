@@ -1,22 +1,36 @@
 {
-  "lastUpdated": "Thu Feb 24 2022 14:02:57 GMT-0500 (Eastern Standard Time)",
+  "lastUpdated": "Mon Feb 27 2023 08:48:25 GMT-0500 (Eastern Standard Time)",
   "projectName": "New Relic Reports",
   "projectUrl": "https://github.com/newrelic-experimental/nr-reports",
   "includeOptDeps": false,
   "includeDev": true,
   "dependencies": {
-    "aws-sdk@2.1060.0": {
+    "aws-sdk@2.1092.0": {
       "name": "aws-sdk",
-      "version": "2.1060.0",
+      "version": "2.1092.0",
       "range": "^2.1060.0",
       "licenses": "Apache-2.0",
       "repoUrl": "https://github.com/aws/aws-sdk-js",
-      "versionedRepoUrl": "https://github.com/aws/aws-sdk-js/tree/v2.1060.0",
+      "versionedRepoUrl": "https://github.com/aws/aws-sdk-js/tree/v2.1092.0",
       "licenseFile": "node_modules/aws-sdk/LICENSE.txt",
-      "licenseUrl": "https://github.com/aws/aws-sdk-js/blob/v2.1060.0/LICENSE.txt",
+      "licenseUrl": "https://github.com/aws/aws-sdk-js/blob/v2.1092.0/LICENSE.txt",
       "licenseTextSource": "file",
       "publisher": "Amazon Web Services",
       "url": "https://aws.amazon.com/"
+    },
+    "csv-stringify@6.2.4": {
+      "name": "csv-stringify",
+      "version": "6.2.4",
+      "range": "^6.2.4",
+      "licenses": "MIT",
+      "repoUrl": "https://github.com/adaltas/node-csv",
+      "versionedRepoUrl": "https://github.com/adaltas/node-csv/tree/v6.2.4",
+      "licenseFile": "node_modules/csv-stringify/LICENSE",
+      "licenseUrl": "https://github.com/adaltas/node-csv/blob/v6.2.4/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "David Worms",
+      "email": "david@adaltas.com",
+      "url": "https://www.adaltas.com"
     },
     "node-fetch@2.6.7": {
       "name": "node-fetch",
@@ -55,17 +69,43 @@
       "publisher": "James Long",
       "email": "longster@gmail.com"
     },
-    "pdf-merger-js@3.3.2": {
+    "pdf-merger-js@3.4.0": {
       "name": "pdf-merger-js",
-      "version": "3.3.2",
+      "version": "3.4.0",
       "range": "^3.3.2",
       "licenses": "MIT",
       "repoUrl": "https://github.com/nbesli/pdf-merger-js",
-      "versionedRepoUrl": "https://github.com/nbesli/pdf-merger-js/tree/v3.3.2",
+      "versionedRepoUrl": "https://github.com/nbesli/pdf-merger-js/tree/v3.4.0",
       "licenseFile": "node_modules/pdf-merger-js/LICENSE",
-      "licenseUrl": "https://github.com/nbesli/pdf-merger-js/blob/v3.3.2/LICENSE",
+      "licenseUrl": "https://github.com/nbesli/pdf-merger-js/blob/v3.4.0/LICENSE",
       "licenseTextSource": "file",
       "publisher": "nbesli"
+    },
+    "pino-pretty@9.4.0": {
+      "name": "pino-pretty",
+      "version": "9.4.0",
+      "range": "^9.4.0",
+      "licenses": "MIT",
+      "repoUrl": "https://github.com/pinojs/pino-pretty",
+      "versionedRepoUrl": "https://github.com/pinojs/pino-pretty/tree/v9.4.0",
+      "licenseFile": "node_modules/pino-pretty/LICENSE",
+      "licenseUrl": "https://github.com/pinojs/pino-pretty/blob/v9.4.0/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "James Sumners",
+      "email": "james.sumners@gmail.com"
+    },
+    "pino@8.11.0": {
+      "name": "pino",
+      "version": "8.11.0",
+      "range": "^8.11.0",
+      "licenses": "MIT",
+      "repoUrl": "https://github.com/pinojs/pino",
+      "versionedRepoUrl": "https://github.com/pinojs/pino/tree/v8.11.0",
+      "licenseFile": "node_modules/pino/LICENSE",
+      "licenseUrl": "https://github.com/pinojs/pino/blob/v8.11.0/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "Matteo Collina",
+      "email": "hello@matteocollina.com"
     },
     "puppeteer-core@12.0.1": {
       "name": "puppeteer-core",
@@ -90,18 +130,31 @@
       "licenseUrl": "https://github.com/showdownjs/showdown/blob/v1.9.1/license.txt",
       "licenseTextSource": "file",
       "publisher": "Estevão Santos"
+    },
+    "yaml@2.2.1": {
+      "name": "yaml",
+      "version": "2.2.1",
+      "range": "^2.2.1",
+      "licenses": "ISC",
+      "repoUrl": "https://github.com/eemeli/yaml",
+      "versionedRepoUrl": "https://github.com/eemeli/yaml/tree/v2.2.1",
+      "licenseFile": "node_modules/yaml/LICENSE",
+      "licenseUrl": "https://github.com/eemeli/yaml/blob/v2.2.1/LICENSE",
+      "licenseTextSource": "file",
+      "publisher": "Eemeli Aro",
+      "email": "eemeli@gmail.com"
     }
   },
   "devDependencies": {
-    "puppeteer@13.1.1": {
+    "puppeteer@13.5.1": {
       "name": "puppeteer",
-      "version": "13.1.1",
+      "version": "13.5.1",
       "range": "^13.0.1",
       "licenses": "Apache-2.0",
       "repoUrl": "https://github.com/puppeteer/puppeteer",
-      "versionedRepoUrl": "https://github.com/puppeteer/puppeteer/tree/v13.1.1",
+      "versionedRepoUrl": "https://github.com/puppeteer/puppeteer/tree/v13.5.1",
       "licenseFile": "node_modules/puppeteer/LICENSE",
-      "licenseUrl": "https://github.com/puppeteer/puppeteer/blob/v13.1.1/LICENSE",
+      "licenseUrl": "https://github.com/puppeteer/puppeteer/blob/v13.5.1/LICENSE",
       "licenseTextSource": "file",
       "publisher": "The Chromium Authors"
     }
