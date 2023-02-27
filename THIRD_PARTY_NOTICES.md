@@ -17,15 +17,11 @@ code, the source code can be found at [https://github.com/newrelic-experimental/
 
 **[devDependencies](#devDependencies)**
 
-- [Third Party Notices](#third-party-notices)
-  - [Content](#content)
-  - [dependencies](#dependencies)
-  - [devDependencies](#devdependencies)
-    - [eslint-config-eslint](#eslint-config-eslint)
-    - [eslint-plugin-disable](#eslint-plugin-disable)
-    - [eslint-plugin-jsdoc](#eslint-plugin-jsdoc)
-    - [eslint-plugin-node](#eslint-plugin-node)
-    - [eslint](#eslint)
+* [eslint-config-eslint](#eslint-config-eslint)
+* [eslint-plugin-disable](#eslint-plugin-disable)
+* [eslint-plugin-jsdoc](#eslint-plugin-jsdoc)
+* [eslint-plugin-node](#eslint-plugin-node)
+* [eslint](#eslint)
 
 
 ## dependencies
