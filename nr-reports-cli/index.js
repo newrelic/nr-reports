@@ -80,7 +80,7 @@ async function main() {
     fullChrome = argv.fullChrome,
     logLevel = getEnv('LOG_LEVEL', 'info'),
     useVerbose = getOption(argv, 'verbose', null, logLevel === 'verbose'),
-    useDebug = getOption(argv, 'debug', null, logLevel === 'DEBUG')
+    useDebug = getOption(argv, 'debug', null, logLevel === 'debug')
 
   if (useDebug) {
     rootLogger.level = 'trace'
