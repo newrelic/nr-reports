@@ -20,7 +20,7 @@ Stuff and things.
 - [ ] Specify time period for dashboard reports
 - [ ] Specify time period for query reports
 - [ ] Community report repository
-- [ ] Add Pino
+- [X] Add Pino
 - [ ] Add New Relic agent support to CLI
 - [ ] Add slack channel channel
 - [ ] Push reports to nerdstorage, generic nerdlet to show reports in nerdstorage
@@ -39,6 +39,9 @@ Stuff and things.
   use try/catch in engine.
 - [ ] Run reports concurrently
 - [ ] Run manifest reports by name
+- [ ] Support `multiAccountMode` on `nrql` tag
+- [ ] Add stdout as a channel so content can be piped to anything.
+  Would need to add a way to silence any logging.
 
 ## Things
 

@@ -9,7 +9,9 @@
   "extends": [
     "eslint"
   ],
-  "plugins": [ "disable" ],
+  "plugins": [
+    "disable"
+  ],
   "rules": {
     "quotes": ["error", "single"],
     "indent": ["error", 2],
@@ -26,6 +28,26 @@
       "files": [".js", "**/*.js"],
       "settings": {
         "disable/plugins": ["jsdoc"]
+      }
+    },
+    {
+      "files": ["*.md", "**/*.md"],
+      "parser": "eslint-plugin-markdownlint/parser",
+      "extends": ["plugin:markdownlint/recommended"],
+      "rules": {
+        "markdownlint/md013": [
+          "error", {
+            "code_blocks": false,
+            "tables": false,
+            "headings": false
+          }
+        ],
+        "markdownlint/md024": [
+          "error", {
+            "siblings_only": true
+          }
+        ],
+        "max-len": "off"
       }
     }
   ]
