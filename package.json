@@ -20,6 +20,7 @@
     "eslint-config-eslint": "^7.0.0",
     "eslint-plugin-disable": "^2.0.3",
     "eslint-plugin-jsdoc": "^37.1.0",
+    "eslint-plugin-markdownlint": "^0.4.0",
     "eslint-plugin-node": "^11.1.0"
   }
 }

@@ -1,3 +1,5 @@
+# New Relic Reports
+
 [![New Relic Experimental header](https://github.com/newrelic/opensource-website/raw/master/src/images/categories/Experimental.png)](https://opensource.newrelic.com/oss-category/#new-relic-experimental)
 
 ![GitHub forks](https://img.shields.io/github/forks/newrelic-experimental/nr-reports?style=social)
@@ -9,16 +11,10 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/newrelic-experimental/nr-reports)
 ![GitHub Release Date](https://img.shields.io/github/release-date/newrelic-experimental/nr-reports)
 
-
 ![GitHub issues](https://img.shields.io/github/issues/newrelic-experimental/nr-reports)
 ![GitHub issues closed](https://img.shields.io/github/issues-closed/newrelic-experimental/nr-reports)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/newrelic-experimental/nr-reports)
 ![GitHub pull requests closed](https://img.shields.io/github/issues-pr-closed/newrelic-experimental/nr-reports)
-
-# New Relic Reports
-
-A framework for automating the generation and delivery of custom New Relic
-reports.
 
 ## Overview
 
@@ -32,29 +28,11 @@ The New Relic Reports engine supports several different report types.
 
 #### Template Reports
 
-Template reports use the [Nunjucks](https://mozilla.github.io/nunjucks/)
-template engine to process user defined templates. A template is just text
-content that contains special "instructions" that can be processed by a template
-engine to translate the original content into new content by doing things like
-executing logic or dynamically replacing variables.
-
-Templates are often written in HTML or Markdown but the template engine doesn't
-care about the content type. It just looks for instructions it recognizes and
-executes those instructions. Custom extensions are provided that make it easy to
-integrate New Relic charts and data in the report. By default, report output is
-rendered into a PDF using headless Chrome. But you can also tell the New Relic
-Reports engine not to do so. You might do this if you are producing a CSV file
-or you want to send raw HTML instead of rendered HTML.
-
-![User-Defined Template Warning](https://img.shields.io/badge/User_Defined_Template_Warning-Never_run_untrusted_templates!-critical?style=for-the-badge&labelColor=orange)
-
-Nunjucks does not sandbox execution so **it is not safe to run untrusted
-templates or inject user-defined content into template definitions**. Doing so
-can expose attack vectors for accessing sensitive data and remote code
-execution.
-
-See [this issue](https://github.com/mozilla/nunjucks-docs/issues/17)
-for more information.
+Template reports provide a mechanism for building custom, content-rich reports
+containing user defined content alongside New Relic charts and data. Template
+reports are typically built with HTML or Markdown and produce PDF output, but
+this is not a requirement. Template reports can be built from any text-based
+content and produce any text-based output.
 
 #### Dashboard Reports
 
@@ -277,7 +255,7 @@ Now, run the report using the following command, noting the addition of the `-v`
 option that is used to specify the path to the values file.
 
 ```bash
-./nr-reports-cli/bin/nr-reports.sh -n hello-world.html -v include/hello-world.json 
+./nr-reports-cli/bin/nr-reports.sh -n hello-world.html -v include/hello-world.json
 ```
 
 Now there should be a new PDF file in the current directory called
@@ -335,13 +313,16 @@ Let's see how that works by running a simple query report to show the average
 latency of all APM services in your account grouped by application name and URL
 using the following NRQL.
 
-`SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri AS 'URL'`
+```text
+SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri AS 'URL'`
+```
 
 To do that, run the following command, replacing the string `1234567` with your
 account ID.
 
 ```bash
 ./nr-reports-cli/bin/nr-reports.sh -a 1234567 -q "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri AS 'URL'"
+```
 
 Now there should be a new CSV file in the current directory called
 `query-report-[DATE_TIME].csv` where `[DATE_TIME]` is a date and time string
@@ -465,16 +446,61 @@ provided mechanisms for automating the generation and delivery of reports. See
 
 ## Usage
 
-### Templates
+### Template Reports
 
-Template reports are created from templates. Templates are stored in template
-files. Template files are plain text documents containing text mixed with
-Nunjucks template expressions. Template expressions provide a way to embed
-instructions into a text file. These instructions are evaluated when the text
-file is passed through [the Nunjucks template "engine"](https://mozilla.github.io/nunjucks/).
-This allows template authors to generate dynamic output by embedding logic and
-other types of expressions into the text file. Here is a very basic template
-file example.
+Template reports are created from [templates](#templates). Templates are stored
+in template files. Template files are plain text documents containing text mixed
+with template "instructions". Template "instructions" are written using a
+special syntax that is understood by the [the Nunjucks template "engine"](https://mozilla.github.io/nunjucks/).
+Reports are produced from a template file by passing the content of the file
+through the template engine. The template engine evaluates the "instructions" to
+transform the original content into the raw report output. By default, the raw
+output is rendered using a headless Chrome instance and saved as a PDF. But you
+can also tell the New Relic Reports engine not to do so. You might do this if
+you are producing a CSV file or you want to deliver raw HTML instead of rendered
+HTML.
+
+The following JSON shows an example of a template report definition in a
+[manifest file](#manifest-file). You might recognize this from the
+section [Update the example manifest file](#update-the-example-manifest-file)
+in the [Getting Started](#getting-started) tutorial.
+
+```json
+  {
+    "name": "hello-world",
+    "templateName": "hello-world.html",
+    "parameters": {
+      "accountId": 1234567,
+      "appName": "Shop Service"
+    },
+    "channels": []
+  }
+```
+
+When the reporting engine runs this report, it will invoke the templating
+engine with the template name `hello-world.html` and the parameters `accountId`
+set to `1234567` and `appName` set to `Shop Service`. The template output will
+be rendered to a PDF file named `hello-world.pdf` using a headless Chrome
+instance and this file will be copied to the current working directory since the
+default channel is the [`file`](#file-channel) channel and no `destDir`
+channel parameter is set.
+
+See the section [Template Report Properties](#template-report-properties) for
+more information on the available dashboard report properties.
+
+![User-Defined Template Warning](https://img.shields.io/badge/User_Defined_Template_Warning-Never_run_untrusted_templates!-critical?style=for-the-badge&labelColor=orange)
+
+Nunjucks does not sandbox execution so **it is not safe to run untrusted
+templates or inject user-defined content into template definitions**. Doing so
+can expose attack vectors for accessing sensitive data and remote code
+execution.
+
+See [this issue](https://github.com/mozilla/nunjucks-docs/issues/17)
+for more information.
+
+#### Templates
+
+Here is a very basic template.
 
 ```text
 {% for fruit in ['banana', 'orange'] -%}
@@ -482,8 +508,22 @@ I want a {{ fruit }}.
 {% endfor -%}
 ```
 
-When the above template is passed through the Nunjucks template engine, it will
-produce the following output.
+This template contains three instructions.
+
+1. The text in between the first `{%` and `%}` pair is an example of a
+   [tag](http://mozilla.github.io/nunjucks/templating.html#tags). In particular,
+   this is the opening of the [for tag](http://mozilla.github.io/nunjucks/templating.html#for).
+1. The text `{{ fruit }}` is an example of a [variable lookup](http://mozilla.github.io/nunjucks/templating.html#variables).
+1. The text in between the second `{%` and `%}` pair signals the closing of the
+   `for` tag.
+
+The `for` tag defines a loop. Any content (including other instructions) in
+between the text `for` and the text `endfor` will be evaluated for each item
+of the loop. In this case, the loop will be executed twice. Once for each value
+of the list specified by the expression `['banana', 'orange']`. Because the
+string `I want a {{ fruit }}.` is placed in between the opening and closing of
+the `for` tag, the following output will be produced when this template is
+passed through the Nunjucks template engine.
 
 ```text
 I want a banana.
@@ -491,22 +531,87 @@ I want a orange.
 
 ```
 
-Nunjucks does not care about the "type" of text file passed to it. For example,
-the above file contains just simple plain text. It could just as easily
-contain HTML or Markdown or XML. As long as it is a text file, Nunjucks will
-scan for template expressions and attempt to process them.
+Notice that the final output does _not_ include any Nunjucks "instructions". All
+instructions have been replaced with the content produced as a result of
+evaluating each instruction.
 
-That said, with the exception of template files with the extension `.md`,
-the reporting engine passes the template file directly to the Nunjucks engine.
-Template files with a `.md` extension are assumed to contain Markdown and are
-converted to HTML using [the `showdown` module](https://github.com/showdownjs/showdown)
-prior to being processed by the Nunjucks engine.
+See the section [Templating](http://mozilla.github.io/nunjucks/templating.html)
+of the Nunjucks documentation for detailed information on how to build
+templates.
 
-An example template file is provided in both [HTML format](./examples/golden-signals.html)
-and [Markdown format](./examples/golden-signals.md). Use these files as samples
-for how to create your own template files. See
-[the Nunjucks documentation](https://mozilla.github.io/nunjucks/templating.html)
-for more information on the Nunjucks syntax.
+#### Template Content
+
+Template reports are typically built with HTML or Markdown and produce PDF
+output. By default, the reporting engine assumes the content in the template is
+HTML. It will process the content of the template by passing it through the
+template engine, load the content into a headless Chrome instance for rendering,
+and save the rendered page as a PDF file. The PDF file is then distributed to
+all [channels](#channels) defined for the report.
+
+Following is an example of an HTML template. You might recognize this from the
+section [Update the example template](#update-the-example-template) in the
+[Getting Started](#getting-started) tutorial.
+
+```html
+{% extends "base/report.html" %}
+
+{% block content %}
+<h1>My Application Throughput</h1>
+<p>
+    This is our application throughput for last week.
+</p>
+<div>
+    {% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
+        type="AREA",
+        accountId=1234567
+    %}{% endchart %}
+</div>
+{% endblock %}
+```
+
+The reporting engine also supports building templates in Markdown. Prior to
+processing and rendering a template, the reporting engine will convert the
+Markdown to HTML if either the [`isMarkdown` flag](#template-report-properties)
+is present and set to `true` in the report definition or if the template name
+has a `.md` extension.
+
+Following is an example of a Markdown template that will produce something very
+similar to the example HTML template above.
+
+```markdown
+# My Application Throughput
+
+This is our application throughput for last week.
+
+{% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
+   type="AREA",
+   accountId=1234567
+%}{% endchart %}
+```
+
+HTML and Markdown are not the only supported content types. In fact, template
+reports can be built from any text-based content and produce any text-based
+output. A report could produce CSV, XML, or JSON output. For example, following
+is a template that produces a CSV file from the result of running a NRQL query
+using [the `nrql` tag](#the-nrql-tag).
+
+```nunjucks
+App Name,Duration
+{%- nrql "SELECT average(duration) AS 'duration' FROM Transaction FACET appName",
+  accountId=1234567
+-%}
+   {%- for item in result %}
+{{ item.facet[0] }},{{ item.duration }}
+   {%- endfor -%}
+{%- endnrql -%}
+
+```
+
+In the above case, the output from the template engine is probably not meant to
+be rendered in a browser. The `render` report parameter is provided to allow you
+to inform the reporting engine to skip the rendering step. In some cases, this
+may even be desirable for HTML-based templates. For example, if the output is
+meant to be included inline in an email or sent as a Slack message.
 
 #### Template Resolution
 
@@ -553,7 +658,187 @@ directory are `git` ignored. To include files in this directory in `git`, either
 remove the line `include/*` from the [`gitignore`](./gitignore) file or add
 negation patterns for the files to be committed.
 
-### Template Parameters
+#### Template Extensions
+
+New Relic Reports provides several [custom tags](http://mozilla.github.io/nunjucks/api.html#custom-tags)
+that make it easy to integrate New Relic charts and data in your reports.
+
+##### The `chart` Tag
+
+The `chart` tag is used to include a [New Relic chart](https://docs.newrelic.com/docs/query-your-data/explore-query-data/use-charts/use-your-charts/)
+in a report. It can be used with an HTML or markdown based template. For an HTML
+based template, the `chart` tag will inject an HTML `<img />` tag into the
+generated output. For a markdown based template, the `chart` tag will inject
+[the markdown to create an image](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#images)
+into the generated output.
+
+For example, recall [the snippet from the example template](#update-the-example-template)
+in the [Getting Started](#getting-started) tutorial.
+
+```nunjucks
+{% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
+   type="AREA",
+   accountId=1234567
+%}{% endchart %}
+```
+
+When the template engine evaluates this tag, it will invoke [the `chart`
+extension](./nr-reports-core/lib/extensions/chart-extension.js). The `chart`
+extension retrieves a static chart URL for the given account ID, NRQL, and chart
+options using the following GraphQL query.
+
+```graphql
+{
+   actor {
+      account(id: $accountId) {
+         nrql(query: $query, timeout: $timeout) {
+            staticChartUrl(chartType: $chartType, format: $chartFormat, width: $chartWidth, height: $chartHeigh)
+         }
+      }
+   }
+}
+```
+
+The `chart` extension takes the returned URL and injects the appropriate markup
+to display the chart image in the report.
+
+Unless the template contains markdown, the `chart` tag is replaced with an
+HTML `img` tag with the `src` value set to the static chart URL, like the one
+below.
+
+```html
+<img src="STATIC_CHART_URL" ... />
+```
+
+For markdown, the `chart` tag is replaced with the markdown to show an image,
+like below.
+
+```markdown
+![](STATIC_CHART_URL)
+```
+
+###### `chart` Tag Options
+
+The `chart` tag supports the following options.
+
+| Option Name | Description | Type | Required | Default |
+| --- | --- | --- | --- | --- |
+| accountId | An account ID to run the query with | Y | |
+| query or first argument | The NRQL query to run | string | Y | |
+| type | The chart type. A valid value for the `chartType` argument of the `staticChartUrl` field of the `NrdbResultContainer` GraphQL type, e.g. `AREA`, `LINE`, etc. | string | N | LINE |
+| format | The chart format. A valid value for the `format` argument of the `staticChartUrl` field of the `NrdbResultContainer` GraphQL type, e.g. `PNG` or `PDF`. | string | N | PNG |
+| width | The width of the image | number | N | 640 |
+| height | The height of the image | number | N | 480 |
+| class | CSS class name(s) to add to the HTML `img` tag. Unused for markdown templates. | string | N | '' |
+
+**NOTE:** The NRQL query can either be specified as the first argument after the
+opening of the `chart` tag as shown in the example above or using the `query`
+keyword argument as shown below.
+
+```nunjucks
+{% chart
+   accountId=1234567,
+   query="FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
+   type="AREA"
+%}{% endchart %}
+```
+
+##### The `nrql` Tag
+
+The `nrql` tag is used to run a NRQL query. The results of the query are stored
+in a template variable for further processing by your templates. We saw
+[an example of this in the Template Content section](#template-content) section.
+It is repeated below for convenience.
+
+```nunjucks
+App Name,Duration
+{%- nrql "SELECT average(duration) AS 'duration' FROM Transaction FACET appName",
+  accountId=1234567
+-%}
+   {%- for item in result %}
+{{ item.facet[0] }},{{ item.duration }}
+   {%- endfor -%}
+{%- endnrql -%}
+
+```
+
+When the template engine evaluates the `nrql` tag, it will invoke [the `nrql`
+extension](./nr-reports-core/lib/extensions/nrql-extension.js). The `nrql`
+extension runs the given NRQL query using the given account ID(s) using the
+following GraphQL query.
+
+```graphql
+{
+   actor {
+      nrql(accounts: $accountIds, query: $query, timeout: $timeout) {
+         results
+         metadata {
+            facets
+            eventTypes
+         }
+      }
+   }
+}
+```
+
+The extension stores an object containing the `results` and `metadata` fields
+into the variable with the name specified by the `var` option on the `nrql`
+tag or into a variable named `result`. The `results` field is an array of
+objects whose structure matches the query submitted. The `facets` field is an
+array containing the names of the facets in the query submitted and the
+`eventTypes` field is an array of the names of the event types in the query
+submitted. Following is an example JSON object that would be returned as the
+result of running the query
+`SELECT average(cpuPercent) FROM SystemSample FACET hostname`.
+
+```json
+{
+   "metadata": {
+      "eventTypes": [
+         "SystemSample"
+      ],
+      "facets": [
+         "hostname"
+      ]
+   },
+   "results": [
+      {
+         "facet": "my.local.test",
+         "average.cpuPercent": 1.5432042784889708,
+         "hostname": "my.local.test"
+      }
+   ]
+}
+```
+
+For more information on the structure of these fields, see the type definition
+for the `CrossResultsNrdbResultContainer` type at `https://api.newrelic.com/graphiql`.
+
+###### `nrql` Tag Options
+
+The `nrql` tag supports the following options.
+
+| Option Name | Description | Type | Required | Default |
+| --- | --- | --- | --- | --- |
+| accountId | Account ID to run the query with. Multiple account IDs an be specified separated by commas. One of the this option or the `accountIds` option must be specified. | Y | |
+| accountIds | A list of account IDs to run the query with. A maximum of 5 account IDs is allowed. One of the this option or the `accountId` option must be specified. | array | Y | |
+| query or first argument | The NRQL query to run. This option supports [template parameter](#template-parameters) interpolation. That is, the query string is interpolated using the template engine prior to being run. | string | Y | |
+| var | The name of the variable to hold the query result | string | N | result |
+
+**NOTE:** The NRQL query can either be specified as the first argument after the
+opening of the `chart` tag as shown in the example above or using the `query`
+keyword argument as shown below.
+
+```nunjucks
+{% nrql
+   accountId=1234567,
+   query="FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
+%}
+<h2>{{ result.facet[0] }}<h2>
+{% endnrql %}
+```
+
+#### Template Parameters
 
 Template parameters are key-value pairs that are passed to the template engine
 when processing a template. Template parameters are used to customize the
@@ -609,7 +894,7 @@ Nice to meet you, {{ your_name }}.
 {%- endif %}
 ```
 
-#### Specifying template parameters
+##### Specifying template parameters
 
 Template parameters are specified as a [JSON](https://www.json.org/json-en.html)
 or [YAML](https://yaml.org/) object. For example, the following JSON specifies
@@ -638,6 +923,182 @@ parameters to use as follows.
     handler function, add all properties from the `body` property to the set.
   * If a `body` property is _not_ present in the `event` object passed to the
     handler function, add all properties from the `event` object to the set.
+
+### Dashboard Reports
+
+Dashboard reports provide a way to easily capture PDFs of one or more
+dashboards. When more than one dashboard GUIDs is specified, each dashboard is
+captured as a separate PDF file. These files can optionally be combined into a
+single file.
+
+The following JSON shows an example of a dashboard report definition in a
+[manifest file](#manifest-file). You might recognize this from the
+section [Update the example manifest file](#update-the-example-manifest-file)
+in the [Getting Started](#getting-started) tutorial.
+
+```json
+  {
+    "name": "performance-summary-dashboard",
+    "dashboards": [
+      "ABCDEF123456"
+    ],
+    "channels": []
+  }
+```
+
+When the reporting engine runs this report, it will execute the
+`dashboardCreateSnapshotUrl` GraphQL mutation with the GUID `ABCDEF123456` in
+order to create a URL to download a PDF snapshot of the dashboard with the given
+GUID. It will then download the PDF to a file named `dashboard-ABCDEF123456.pdf`
+since no `outputFileName` is specified. The PDF file will be copied to the
+current working directory since the default channel is the
+[`file`](#file-channel) channel and no `destDir` channel parameter is set.
+
+See the section [Dashboard Report Properties](#dashboard-report-properties) for
+more information on the available dashboard report properties.
+
+### Query Reports
+
+Query reports provide a simple way to run a NRQL query and export the results of
+the query to a file. By default, the results are exported to a CSV file.
+
+The following JSON shows an example of a query report definition in a
+[manifest file](#manifest-file) that will run the example query from the
+section [Run a query report](#run-a-query-report) in the
+[Getting Started](#getting-started) tutorial.
+
+```yaml
+{
+   "name": "transactions"
+   "accountIds":
+     - 1234567
+   "query": "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri AS 'URL'"
+   "timeout": 10
+   "channels": []
+}
+```
+
+When the reporting engine runs this report, it will execute the following
+GraphQL query using the given NRQL query for the `$query` argument, the given
+account ID (in a 1 member array) for the `$accountIds` argument, and the given
+timeout for the `$timeout` argument.
+
+```graphql
+{
+   actor {
+      nrql(accounts: $accountIds, query: $query, timeout: $timeout) {
+         results
+         metadata {
+            facets
+            eventTypes
+         }
+      }
+   }
+}
+```
+
+The results will be tabulated into a CSV file where the rows in the CSV file
+correspond to the each item in the returned `results` array and the columns in
+the CSV file correspond to the facets in the query (in this case
+`Application Name` and `URL`) followed by the fields selected by the query
+(in this case `Duration`), just like you'd see in a `TABLE` widget on a
+dashboard. Following is an example CSV that might be generated from this query.
+
+```csv
+Application Name,URL,Duration
+Shop Service,/api/v1/checkout,1.5191369267857142
+Shop Service,/api/v1/products,1.5092493357575756
+Shop Service,/api/v1/products/1234,1.4948035056074764
+```
+
+#### Multi-account Queries
+
+Multiple account IDs can be specified for a query report. The reporting engine
+supports three different modes for executing queries against multiple accounts.
+The query mode is specified using the `multiAccountMode` option in a query
+report definition in the [manifest](#manifest-file). Specifying the
+multi-account mode at the CLI is not supported and therefore will always use
+the default multi-account mode [`cross-account`](#cross-account-queries).
+
+##### Cross-account Queries
+
+By default, a multi-account query will be run using a
+[cross-account query](https://docs.newrelic.com/docs/apis/nerdgraph/examples/nerdgraph-nrql-tutorial/#cross-account-query).
+With cross-account queries, a query is run against each of the accounts (up to a
+maximum of 5) using a query like the following.
+
+```graphql
+{
+  actor {
+    nrql(
+      accounts: [ACCOUNT_ID_1, ACCOUNT_ID_2, ACCOUNT_ID_3]
+      options: {}
+      query: "NRQL_QUERY"
+      timeout: 70
+    ) {
+      results
+    }
+  }
+}
+```
+
+The results are aggregated and returned as a single set of results.
+
+To specify that the reporting engine should run a multi-account query using a
+cross-account query, either set the `multiAccountMode` option in the [manifest](#manifest-file)
+to `cross-account` or leave it out entirely, as `cross-account` is the default.
+
+##### Per-account Queries
+
+Sometimes you really want to run a query individually against multiple accounts
+and get each set of results individually rather than aggregating the set of
+results across all account. For example, if you want to find the top 5
+transactions of each of 5 different accounts and export them to a CSV file with
+each row including the account ID, using a cross-account query won't suffice. To
+account for this, the reporting engine provides two multi-account modes that
+execute queries separately against each account: `per-account` and
+`per-account-concurrent`.
+
+In the `per-account` case, a single GraphQL query is run that utilizes
+[GraphQL aliases](https://graphql.org/learn/queries/#aliases) to run multiple
+GraphQL queries in a single GraphQL call, as in the following example.
+
+```graphql
+{
+   NrqlQuery1: {
+      actor {
+         nrql(
+            accounts: [ACCOUNT_ID_1, ACCOUNT_ID_2, ACCOUNT_ID_3]
+            options: {}
+            query: "NRQL_QUERY_1"
+            timeout: 70
+         ) {
+            results
+         }
+      }
+   }
+   NrqlQuery2: {
+      actor {
+         nrql(
+            accounts: [ACCOUNT_ID_1, ACCOUNT_ID_2, ACCOUNT_ID_3]
+            options: {}
+            query: "NRQL_QUERY_2"
+            timeout: 70
+         ) {
+            results
+         }
+      }
+   }
+}
+```
+
+In the `per-account-concurrent` case, multiple GraphQL queries are run
+concurrently, one query per account.
+
+**NOTE:**
+The `per-account` and `per-account-concurrent` modes are not "native" query
+types like `cross-account`. Rather, they are implemented in the reporting
+engine.
 
 ### Channels
 
@@ -921,7 +1382,7 @@ The following properties are common to all report types.
 | Property Name | Description | Type | Required | Default |
 | --- | --- | --- | --- | --- |
 | accountId | An account ID to run the query with. One of the this property or the `accountIds` property must be specified. | number | Y | |
-| accountIds | A list of account IDs to run the query with. A maximum of 5 account IDs is allowed. One of the this property or the `accountId` property must be specified. | array | Y | |
+| accountIds | A list of account IDs to run the query with. A maximum of 5 account IDs is allowed if `multiAccountMode` is set to `cross-account`. One of the this property or the `accountId` property must be specified. | array | Y | |
 | query | The NRQL query to run. | string | Y | |
 | multiAccountMode | The method used to query multiple accounts when multiple account IDs are specified. Valid values are `cross-account`, `per-account`, and `per-account-concurrent` | string | N | cross-account |
 
@@ -1001,38 +1462,50 @@ The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
 * Run all reports using the defaults (read reports from `manifest.json` in the
   `include` directory)
 
-  `./nr-reports-cli/bin/nr-reports.sh`
+   ```bash
+   ./nr-reports-cli/bin/nr-reports.sh
+   ```
 
 * Run all reports defined in the manifest file `my-manifest.json` in the current
   working directory
 
-  `./nr-reports-cli/bin/nr-reports.sh -f my-manifest.json`
+   ```bash
+   ./nr-reports-cli/bin/nr-reports.sh -f my-manifest.json
+   ```
 
 * Run a report using the template named `my-report.html` in the current working
   directory with the values file `my-report-values.json` in the current working
   directory and copy the result report into the current working directory
 
-  `./nr-reports-cli/bin/nr-reports.sh -n my-report.html -v my-report-values.json`
+   ```bash
+   ./nr-reports-cli/bin/nr-reports.sh -n my-report.html -v my-report-values.json
+   ```
 
 * Run a report using the template named `my-report.html` in the directory
   `/opt/templates` with the values file `my-report-values.json` and upload the
   result report to AWS S3 using the bucket name defined in the `S3_DEST_BUCKET`
   environment variable
 
-  `./nr-reports-cli/bin/nr-reports.sh -n my-report.html -v my-report-values.json -p /opt/templates -c s3`
+   ```bash
+   ./nr-reports-cli/bin/nr-reports.sh -n my-report.html -v my-report-values.json -p /opt/templates -c s3
+   ```
 
 * Run a report with a snapshot image of the dashboards with GUIDs `A1234` and
   `B1234`, copy the result report into the current working directory, and email
   the result report using the email channel configuration values specified in
   the `EMAIL_*` environment variables
 
-  `./nr-reports-cli/bin/nr-reports.sh -d A1234,B1234 -c file,email`
+   ```bash
+   ./nr-reports-cli/bin/nr-reports.sh -d A1234,B1234 -c file,email
+   ```
 
 * Run a report with the NRQL query `SELECT average(duration) FROM Transaction'`
   against the account with ID `1234567` and upload the result CSV report to AWS
   S3 using the bucket name defined in the `S3_DEST_BUCKET` environment variable.
 
-  `./nr-reports-cli/bin/nr-reports.sh -a 1234567 -q 'SELECT average(duration) FROM Transaction' -c s3`
+   ```bash
+   ./nr-reports-cli/bin/nr-reports.sh -a 1234567 -q 'SELECT average(duration) FROM Transaction' -c s3
+   ```
 
 ### Using the CLI image
 
@@ -1072,7 +1545,7 @@ Here are a few examples.
 
 * Build an image using all the defaults. The image will be tagged with
   `nr-reports:latest` in the local Docker registry.
-  
+
   ```bash
   cd ./nr-reports-cli
   npm run build
@@ -1080,7 +1553,7 @@ Here are a few examples.
 
 * Build an image with a custom image name. The image will be tagged with
   `my-great-reports:1.1` in the local Docker registry.
-  
+
   ```bash
   cd ./nr-reports-cli
   npm run build -- --image-repo my-great-reports --image-tag 1.1
@@ -1104,8 +1577,8 @@ only be used locally when testing and developing templates.
 **NOTE:** In the examples below, the [AWS configuration and credential files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
 in the local `.aws` directory are mounted into the home directory of the
 `pptruser` in the container so that the [AWS SDK for Node.js](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started-nodejs.html)
-has access to the AWS configuration and credentials without having to pass those via
-arguments on the command line.
+has access to the AWS configuration and credentials without having to pass those
+via arguments on the command line.
 
 ##### Running a report using a template name with the CLI image
 
@@ -1203,7 +1676,7 @@ Here are a few examples.
 
 * Build an image using all the defaults. The image will be tagged with
   `nr-reports-cron:latest` in the local Docker registry.
-  
+
   ```bash
   cd ./nr-reports-cli
   npm run build-cron
@@ -1241,8 +1714,8 @@ only be used locally when testing and developing templates.
 **NOTE:** In the examples below, the [AWS configuration and credential files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
 in the local `.aws` directory are mounted into the home directory of the
 `pptruser` in the container so that the [AWS SDK for Node.js](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started-nodejs.html)
-has access to the AWS configuration and credentials without having to pass those via
-arguments on the command line.
+has access to the AWS configuration and credentials without having to pass those
+via arguments on the command line.
 
 ##### Running a report using a template name with the CRON image - Variation 1
 
@@ -1639,7 +2112,7 @@ have any questions, or to execute our corporate CLA, required if your
 contribution is on behalf of a company, please drop us an email at
 opensource@newrelic.com.
 
-**A note about vulnerabilities**
+**A note about vulnerabilities:**
 
 As noted in our [security policy](../../security/policy), New Relic is committed
 to the privacy and security of our customers and their data. We believe that
