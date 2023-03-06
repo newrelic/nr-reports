@@ -1,6 +1,6 @@
 # New Relic Reports
 
-[![New Relic Experimental header](https://github.com/newrelic/opensource-website/raw/master/src/images/categories/Experimental.png)](https://opensource.newrelic.com/oss-category/#new-relic-experimental)
+[![New Relic Experimental header](https://github.com/newrelic/opensource-website/raw/main/src/images/categories/Experimental.png)](https://opensource.newrelic.com/oss-category/#new-relic-experimental)
 
 ![GitHub forks](https://img.shields.io/github/forks/newrelic-experimental/nr-reports?style=social)
 ![GitHub stars](https://img.shields.io/github/stars/newrelic-experimental/nr-reports?style=social)
