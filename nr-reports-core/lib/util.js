@@ -198,7 +198,7 @@ function parseManifest(manifestFile, contents, defaultChannel = null) {
   })
 
   if (Array.isArray(data)) {
-    logger.trace('Manifest starts with array')
+    logger.debug('Manifest starts with array')
     data = {
       reports: data,
     }
