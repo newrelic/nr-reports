@@ -1,7 +1,7 @@
 'use strict'
 
 const path = require('path'),
-  { createLogger } = require('../logger'),
+  { createLogger, logTrace } = require('../logger'),
   {
     DEFAULT_CONCURRENCY,
     writeCsv,
@@ -25,9 +25,8 @@ async function writeFile(context, output, nrqlResults) {
     rows = []
   let singleFacet
 
-  logger.debug(log => {
-    log('NRQL results:')
-    log(nrqlResults)
+  logTrace(logger, log => {
+    log({ results: nrqlResults }, 'NRQL results:')
   })
 
   // If there is more than one result, the query was run per account so
@@ -131,7 +130,9 @@ function runMultiConcurrentNrql(context, report, accountIds) {
   }
 
   return new Promise((resolve, reject) => {
-    logger.verbose(`Running concurrent queries for ${accountIds.length} accounts...`)
+    logger.debug(
+      `Running concurrent queries for ${accountIds.length} accounts...`,
+    )
 
     doAsyncWork(
       accountIds,
@@ -153,7 +154,9 @@ function runMultiConcurrentNrql(context, report, accountIds) {
       handleResults,
     ).then(() => {
       if (errors.length > 0) {
-        reject(new Error('One or more queries failed. See additional output for details.'))
+        reject(new Error(
+          'One or more queries failed. See additional output for details.',
+        ))
       }
       resolve(nrqlResults)
     })
@@ -172,7 +175,7 @@ async function runMultiNrql(context, report, accountIds) {
     nerdgraph = new NerdgraphClient()
   let q = ''
 
-  logger.verbose(`Running aliased queries for ${accountIds.length} accounts...`)
+  logger.debug(`Running aliased queries for ${accountIds.length} accounts...`)
 
   for (let index = 0; index < accountIds.length; index += 1) {
     q += `
@@ -223,7 +226,7 @@ async function runNrql(context, report) {
     )),
     nerdgraph = new NerdgraphClient()
 
-  logger.verbose(`Running query report for query "${query}"...`)
+  logger.debug(`Running query report for query "${query}"...`)
 
   if (multiAccountMode === 'per-account') {
     return await runMultiNrql(context, report, accountIds)

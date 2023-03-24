@@ -5,7 +5,7 @@ const fs = require('fs'),
   path = require('path'),
   YAML = require('yaml'),
   { stringify } = require('csv-stringify'),
-  { createLogger } = require('./logger')
+  { createLogger, logTrace } = require('./logger')
 
 const logger = createLogger('util'),
   ENDPOINTS = {
@@ -99,10 +99,6 @@ function getOption(options, optionName, envName = null, defaultValue = null) {
   return envName ? getEnv(envName, defaultValue) : defaultValue
 }
 
-function obfuscateContext(context) {
-  return { ...context, apiKey: '[REDACTED]' }
-}
-
 class Context {
   constructor(...objs) {
     for (const obj of objs) {
@@ -123,17 +119,6 @@ class Context {
   get(propName, envName = null, defaultValue = null) {
     return getOption(this, propName, envName, defaultValue)
   }
-
-  dump(msg) {
-    logger.debug(log => {
-      log(msg)
-      log(obfuscateContext(this))
-    })
-  }
-
-  stringify() {
-    return JSON.stringify(obfuscateContext(this), null, 2)
-  }
 }
 
 function makeChannel(type) {
@@ -147,7 +132,7 @@ async function withTempDir(fn) {
 
   try {
     tempDir = await mkdtemp(getTempPath('nr-reports-'))
-    logger.verbose(`Created temporary directory ${tempDir}`)
+    logger.debug(`Created temporary directory ${tempDir}`)
 
     await fn(tempDir)
   } finally {
@@ -160,7 +145,7 @@ async function withTempDir(fn) {
         /* Check for file existence */
         await access(tempDir, fs.constants.F_OK)
 
-        logger.verbose(`Removing temporary directory ${tempDir}...`)
+        logger.debug(`Removing temporary directory ${tempDir}...`)
         await rmdir(tempDir, { recursive: true })
       }
     } catch (err) {
@@ -200,22 +185,20 @@ function isYaml(fileName) {
 }
 
 function parseManifest(manifestFile, contents, defaultChannel = null) {
-  logger.debug(log => {
-    log('Parsing manifest:')
-    log(contents)
+  logTrace(logger, log => {
+    log({ contents }, 'Parsing manifest:')
   })
 
   let data = isYaml(manifestFile) ? (
     YAML.parse(contents)
   ) : JSON.parse(contents)
 
-  logger.debug(log => {
-    log('Parsed manifest:')
-    log(data)
+  logTrace(logger, log => {
+    log({ manifest: data }, 'Parsed manifest:')
   })
 
   if (Array.isArray(data)) {
-    logger.verbose('Manifest starts with array')
+    logger.trace('Manifest starts with array')
     data = {
       reports: data,
     }
@@ -255,18 +238,16 @@ function parseManifest(manifestFile, contents, defaultChannel = null) {
 }
 
 function parseJaml(fileName, contents) {
-  logger.debug(log => {
-    log('Parsing JSON/YML:')
-    log(contents)
+  logTrace(logger, log => {
+    log({ contents }, 'Parsing JSON/YML:')
   })
 
   const data = isYaml(fileName) ? (
     YAML.parse(contents)
   ) : JSON.parse(contents)
 
-  logger.debug(log => {
-    log('Parsed JSON/YML:')
-    log(data)
+  logTrace(logger, log => {
+    log({ data }, 'Parsed JSON/YML:')
   })
 
   return data
@@ -405,10 +386,7 @@ function writeCsv(filePath, columns, rows) {
       columns,
     })
 
-  logger.verbose(`Exporting ${rows.length} rows...`)
-  logger.debug(log => {
-    rows.forEach(row => log(row))
-  })
+  logger.debug(`Exporting ${rows.length} rows...`)
 
   return new Promise((resolve, reject) => {
     stringifier.on('readable', () => {
@@ -427,7 +405,7 @@ function writeCsv(filePath, columns, rows) {
 
     stringifier.on('finish', () => {
       file.end()
-      logger.verbose(
+      logger.debug(
         `Finished writing ${filePath}!\n${rows.length} rows exported.`,
       )
       file.close(err => {

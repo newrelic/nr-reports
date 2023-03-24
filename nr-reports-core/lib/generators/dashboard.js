@@ -36,7 +36,7 @@ async function downloadDashboardPdf(apiKey, dashboard, downloadDir) {
 
   // todo: check for errors
 
-  logger.verbose(`Fetching dashboard ${dashboardUrl}...`)
+  logger.debug(`Fetching dashboard ${dashboardUrl}...`)
 
   const response = await fetch(dashboardUrl)
 
@@ -44,9 +44,9 @@ async function downloadDashboardPdf(apiKey, dashboard, downloadDir) {
     throw new Error(`Download PDF at ${dashboardUrl} failed: status=${response.status}`)
   }
 
-  logger.verbose(`Writing PDF to ${dashboardPdfFileName}...`)
+  logger.debug(`Writing PDF to ${dashboardPdfFileName}...`)
   await streamPipeline(response.body, createWriteStream(dashboardPdfFileName))
-  logger.verbose(`Wrote PDF to ${dashboardPdfFileName}...`)
+  logger.debug(`Wrote PDF to ${dashboardPdfFileName}...`)
 
   return dashboardPdfFileName
 }
@@ -54,14 +54,14 @@ async function downloadDashboardPdf(apiKey, dashboard, downloadDir) {
 async function mergePdfs(dashboardPdfs, consolidatedPdf) {
   const merger = new PDFMerger()
 
-  logger.verbose(log => {
+  logger.debug(log => {
     log(`Merging ${dashboardPdfs.length} PDFs to ${consolidatedPdf}...`)
     dashboardPdfs.forEach(pdf => log(pdf))
   })
 
   dashboardPdfs.forEach(dashboard => merger.add(dashboard))
 
-  logger.verbose(`Creating consolidated PDF ${consolidatedPdf}...`)
+  logger.debug(`Creating consolidated PDF ${consolidatedPdf}...`)
   await merger.save(consolidatedPdf)
 }
 
@@ -79,7 +79,7 @@ async function generateDashboardReport(
       combinePdfs,
     } = report
 
-    logger.verbose(`Running dashboard report for dashboards [${dashboards}]...`)
+    logger.debug(`Running dashboard report for dashboards [${dashboards}]...`)
 
     const promises = dashboards.map(async dashboard => (
         await downloadDashboardPdf(context.apiKey, dashboard, tempDir)

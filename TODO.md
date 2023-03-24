@@ -41,7 +41,10 @@ Stuff and things.
 - [ ] Run manifest reports by name
 - [ ] Support `multiAccountMode` on `nrql` tag
 - [ ] Add stdout as a channel so content can be piped to anything.
-  Would need to add a way to silence any logging.
+  Would need to add a way to silence any logging or send to stderr
+- [ ] Add support for `otherResult` for faceted NRQL queries.
+- [ ] Add New Relic Metrics/Events as a channel
+- [ ] Remove dependency on puppeteer from core?
 
 ## Things
 

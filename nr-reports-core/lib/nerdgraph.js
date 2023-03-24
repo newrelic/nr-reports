@@ -1,7 +1,7 @@
 'use strict'
 
 const fetch = require('node-fetch'),
-  { createLogger } = require('./logger'),
+  { createLogger, logTrace } = require('./logger'),
   {
     ENDPOINTS,
     getNested,
@@ -87,9 +87,8 @@ class NerdgraphClient {
   }
 
   async post(apiKey, payload, options = { headers: {} }) {
-    logger.debug(log => {
-      log('GraphQL POST:')
-      log(payload)
+    logTrace(logger, log => {
+      log({ payload }, 'GraphQL Request:')
     })
 
     const response = await fetch(this.url(options), {
@@ -102,9 +101,8 @@ class NerdgraphClient {
 
     const responseJson = await response.json()
 
-    logger.debug(log => {
-      log('GraphQL Response:')
-      log(responseJson)
+    logTrace(logger, log => {
+      log({ response: responseJson }, 'GraphQL Response:')
     })
 
     if (responseJson.errors) {

@@ -16,7 +16,7 @@ function getSecretValue(secretName, secretKey) {
   }
 
   return new Promise((resolve, reject) => {
-    logger.verbose(`Retrieving secret value for secret ${secretName} with key ${secretKey}...`)
+    logger.trace(`Retrieving secret value for secret ${secretName} with key ${secretKey}...`)
 
     secretsManager.getSecretValue(getParams, (err, data) => {
       if (err) {
@@ -29,10 +29,10 @@ function getSecretValue(secretName, secretKey) {
       // Decrypts secret using the associated KMS CMK.
       // Depending on whether the secret is a string or binary, one of these fields will be populated.
       if ('SecretString' in data) {
-        logger.verbose(`Found SecretString in secret ${secretName}.`)
+        logger.trace(`Found SecretString in secret ${secretName}.`)
         secret = data.SecretString
       } else {
-        logger.verbose(`No SecretString in secret ${secretName}. Decoding SecretBinary...`)
+        logger.trace(`No SecretString in secret ${secretName}. Decoding SecretBinary...`)
 
         const buff = Buffer.from(data.SecretBinary, 'base64')
 
@@ -44,7 +44,7 @@ function getSecretValue(secretName, secretKey) {
         return
       }
 
-      logger.verbose(`Parsing secret value for ${secretName} as JSON...`)
+      logger.trace(`Parsing secret value for ${secretName} as JSON...`)
 
       const secretObj = JSON.parse(secret)
 
@@ -60,7 +60,7 @@ function getS3Object(bucket, key) {
   }
 
   return new Promise((resolve, reject) => {
-    logger.verbose(`Getting object with ${key} from bucket ${bucket}...`)
+    logger.trace(`Getting object with ${key} from bucket ${bucket}...`)
 
     s3.getObject(getParams, (err, data) => {
 
@@ -70,11 +70,7 @@ function getS3Object(bucket, key) {
         return
       }
 
-      logger.verbose(`Got object with ${key} from bucket ${bucket}.`)
-      logger.debug(log => {
-        log('GetObject response:')
-        log(data)
-      })
+      logger.trace(`Got object with ${key} from bucket ${bucket}.`)
 
       resolve(data)
     })
@@ -96,7 +92,7 @@ function putS3Object(bucket, key, content) {
   }
 
   return new Promise((resolve, reject) => {
-    logger.verbose(`Putting object with ${key} into bucket ${bucket}...`)
+    logger.trace(`Putting object with ${key} into bucket ${bucket}...`)
 
     s3.putObject(putParams, (err, data) => {
 
@@ -106,11 +102,7 @@ function putS3Object(bucket, key, content) {
         return
       }
 
-      logger.verbose(`Put object with ${key} into bucket ${bucket}.`)
-      logger.debug(log => {
-        log('PutObject response:')
-        log(data)
-      })
+      logger.trace(`Put object with ${key} into bucket ${bucket}.`)
 
       resolve(data)
     })

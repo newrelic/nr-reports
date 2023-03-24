@@ -1,8 +1,13 @@
 'use strict'
 
+// The newrelic module is provided by the Lambda layer.
+// eslint-disable-next-line node/no-missing-require
+const newrelic = require('newrelic')
+
 const chromium = require('chrome-aws-lambda'),
   {
     rootLogger,
+    setLogLevel,
     Engine,
     getEnv,
     getSecretValue,
@@ -15,9 +20,9 @@ function configureLogger() {
   const logLevel = strToLower(getEnv('LOG_LEVEL', 'info'))
 
   if (logLevel === 'debug') {
-    rootLogger.level = 'trace'
+    setLogLevel(logger, 'trace')
   } else if (logLevel === 'verbose') {
-    rootLogger.level = 'debug'
+    setLogLevel(logger, 'debug')
   }
 }
 
@@ -72,11 +77,6 @@ function lambdaResponse(
 async function handler(event) {
   const values = event.body || event
 
-  rootLogger.debug(log => {
-    log('Lambda event:')
-    log(event)
-  })
-
   try {
     const engine = new Engine(
       await getApiKey(),
@@ -100,6 +100,16 @@ async function handler(event) {
 
     await engine.run(values)
 
+    logger.trace('Recording job status...')
+
+    newrelic.recordCustomEvent(
+      'NrReportsStatus',
+      {
+        error: false,
+        ...values.options,
+      },
+    )
+
     return lambdaResponse(
       200,
       true,
@@ -107,6 +117,19 @@ async function handler(event) {
   } catch (err) {
     logger.error('Uncaught exception:')
     logger.error(err)
+
+    newrelic.noticeError(err)
+
+    logger.trace('Recording job status...')
+
+    newrelic.recordCustomEvent(
+      'NrReportsStatus',
+      {
+        error: true,
+        message: err.message,
+      },
+    )
+
     return lambdaResponse(
       500,
       false,

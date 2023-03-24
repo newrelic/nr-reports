@@ -15,7 +15,7 @@ const fs = require('fs'),
   {
     getS3ObjectAsString,
   } = require('../aws-util'),
-  { createLogger } = require('../logger')
+  { createLogger, logTrace } = require('../logger')
 
 const { writeFile } = fs.promises,
   logger = createLogger('template-generator'),
@@ -32,19 +32,18 @@ const { writeFile } = fs.promises,
 converter.setFlavor('github')
 
 async function renderPdf(browser, content, file) {
-  logger.verbose(`Creating new browser page to render PDF to ${file}...`)
+  logger.debug(`Creating new browser page to render PDF to ${file}...`)
 
   const page = await browser.newPage()
 
   page
-    .on('console', message => logger.verbose(`chrome-console: ${message.type().slice(0, 3).toUpperCase()} ${message.text()}`))
+    .on('console', message => logger.debug(`chrome-console: ${message.type().slice(0, 3).toUpperCase()} ${message.text()}`))
     .on('pageerror', ({ message }) => logger.error(`chrome-pageerror: ${message}`))
-    .on('response', response => logger.verbose(`chrome-response: ${response.status()} ${response.url()}`))
+    .on('response', response => logger.debug(`chrome-response: ${response.status()} ${response.url()}`))
     .on('requestfailed', request => logger.error(`chrome-requestfailed: ${request.failure()} ${request.url()}`))
 
-  logger.debug(log => {
-    log('HTML content:')
-    log(content)
+  logTrace(logger, log => {
+    log({ content }, 'HTML content:')
   })
 
   await page.setContent(
@@ -54,7 +53,7 @@ async function renderPdf(browser, content, file) {
     },
   )
 
-  logger.verbose(`Saving PDF to ${file}...`)
+  logger.debug(`Saving PDF to ${file}...`)
 
   await page.pdf({
     path: file,
@@ -70,10 +69,10 @@ async function renderPdf(browser, content, file) {
 
 function processTemplateFile(file, renderContext) {
   return new Promise((resolve, reject) => {
-    logger.verbose(`Processing template file ${file}...`)
+    logger.debug(`Processing template file ${file}...`)
 
-    logger.debug(() => {
-      renderContext.dump('Render context:')
+    logTrace(logger, log => {
+      log(renderContext, 'Render context:')
     })
 
     nunjucks.render(file, renderContext, (err, res) => {
@@ -89,10 +88,10 @@ function processTemplateFile(file, renderContext) {
 
 function processTemplateString(template, renderContext) {
   return new Promise((resolve, reject) => {
-    logger.verbose('Processing template string...')
+    logger.debug('Processing template string...')
 
-    logger.debug(() => {
-      renderContext.dump('Render context:')
+    logTrace(logger, log => {
+      log(renderContext, 'Render context:')
     })
 
     nunjucks.renderString(template, renderContext, (err, res) => {
@@ -132,13 +131,13 @@ async function processTemplateReport(
       )
     )
 
-    logger.verbose(`Processing template ${templateName}...`)
+    logger.debug(`Processing template ${templateName}...`)
 
     if (typeof templateIsMarkdown === 'undefined') {
       templateIsMarkdown = (path.extname(templateName.toLowerCase()) === '.md')
     }
 
-    logger.verbose(`templateIsMarkdown: ${templateIsMarkdown}`)
+    logger.debug(`templateIsMarkdown: ${templateIsMarkdown}`)
 
     renderContext.isMarkdown = templateIsMarkdown
 
@@ -204,7 +203,7 @@ async function generateTemplateReport(
 }
 
 function configureNunjucks(apiKey, templatePath) {
-  logger.verbose('Configuring Nunjucks...')
+  logger.debug('Configuring Nunjucks...')
 
   const templatesPath = ['.', 'include', 'templates']
 
@@ -216,9 +215,8 @@ function configureNunjucks(apiKey, templatePath) {
     })
   }
 
-  logger.debug(log => {
-    log('Final template path:')
-    log(templatesPath)
+  logTrace(logger, log => {
+    log({ templatesPath }, 'Final template path:')
   })
 
   const env = nunjucks.configure(templatesPath)
