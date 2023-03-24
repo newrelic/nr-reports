@@ -3,62 +3,97 @@
 
 const pino = require('pino')
 
-class Logger {
-  constructor(clazz, parentLogger = null) {
-    if (parentLogger) {
-      this.logger = parentLogger.logger.child({ component: clazz })
-      parentLogger.children.push(this)
-    } else {
-      const pinoOpts = { name: clazz },
-        logPretty = process.env.LOG_PRETTY_PRINT
+const LOG_LEVEL_TRACE = 'trace',
+  LOG_LEVEL_DEBUG = 'debug',
+  LOG_LEVEL_INFO = 'info'
 
-      if (logPretty) {
-        pinoOpts.transport = { target: 'pino-pretty' }
-      }
+function createRootLogger() {
+  const pinoOpts = { name: 'nr-reports' },
+    logPretty = process.env.LOG_PRETTY_PRINT
 
-      this.logger = pino(pinoOpts)
-      this.children = []
-    }
+  if (logPretty) {
+    pinoOpts.transport = { target: 'pino-pretty' }
   }
 
-  log(msg, type = 'info') {
-    if (typeof msg === 'function') {
-      msg(message => this.logger[type](message))
-      return
-    }
+  // Per https://github.com/pinojs/pino/issues/416, creating child loggers
+  // is a hot path and keeping child arrays around per logger can make it
+  // worse. But our loggers are long lived so it should be ok.
 
-    this.logger[type](msg)
-  }
+  const logger = pino(pinoOpts)
 
-  error(msg) {
-    this.log(msg, 'error')
-  }
+  logger.children = []
 
-  warn(msg) {
-    this.log(msg, 'warn')
-  }
+  return logger
+}
 
-  verbose(msg) {
-    this.log(msg, 'debug')
-  }
+const rootLogger = createRootLogger()
 
-  debug(msg) {
-    this.log(msg, 'trace')
-  }
+function createLogger(clazz, parentLogger = rootLogger) {
+  const logger = parentLogger.child({ component: clazz })
 
-  set level(lvl) {
-    this.logger.level = lvl
-    if (this.children) {
-      this.children.forEach(child => {
-        child.logger.level = lvl
-      })
-    }
+  parentLogger.children.push(logger)
+
+  return logger
+}
+
+function setLogLevel(logger, level) {
+  logger.level = level
+  if (logger.children) {
+    logger.children.forEach(child => {
+      child.level = level
+    })
   }
 }
 
-const rootLogger = new Logger('nr-reports')
+function obfuscate(obj, level = 0) {
+  if (level > 2) {
+    return '[object] (max depth exceeded)'
+  }
+
+  const objPrime = {}
+
+  Object.getOwnPropertyNames(obj).forEach(prop => {
+    const type = typeof obj[prop]
+
+    if (/key|token|password/iu.test(prop)) {
+      objPrime[prop] = '[REDACTED]'
+      return
+    }
+
+    objPrime[prop] = obj[prop] && type === 'object' ? (
+      obfuscate(obj[prop], level + 1)
+    ) : obj[prop]
+  })
+
+  return objPrime
+}
+
+function logSafe(logger, type, fn) {
+  if (logger.isLevelEnabled(type)) {
+    fn((...args) => {
+      const [first, ...rest] = args
+      let newArgs = args
+
+      if (typeof first === 'object') {
+        newArgs = [obfuscate(first), ...rest]
+      }
+
+      logger[type](...newArgs)
+    })
+  }
+}
+
+function logTrace(logger, fn) {
+  logSafe(logger, LOG_LEVEL_TRACE, fn)
+}
 
 module.exports = {
   rootLogger,
-  createLogger: clazz => (new Logger(clazz, rootLogger)),
+  createLogger,
+  setLogLevel,
+  LOG_LEVEL_TRACE,
+  LOG_LEVEL_DEBUG,
+  LOG_LEVEL_INFO,
+  logSafe,
+  logTrace,
 }

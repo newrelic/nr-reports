@@ -1,7 +1,7 @@
 'use strict'
 
 const nunjucks = require('nunjucks'),
-  { createLogger } = require('../logger'),
+  { createLogger, logTrace } = require('../logger'),
   {
     NerdgraphClient,
   } = require('../nerdgraph'),
@@ -64,9 +64,8 @@ function ChartExtension(apiKey) {
       let query = null,
         options = {}
 
-      logger.debug(log => {
-        log('Extension args:')
-        log(args)
+      logTrace(logger, log => {
+        log(args, 'Extension args:')
       })
 
       args.forEach(arg => {
@@ -100,8 +99,8 @@ function ChartExtension(apiKey) {
         },
         nerdgraph = new NerdgraphClient()
 
-      logger.debug(() => {
-        newContext.dump('Extension render context')
+      logTrace(logger, log => {
+        log(newContext, 'Extension render context')
       })
 
       const result = await nerdgraph.getShareableChartUrl(

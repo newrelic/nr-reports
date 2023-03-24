@@ -2057,6 +2057,33 @@ npm run delete -- --package-name nr-reports-lambda
 
 ## Troubleshooting
 
+### Monitoring
+
+The reporting engine can be monitored using
+[the New Relic APM agent for Node.js](https://docs.newrelic.com/docs/apm/agents/nodejs-agent/getting-started/introduction-new-relic-nodejs/)
+if you are using [the CLI](#using-the-cli), [the CLI image](#using-the-cli-image),
+or [the CRON image](#using-the-cron-image); or using
+[Serverless monitoring for AWS Lambda](https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/get-started/monitoring-aws-lambda-serverless-monitoring/) if you are using [the AWS Lambda function](#using-the-aws-lambda-function)
+
+To enable the APM agent for the CLI, the CLI image, or the CRON image, simply
+update the [Node.js agent configuration](https://docs.newrelic.com/docs/apm/agents/nodejs-agent/installation-configuration/nodejs-agent-configuration/)
+just as you would for any other application. If you plan to use the
+[agent configuration file method](https://docs.newrelic.com/docs/apm/agents/nodejs-agent/installation-configuration/nodejs-agent-configuration/#config_file),
+you can find the agent configuration file at [`nr-reports-cli/newrelic.js`](./nr-reports-cli/newrelic.js).
+If you plan to use [environment variables](https://docs.newrelic.com/docs/apm/agents/nodejs-agent/installation-configuration/nodejs-agent-configuration/#environment)
+(recommended), refer to the appropriate documentation for setting
+environment variables for your runtime environment (shell versus local Docker
+image versus container service, etc).
+
+To enable serverless monitoring for AWS Lambda, refer to our
+[official documentation](https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/enable-aws-lambda-monitoring/)
+and the [Deploying the AWS Lambda function](#deploying-the-aws-lambda-function)
+section of this document.
+
+Once enabled, an APM or Lambda function entity will be created with the name
+specified in the agent configuration and the reporting engine performance
+metrics, logs, and traces will be collected and associated with the entity.
+
 ### `Error: Failed to launch the browser process!`
 
 If you get the error below while running the Docker CLI or CRON image, you

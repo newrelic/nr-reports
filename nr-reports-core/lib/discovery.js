@@ -1,7 +1,7 @@
 'use strict'
 
 const { getChannelDefaults } = require('./channels'),
-  { createLogger } = require('./logger'),
+  { createLogger, logTrace } = require('./logger'),
   {
     DEFAULT_CHANNEL,
     loadFile,
@@ -21,18 +21,16 @@ function makeChannel(type, options) {
 }
 
 function parseChannels(options, channels) {
-  logger.debug(log => {
-    log('Parsing channels:')
-    log(channels)
+  logTrace(logger, log => {
+    log({ channels }, 'Parsing channels:')
   })
 
   const data = channels.split(/[\s]*,[\s]*/u).map(
     type => makeChannel(type, options),
   )
 
-  logger.debug(log => {
-    log('Parsed channels:')
-    log(data)
+  logTrace(logger, log => {
+    log({ channels: data }, 'Parsed channels:')
   })
 
   return data
@@ -109,7 +107,7 @@ async function discoverReportsHelper(
 
   // Name of manifest file
   if (manifestFile) {
-    logger.debug(`Found manifest file ${manifestFile}.`)
+    logger.trace(`Found manifest file ${manifestFile}.`)
 
     return await loadManifest(
       fileLoader,
@@ -124,7 +122,7 @@ async function discoverReportsHelper(
 
   // Name of template file
   if (templateName) {
-    logger.debug(`Found template name ${templateName}.`)
+    logger.trace(`Found template name ${templateName}.`)
 
     const valuesFile = getOption(options, 'valuesFilePath', 'VALUES_FILE_PATH'),
       channels = getChannels(defaultChannelType, options)
@@ -168,7 +166,7 @@ async function discoverReportsHelper(
 
   // Array or comma-delimited list of dashboard GUIDs
   if (dashboards) {
-    logger.debug(`Found dashboards ${dashboards}.`)
+    logger.trace(`Found dashboards ${dashboards}.`)
 
     const dashboardGuids = (
         Array.isArray(dashboards) ? dashboards : dashboards.split(/[\s]*,[\s]*/u)
@@ -190,7 +188,7 @@ async function discoverReportsHelper(
 
   // NRQL query
   if (query) {
-    logger.debug(`Found query ${query}.`)
+    logger.trace(`Found query ${query}.`)
 
     const accountId = requireAccountId(options),
       channels = getChannels(defaultChannelType, options)
@@ -207,7 +205,7 @@ async function discoverReportsHelper(
     }
   }
 
-  logger.debug('Using default manifest.')
+  logger.trace('Using default manifest.')
 
   // Try to load a default manifest from local storage
   return await loadManifest(
@@ -221,7 +219,7 @@ async function discoverReportsHelper(
 
 async function discoverReports(args, defaultChannelType) {
   if (Array.isArray(args)) {
-    logger.debug('Args is an array of reports.')
+    logger.trace('Args is an array of reports.')
     return args
   }
 
@@ -232,7 +230,7 @@ async function discoverReports(args, defaultChannelType) {
     sourceBucket = getOption(options, 'sourceBucket', 'S3_SOURCE_BUCKET')
 
   if (sourceBucket) {
-    logger.debug(`Found sourceBucket ${sourceBucket}.`)
+    logger.trace(`Found sourceBucket ${sourceBucket}.`)
 
     return await discoverReportsHelper(
       options,
@@ -244,7 +242,7 @@ async function discoverReports(args, defaultChannelType) {
     )
   }
 
-  logger.debug('No sourceBucket found.')
+  logger.trace('No sourceBucket found.')
 
   return await discoverReportsHelper(
     options,

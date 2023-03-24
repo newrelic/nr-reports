@@ -1,7 +1,12 @@
 'use strict'
 
 const { publish } = require('./channels'),
-  { createLogger } = require('./logger'),
+  {
+    LOG_LEVEL_DEBUG,
+    createLogger,
+    logSafe,
+    logTrace,
+  } = require('./logger'),
   {
     withTempDir,
     shouldRender,
@@ -26,14 +31,8 @@ class Engine {
   }
 
   async run(args) {
-    logger.debug(log => {
-      this.context.dump('Invoked with context:')
-
-      log('Invoked with arguments:')
-      log(args)
-
-      log('Invoked with environment:')
-      log(process.env)
+    logSafe(logger, LOG_LEVEL_DEBUG, log => {
+      log({ ...this.context, ...args.options }, 'Engine started.')
     })
 
     let browser
@@ -44,9 +43,8 @@ class Engine {
         this.context.defaultChannelType,
       )
 
-      logger.debug(log => {
-        log('Final manifest:')
-        log(manifest)
+      logTrace(logger, log => {
+        log({ manifest }, 'Final manifest:')
       })
 
       if (!manifest || manifest.reports.length === 0) {
@@ -55,11 +53,10 @@ class Engine {
         throw new Error('No reports selected.')
       }
 
-      logger.verbose(`Running ${manifest.reports.length} reports...`)
+      logger.debug(`Running ${manifest.reports.length} reports...`)
 
-      logger.debug(log => {
-        log('Reports:')
-        log(manifest.reports)
+      logTrace(logger, log => {
+        log({ reports: manifest.reports }, 'Reports:')
       })
 
       const reportIndex = manifest.reports.findIndex(shouldRender),
@@ -76,13 +73,12 @@ class Engine {
       })
 
       if (reportIndex >= 0) {
-        logger.debug('Found 1 or more PDF reports. Launching browser...')
+        logger.trace('Found 1 or more PDF reports. Launching browser...')
 
         const puppetArgs = await this.callbacks.getPuppetArgs()
 
-        logger.debug(log => {
-          log('Launching browser using the following args:')
-          log(puppetArgs)
+        logTrace(logger, log => {
+          log(puppetArgs, 'Launching browser using the following args:')
         })
 
         context.browser = browser = await this.callbacks.openChrome(puppetArgs)
@@ -94,7 +90,7 @@ class Engine {
 
           let generator
 
-          logger.verbose(`Running report ${report.name || index}...`)
+          logger.debug(`Running report ${report.name || index}...`)
 
           if (report.templateName) {
             generator = templateGenerator
@@ -111,8 +107,11 @@ class Engine {
 
           const reportContext = context.context(report)
 
-          logger.debug(() => {
-            reportContext.dump('Report context:')
+          logTrace(logger, log => {
+            log(
+              reportContext,
+              'Invoking generator with the following report context:',
+            )
           })
 
           const outputs = await generator.generate(
@@ -133,7 +132,7 @@ class Engine {
             logger.warn(`No outputs generated for report ${report.name || index}.`)
           }
 
-          logger.verbose(`Completed report ${report.name || index}.`)
+          logger.debug(`Completed report ${report.name || index}.`)
         }
       })
     } finally {
