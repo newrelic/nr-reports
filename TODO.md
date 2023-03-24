@@ -21,7 +21,7 @@ Stuff and things.
 - [ ] Specify time period for query reports
 - [ ] Community report repository
 - [X] Add Pino
-- [ ] Add New Relic agent support to CLI
+- [X] Add New Relic agent support to CLI
 - [ ] Add slack channel channel
 - [ ] Push reports to nerdstorage, generic nerdlet to show reports in nerdstorage
 - [ ] Rename channels to destinations
