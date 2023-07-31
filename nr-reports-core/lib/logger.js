@@ -5,10 +5,14 @@ const pino = require('pino')
 
 const LOG_LEVEL_TRACE = 'trace',
   LOG_LEVEL_DEBUG = 'debug',
-  LOG_LEVEL_INFO = 'info'
+  LOG_LEVEL_INFO = 'info',
+  LOG_LEVEL_WARN = 'warn',
+  LOG_LEVEL_ERROR = 'error',
+  LOG_LEVEL_FATAL = 'fatal',
+  DEFAULT_LOG_LEVEL = LOG_LEVEL_WARN
 
 function createRootLogger() {
-  const pinoOpts = { name: 'nr-reports' },
+  const pinoOpts = { name: 'nr-reports', level: DEFAULT_LOG_LEVEL },
     logPretty = process.env.LOG_PRETTY_PRINT
 
   if (logPretty) {
@@ -47,7 +51,11 @@ function setLogLevel(logger, level) {
 
 function obfuscate(obj, level = 0) {
   if (level > 2) {
-    return '[object] (max depth exceeded)'
+    return Array.isArray(obj) ? (
+      `[array],length:${obj.length} (max depth exceeded)`
+    ) : (
+      '[object] (max depth exceeded)'
+    )
   }
 
   const objPrime = {}
@@ -94,6 +102,10 @@ module.exports = {
   LOG_LEVEL_TRACE,
   LOG_LEVEL_DEBUG,
   LOG_LEVEL_INFO,
+  LOG_LEVEL_WARN,
+  LOG_LEVEL_ERROR,
+  LOG_LEVEL_FATAL,
+  DEFAULT_LOG_LEVEL,
   logSafe,
   logTrace,
 }

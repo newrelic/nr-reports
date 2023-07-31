@@ -17,7 +17,7 @@ const chromium = require('chrome-aws-lambda'),
 const logger = rootLogger
 
 function configureLogger() {
-  const logLevel = strToLower(getEnv('LOG_LEVEL', 'info'))
+  const logLevel = strToLower(getEnv('LOG_LEVEL'))
 
   if (logLevel === 'debug') {
     setLogLevel(logger, 'trace')

@@ -1,6 +1,7 @@
 'use strict'
 
-const { getChannelDefaults } = require('./channels'),
+const path = require('path'),
+  { getChannelDefaults } = require('./channels'),
   { createLogger, logTrace } = require('./logger'),
   {
     DEFAULT_CHANNEL,
@@ -125,7 +126,10 @@ async function discoverReportsHelper(
     logger.trace(`Found template name ${templateName}.`)
 
     const valuesFile = getOption(options, 'valuesFilePath', 'VALUES_FILE_PATH'),
-      channels = getChannels(defaultChannelType, options)
+      channels = getChannels(defaultChannelType, options),
+      reportName = path.parse(templateName).name,
+      outputFileName = getOption(options, 'outputFileName'),
+      noRender = getOption(options, 'noRender', null, false)
 
     if (valuesFile) {
 
@@ -140,8 +144,10 @@ async function discoverReportsHelper(
         config: {},
         variables: {},
         reports: [{
-          name: `report-${templateName}`,
+          name: reportName,
           templateName,
+          render: !noRender,
+          outputFileName,
           parameters: { ...rest, ...values },
           channels,
           ...extras,
@@ -153,8 +159,10 @@ async function discoverReportsHelper(
       config: {},
       variables: {},
       reports: [{
-        name: `report-${templateName}`,
+        name: reportName,
         templateName,
+        render: !noRender,
+        outputFileName,
         parameters: values || {},
         channels,
         ...extras,
@@ -177,6 +185,7 @@ async function discoverReportsHelper(
       config: {},
       variables: {},
       reports: [{
+        name: 'dashboard-report',
         dashboards: dashboardGuids,
         channels,
         ...extras,
@@ -191,14 +200,17 @@ async function discoverReportsHelper(
     logger.trace(`Found query ${query}.`)
 
     const accountId = requireAccountId(options),
-      channels = getChannels(defaultChannelType, options)
+      channels = getChannels(defaultChannelType, options),
+      outputFileName = getOption(options, 'outputFileName')
 
     return {
       config: {},
       variables: {},
       reports: [{
+        name: 'query-report',
         accountId,
         query,
+        outputFileName,
         channels,
         ...extras,
       }],

@@ -5,6 +5,7 @@ const fs = require('fs'),
   path = require('path'),
   YAML = require('yaml'),
   { stringify } = require('csv-stringify'),
+  showdown = require('showdown'),
   { createLogger, logTrace } = require('./logger')
 
 const logger = createLogger('util'),
@@ -15,7 +16,18 @@ const logger = createLogger('util'),
     },
   },
   DEFAULT_CONCURRENCY = 4,
-  { access, mkdtemp, readFile, rmdir } = fs.promises
+  { access, mkdtemp, readFile, rmdir, unlink } = fs.promises,
+  markdownConverter = new showdown.Converter({
+    ghCompatibleHeaderId: true,
+    strikethrough: true,
+    tables: true,
+    tablesHeaderId: true,
+    tasklists: true,
+    openLinksInNewWindow: true,
+    backslashEscapesHTMLTags: true,
+  })
+
+markdownConverter.setFlavor('github')
 
 function getNestedHelper(val, arr = [], index = 0) {
   if (index === arr.length) {
@@ -154,6 +166,29 @@ async function withTempDir(fn) {
   }
 }
 
+async function withTempFile(fn, tempDir, fileName) {
+  let tempFile
+
+  try {
+    tempFile = path.join(tempDir, fileName)
+
+    await fn(tempFile)
+  } finally {
+    try {
+      if (tempFile) {
+
+        /* Check for file existence */
+        await access(tempFile, fs.constants.F_OK)
+
+        logger.debug(`Removing temporary file ${tempFile}...`)
+        await unlink(tempFile)
+      }
+    } catch (err) {
+      logger.error(err)
+    }
+  }
+}
+
 function getDefaultChannel(report, defaultChannel) {
   if (!defaultChannel) {
     return makeChannel(DEFAULT_CHANNEL)
@@ -198,7 +233,7 @@ function parseManifest(manifestFile, contents, defaultChannel = null) {
   })
 
   if (Array.isArray(data)) {
-    logger.debug('Manifest starts with array')
+    logger.trace('Manifest starts with array')
     data = {
       reports: data,
     }
@@ -261,23 +296,6 @@ function splitStringAndTrim(str, delimiter = ',') {
   return str.split(delimiter).map(s => s.trim())
 }
 
-function getFilenameWithNewExtension(templateName, ext) {
-  const {
-    name,
-  } = path.parse(templateName)
-
-  return `${name}.${ext}`
-}
-
-function getDefaultOutputFilename(templateName) {
-  const {
-    name,
-    ext,
-  } = path.parse(templateName)
-
-  return `${name}.out${ext}`
-}
-
 function shouldRender(report) {
   return report.templateName && (
     typeof report.render === 'undefined' || report.render
@@ -294,8 +312,26 @@ function pad(number, length) {
   return str
 }
 
-function strToLower(input) {
-  return input.toLowerCase()
+function trimStringAndLower(input, defaultValue = null) {
+  if (!input) {
+    return defaultValue
+  }
+
+  return input.trim().toLowerCase()
+}
+
+function toString(input, defaultValue = '') {
+  const type = typeof input
+
+  if (type === 'undefined') {
+    return defaultValue
+  }
+
+  if (type === 'string') {
+    return input
+  }
+
+  return input.toString()
 }
 
 function toBoolean(input) {
@@ -310,7 +346,7 @@ function toBoolean(input) {
   }
 
   if (type === 'string') {
-    const lower = input.trim().toLowerCase()
+    const lower = trimStringAndLower(input)
 
     if (lower === 'true' || lower === 'on' || lower === 'yes' || lower === '1') {
       return true
@@ -362,6 +398,10 @@ function toDate(input) {
   return date
 }
 
+function isUndefined(val) {
+  return typeof val === 'undefined'
+}
+
 function getFormattedDateTime(input = new Date()) {
   const date = toDate(input)
 
@@ -379,41 +419,34 @@ function getFormattedDateTime(input = new Date()) {
   return `${year}-${month}-${day}_${hour}${minutes}${seconds}`
 }
 
-function writeCsv(filePath, columns, rows) {
-  const file = fs.createWriteStream(filePath, { encoding: 'utf-8' }),
-    stringifier = stringify({
+function buildCsv(columns, rows) {
+  const stringifier = stringify({
       header: true,
       columns,
-    })
+    }),
+    data = []
 
-  logger.debug(`Exporting ${rows.length} rows...`)
+  logger.debug(`Generating ${rows.length} rows...`)
 
   return new Promise((resolve, reject) => {
     stringifier.on('readable', () => {
-      let row = stringifier.read()
+      let row
 
-      while (row) {
-        file.write(row)
-        row = stringifier.read()
+      while ((row = stringifier.read()) !== null) {
+        data.push(row)
       }
     })
 
     stringifier.on('error', err => {
       logger.error(err.message)
-      file.close(() => reject(err))
+      reject(err)
     })
 
     stringifier.on('finish', () => {
-      file.end()
       logger.debug(
-        `Finished writing ${filePath}!\n${rows.length} rows exported.`,
+        `Finished generating ${rows.length} rows.`,
       )
-      file.close(err => {
-        if (err) {
-          reject(err)
-        }
-        resolve()
-      })
+      resolve(data.join(''))
     })
 
     rows.forEach(row => {
@@ -515,6 +548,10 @@ function doAsyncWork(items, max, fn, args, cb) {
   })
 }
 
+function markdownToHtml(text) {
+  return markdownConverter.makeHtml(text)
+}
+
 module.exports = {
   DEFAULT_CHANNEL,
   DEFAULT_CONCURRENCY,
@@ -533,17 +570,19 @@ module.exports = {
   parseJaml,
   splitPaths,
   splitStringAndTrim,
-  getFilenameWithNewExtension,
-  getDefaultOutputFilename,
   toBoolean,
   withTempDir,
+  withTempFile,
   shouldRender,
+  toString,
   toNumber,
   toDate,
   getFormattedDateTime,
-  writeCsv,
+  isUndefined,
+  buildCsv,
   requireAccountId,
   requireAccountIds,
-  strToLower,
+  trimStringAndLower,
   doAsyncWork,
+  markdownToHtml,
 }

@@ -1,45 +1,55 @@
 'use strict'
-const fs = require('fs'),
-  path = require('path'),
-  nunjucks = require('nunjucks'),
-  showdown = require('showdown'),
-  NrqlExtension = require('../extensions/nrql-extension'),
-  ChartExtension = require('../extensions/chart-extension'),
-  DumpContextExtension = require('../extensions/dump-context-extension'),
+const path = require('path'),
+  { shouldRender } = require('../util'),
   {
-    getFilenameWithNewExtension,
-    shouldRender,
-    getDefaultOutputFilename,
-    splitPaths,
-  } = require('../util'),
-  {
-    getS3ObjectAsString,
-  } = require('../aws-util'),
+    Output,
+    getDefaultOutputFileName,
+    FileOutput,
+  } = require('../output'),
   { createLogger, logTrace } = require('../logger')
+const {
+  init: initEngines,
+  processTemplate,
+  getTemplateEngine,
+} = require('../template-engines')
 
-const { writeFile } = fs.promises,
-  logger = createLogger('template-generator'),
-  converter = new showdown.Converter({
-    ghCompatibleHeaderId: true,
-    strikethrough: true,
-    tables: true,
-    tablesHeaderId: true,
-    tasklists: true,
-    openLinksInNewWindow: true,
-    backslashEscapesHTMLTags: true,
-  })
+const logger = createLogger('template-generator')
 
-converter.setFlavor('github')
+function init(context) {
+  initEngines(context)
+}
 
-async function renderPdf(browser, content, file) {
-  logger.debug(`Creating new browser page to render PDF to ${file}...`)
+function maybeConvertMarkdown(context, report, content) {
+  const {
+      templateName,
+    } = report,
+    isMarkdown = typeof report.isMarkdown === 'undefined' ? (
+      path.extname(templateName.toLowerCase()) === '.md'
+    ) : report.isMarkdown
+
+  logger.trace(`Template ${isMarkdown ? 'is' : 'is not'} markdown.`)
+
+  return isMarkdown ? (
+    getTemplateEngine(context).markdownToHtml(content)
+  ) : content
+}
+
+async function renderPdf(context, report, content, tempDir) {
+  const browser = context.browser,
+    html = maybeConvertMarkdown(context, report, content),
+    file = path.join(
+      tempDir,
+      getDefaultOutputFileName(report, 'pdf'),
+    )
+
+  logger.trace('Creating new browser page to render PDF...')
 
   const page = await browser.newPage()
 
   page
-    .on('console', message => logger.debug(`chrome-console: ${message.type().slice(0, 3).toUpperCase()} ${message.text()}`))
+    .on('console', message => logger.trace(`chrome-console: ${message.type().slice(0, 3).toUpperCase()} ${message.text()}`))
     .on('pageerror', ({ message }) => logger.error(`chrome-pageerror: ${message}`))
-    .on('response', response => logger.debug(`chrome-response: ${response.status()} ${response.url()}`))
+    .on('response', response => logger.trace(`chrome-response: ${response.status()} ${response.url()}`))
     .on('requestfailed', request => logger.error(`chrome-requestfailed: ${request.failure()} ${request.url()}`))
 
   logTrace(logger, log => {
@@ -47,13 +57,13 @@ async function renderPdf(browser, content, file) {
   })
 
   await page.setContent(
-    content,
+    html,
     {
       waitUntil: ['load', 'domcontentloaded', 'networkidle0'],
     },
   )
 
-  logger.debug(`Saving PDF to ${file}...`)
+  logger.trace(`Rendering page PDF to file ${file}...`)
 
   await page.pdf({
     path: file,
@@ -65,104 +75,19 @@ async function renderPdf(browser, content, file) {
       right: '40px',
     },
   })
+
+  return new FileOutput([file])
 }
 
-function processTemplateFile(file, renderContext) {
-  return new Promise((resolve, reject) => {
-    logger.debug(`Processing template file ${file}...`)
-
-    logTrace(logger, log => {
-      log(renderContext, 'Render context:')
-    })
-
-    nunjucks.render(file, renderContext, (err, res) => {
-      if (err) {
-        reject(err)
-        return
-      }
-
-      resolve(res)
-    })
-  })
-}
-
-function processTemplateString(template, renderContext) {
-  return new Promise((resolve, reject) => {
-    logger.debug('Processing template string...')
-
-    logTrace(logger, log => {
-      log(renderContext, 'Render context:')
-    })
-
-    nunjucks.renderString(template, renderContext, (err, res) => {
-      if (err) {
-        reject(err)
-        return
-      }
-
-      resolve(res)
-    })
-  })
-}
-
-async function processTemplateReport(
-  context,
-  report,
-  tempDir,
-  processor,
-) {
-  const {
-      templateName,
-      parameters,
-      isMarkdown,
-      outputFileName,
-    } = report,
-    renderContext = context.context(parameters),
-    shouldRenderPdf = shouldRender(report)
-  let templateIsMarkdown = isMarkdown
-
+async function generateTemplateReport(context, manifest, report, tempDir) {
   try {
-    const output = outputFileName ? path.join(tempDir, outputFileName) : (
-      path.join(
-        tempDir,
-        shouldRenderPdf ? (
-          getFilenameWithNewExtension(templateName, 'pdf')
-        ) : getDefaultOutputFilename(templateName),
-      )
-    )
+    const content = await processTemplate(context, manifest, report)
 
-    logger.debug(`Processing template ${templateName}...`)
-
-    if (typeof templateIsMarkdown === 'undefined') {
-      templateIsMarkdown = (path.extname(templateName.toLowerCase()) === '.md')
+    if (shouldRender(report)) {
+      return await renderPdf(context, report, content, tempDir)
     }
 
-    logger.debug(`templateIsMarkdown: ${templateIsMarkdown}`)
-
-    renderContext.isMarkdown = templateIsMarkdown
-
-    let content = await processor(templateName, renderContext)
-
-    if (templateIsMarkdown) {
-      content = await processTemplateString(
-        `{% extends "base/report.md.html" %} {% block content %}${converter.makeHtml(content)}{% endblock %}`,
-        renderContext,
-      )
-    }
-
-    if (shouldRenderPdf) {
-      await renderPdf(
-        context.browser,
-        content,
-        output,
-      )
-
-      return [output]
-    }
-
-    await writeFile(output, content)
-
-    return [output]
+    return new Output(content)
   } catch (err) {
     logger.error(err)
   }
@@ -170,65 +95,7 @@ async function processTemplateReport(
   return null
 }
 
-async function generateTemplateReport(
-  context,
-  manifest,
-  report,
-  tempDir,
-) {
-  if (report.S3Bucket) {
-    const template = await getS3ObjectAsString(
-      report.S3Bucket,
-      report.templateName,
-    )
-
-    return await processTemplateReport(
-      context,
-      report,
-      tempDir,
-      async (templateName, renderContext) => (
-        await processTemplateString(template, renderContext)
-      ),
-    )
-  }
-
-  return await processTemplateReport(
-    context,
-    report,
-    tempDir,
-    async (templateName, renderContext) => (
-      await processTemplateFile(templateName, renderContext)
-    ),
-  )
-}
-
-function configureNunjucks(apiKey, templatePath) {
-  logger.debug('Configuring Nunjucks...')
-
-  const templatesPath = ['.', 'include', 'templates']
-
-  if (templatePath) {
-    splitPaths(templatePath).forEach(p => {
-      if (p) {
-        templatesPath.push(p)
-      }
-    })
-  }
-
-  logTrace(logger, log => {
-    log({ templatesPath }, 'Final template path:')
-  })
-
-  const env = nunjucks.configure(templatesPath)
-
-  env.addExtension('NrqlExtension', new NrqlExtension(apiKey))
-  env.addExtension('ChartExtension', new ChartExtension(apiKey))
-  env.addExtension('DumpContextExtension', new DumpContextExtension())
-
-  return env
-}
-
 module.exports = {
+  init,
   generate: generateTemplateReport,
-  configureNunjucks,
 }

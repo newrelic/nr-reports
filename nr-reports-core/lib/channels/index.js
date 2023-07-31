@@ -3,22 +3,24 @@
 const email = require('./email'),
   file = require('./file'),
   s3 = require('./s3'),
+  slack = require('./slack'),
   { createLogger, logTrace } = require('../logger')
 
 const publishers = {
     email,
     file,
     s3,
+    slack,
   },
   logger = createLogger('publisher')
 
-async function publish(context, manifest, report, files) {
+async function publish(context, manifest, report, output, tempDir) {
   const { channels } = report
 
   logTrace(logger, log => {
     log(
       { channels },
-      `Publishing ${files.length} files to the following channels:`,
+      `Publishing output for report ${report.name} to the following channels:`,
     )
   })
 
@@ -38,18 +40,15 @@ async function publish(context, manifest, report, files) {
     logTrace(logger, log => {
       log(
         { ...publishContext, ...channel },
-        `Publishing ${files.length} files to channel ${channel.type}...`,
+        `Publishing output for report ${report.name} to channel ${channel.type}...`,
       )
-
-      log('Files:')
-      files.forEach(f => log(f))
     })
 
     try {
-      await publisher.publish(publishContext, manifest, report, channel, files)
-      logger.debug(`${files.length} files published to channel ${channel.type}.`)
+      await publisher.publish(publishContext, manifest, report, channel, output, tempDir)
+      logger.trace(`Output for report ${report.name} published to channel ${channel.type}.`)
     } catch (err) {
-      logger.error(`Publishing ${files.length} files to channel ${channel.type} failed with the following error. Publishing will continue with remaining channels.`)
+      logger.error(`Publishing output for report ${report.name} to channel ${channel.type} failed with the following error. Publishing will continue with remaining channels.`)
       logger.error(err)
     }
   }
