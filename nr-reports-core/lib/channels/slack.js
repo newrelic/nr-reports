@@ -65,11 +65,15 @@ async function post(webhookUrl, message, options = { headers: {} }) {
 
 async function buildMessage(context, report, channelConfig, output) {
 
+  if (channelConfig.passThrough) {
+    return await output.render(context, report, channelConfig)
+  }
+
   /*
    * Set the message text to the rendered output with any special mrkdwn
    * characters escaped.
    */
-  return {
+  return JSON.stringify({
     text: escapeMrkdwn(
       await output.render(
         context,
@@ -77,7 +81,7 @@ async function buildMessage(context, report, channelConfig, output) {
         channelConfig,
       ),
     ),
-  }
+  })
 }
 
 async function postToSlack(context, manifest, report, channelConfig, output) {

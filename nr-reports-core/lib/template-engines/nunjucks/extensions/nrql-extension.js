@@ -19,7 +19,7 @@ function handleError(context, err, errorBody, callback) {
   }
 
   // eslint-disable-next-line node/callback-return
-  callback(null, new nunjucks.runtime.SafeString('This chart could not be displayed.'))
+  callback(null, new nunjucks.runtime.SafeString(`Query failed: ${err}`))
 }
 
 function NrqlExtension(apiKey) {

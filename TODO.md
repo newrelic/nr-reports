@@ -60,6 +60,7 @@
   in the generators?
 - [ ] Add New Relic Metrics/Events as a channel
 - [ ] Run manifest reports by name
+- [ ] Specify dashboard output file names
 
 ## Low
 

@@ -44,7 +44,9 @@ async function render(
   }
 
   /*
-   * Otherwise, render the template with the output data.
+   * Otherwise, render the template with the output data. The data could be
+   * either the processed columns and rows or an array of the raw GraphQL
+   * results (if passThrough was specified on the query).
    *
    * TODO: This would re-render the template for every channel which calls
    * output.render() for a given report.

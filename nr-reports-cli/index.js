@@ -86,7 +86,6 @@ $0 -q <nrql-query> -a <account-id> [-o <output-file>] [-c <channel-ids>]`)
       alias: 'template-path',
       type: 'string',
       describe: 'When running a template report, include paths in <template-path> on the template search path (OS separator delimited)',
-      default: 'reports',
     })
     .option('o', {
       alias: 'output-file',
@@ -172,7 +171,7 @@ async function main() {
         nrqlQuery: argv.q,
         outputFileName: argv.o,
         noRender: argv.skipRender,
-        sourceBucket: null, // TODO
+        // sourceBucket: null, // TODO
       },
     }
 
