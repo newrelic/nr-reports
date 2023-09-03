@@ -23,4 +23,5 @@ cd $ROOT_DIR && \
     --build-arg AWS_LAMBDA_VER=$AWS_LAMBDA_VER \
     --progress plain \
     -t $PACKAGE_NAME:$ECR_IMAGE_TAG \
+    --platform=linux/amd64 \
     $ROOT_DIR

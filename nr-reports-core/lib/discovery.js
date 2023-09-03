@@ -170,7 +170,8 @@ async function discoverReportsHelper(
     }
   }
 
-  const dashboards = getOption(options, 'dashboardIds', 'DASHBOARD_IDS')
+  const dashboards = getOption(options, 'dashboardIds', 'DASHBOARD_IDS'),
+    combinePdfs = getOption(options, "combinePdfs")
 
   // Array or comma-delimited list of dashboard GUIDs
   if (dashboards) {
@@ -187,6 +188,7 @@ async function discoverReportsHelper(
       reports: [{
         name: 'dashboard-report',
         dashboards: dashboardGuids,
+        combinePdfs,
         channels,
         ...extras,
       }],

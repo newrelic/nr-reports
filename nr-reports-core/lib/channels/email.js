@@ -229,8 +229,7 @@ async function sendMail(
     return
   }
 
-  const emailTemplateName = resolveEmailTemplate(channelConfig),
-    text = await output.render(
+  const text = await output.render(
       context,
       report,
       channelConfig,
@@ -251,7 +250,7 @@ async function sendMail(
       await renderTemplate(
         context.context({ result: text }),
         report,
-        emailTemplateName || EMAIL_TEMPLATE_DEFAULT,
+        resolveEmailTemplate(channelConfig, EMAIL_TEMPLATE_DEFAULT),
       )
     ),
   )

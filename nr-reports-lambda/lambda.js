@@ -11,13 +11,14 @@ const chromium = require('chrome-aws-lambda'),
     Engine,
     getEnv,
     getSecretValue,
-    strToLower,
+    trimStringAndLower,
+    DEFAULT_LOG_LEVEL,
   } = require('nr-reports-core')
 
 const logger = rootLogger
 
 function configureLogger() {
-  const logLevel = strToLower(getEnv('LOG_LEVEL'))
+  const logLevel = trimStringAndLower(getEnv('LOG_LEVEL', DEFAULT_LOG_LEVEL))
 
   if (logLevel === 'debug') {
     setLogLevel(logger, 'trace')
@@ -116,7 +117,9 @@ async function handler(event) {
     )
   } catch (err) {
     logger.error('Uncaught exception:')
-    logger.error(err)
+    logger.error(err.message)
+
+    console.error(err)
 
     newrelic.noticeError(err)
 

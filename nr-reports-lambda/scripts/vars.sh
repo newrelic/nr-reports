@@ -63,12 +63,12 @@ if [ -z "$PACKAGE_NAME" ]; then
 fi
 
 if [ -z "$AWS_REGION" ]; then
-    AWS_REGION=$(aws configure get region)
+    export AWS_REGION=$(aws configure get region)
 fi
 
 AWS_LAMBDA_VER=${AWS_LAMBDA_VER:-14}
 NEW_RELIC_LAYER_NAME=${NEW_RELIC_LAYER_NAME:-NewRelicNodeJS14X}
-NEW_RELIC_LAYER_VER=${NEW_RELIC_LAYER_VER:-33}
+NEW_RELIC_LAYER_VER=${NEW_RELIC_LAYER_VER:-118}
 FUNCTION_NAME=$(npm run --silent function-name)
 ECR_REPO_URI=$(npm run --silent image-repo-uri)
 ECR_IMAGE_TAG=$(npm run --silent image-tag)

@@ -23,7 +23,7 @@ function escapeMrkdwn(str) {
   )
 }
 
-function buildHeaders(apiKey, headers = {}) {
+function buildHeaders(headers = {}) {
   return {
     'Content-Type': 'application/json',
     ...headers,
