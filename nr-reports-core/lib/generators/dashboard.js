@@ -7,10 +7,13 @@ const { createWriteStream } = require('fs'),
   { promisify } = require('util'),
   PDFMerger = require('pdf-merger-js'),
   { createLogger } = require('../logger'),
-  { NerdgraphClient } = require('../nerdgraph')
+  { NerdgraphClient } = require('../nerdgraph'),
+  { FileOutput } = require('../output')
 
 const logger = createLogger('dashboard-generator'),
   streamPipeline = promisify(pipeline)
+
+function init() {}
 
 async function downloadDashboardPdf(apiKey, dashboard, downloadDir) {
   const query = `{
@@ -36,7 +39,7 @@ async function downloadDashboardPdf(apiKey, dashboard, downloadDir) {
 
   // todo: check for errors
 
-  logger.debug(`Fetching dashboard ${dashboardUrl}...`)
+  logger.trace(`Fetching dashboard ${dashboardUrl}...`)
 
   const response = await fetch(dashboardUrl)
 
@@ -44,9 +47,9 @@ async function downloadDashboardPdf(apiKey, dashboard, downloadDir) {
     throw new Error(`Download PDF at ${dashboardUrl} failed: status=${response.status}`)
   }
 
-  logger.debug(`Writing PDF to ${dashboardPdfFileName}...`)
+  logger.trace(`Writing PDF to ${dashboardPdfFileName}...`)
   await streamPipeline(response.body, createWriteStream(dashboardPdfFileName))
-  logger.debug(`Wrote PDF to ${dashboardPdfFileName}...`)
+  logger.trace(`Wrote PDF to ${dashboardPdfFileName}...`)
 
   return dashboardPdfFileName
 }
@@ -54,14 +57,14 @@ async function downloadDashboardPdf(apiKey, dashboard, downloadDir) {
 async function mergePdfs(dashboardPdfs, consolidatedPdf) {
   const merger = new PDFMerger()
 
-  logger.debug(log => {
+  logger.trace(log => {
     log(`Merging ${dashboardPdfs.length} PDFs to ${consolidatedPdf}...`)
     dashboardPdfs.forEach(pdf => log(pdf))
   })
 
   dashboardPdfs.forEach(dashboard => merger.add(dashboard))
 
-  logger.debug(`Creating consolidated PDF ${consolidatedPdf}...`)
+  logger.trace(`Creating consolidated PDF ${consolidatedPdf}...`)
   await merger.save(consolidatedPdf)
 }
 
@@ -79,7 +82,7 @@ async function generateDashboardReport(
       combinePdfs,
     } = report
 
-    logger.debug(`Running dashboard report for dashboards [${dashboards}]...`)
+    logger.trace(`Running dashboard report for dashboards [${dashboards}]...`)
 
     const promises = dashboards.map(async dashboard => (
         await downloadDashboardPdf(context.apiKey, dashboard, tempDir)
@@ -91,7 +94,7 @@ async function generateDashboardReport(
       await mergePdfs(dashboardPdfs, consolidatedPdf)
     }
 
-    return combinePdfs ? [consolidatedPdf] : dashboardPdfs
+    return new FileOutput(combinePdfs ? [consolidatedPdf] : dashboardPdfs)
   } catch (err) {
     logger.error(err)
   }
@@ -100,5 +103,6 @@ async function generateDashboardReport(
 }
 
 module.exports = {
+  init,
   generate: generateDashboardReport,
 }

@@ -1,8 +1,4 @@
 {
-  "title": "New Relic Golden Signals Weekly Report",
-  "author": "Alice Reli",
-  "authorTitle": "SRE",
-  "accountId": 9999999,
-  "accountName": "NEWRELIC_ACCOUNT_NAME",
-  "appName": "NEWRELIC_APPLICATION_NAME"
+  "accountId": 1234567,
+  "appName": "Shop Service"
 }

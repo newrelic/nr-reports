@@ -1,13 +1,13 @@
 'use strict'
 
 const nunjucks = require('nunjucks'),
-  { createLogger, logTrace } = require('../logger'),
+  { createLogger, logTrace } = require('../../../logger'),
   {
     NerdgraphClient,
-  } = require('../nerdgraph'),
-  { Context, requireAccountId, toNumber } = require('../util')
+  } = require('../../../nerdgraph'),
+  { Context, requireAccountIds } = require('../../../util')
 
-const logger = createLogger('chart-extension')
+const logger = createLogger('nrql-extension')
 
 function handleError(context, err, errorBody, callback) {
   logger.error(err)
@@ -19,11 +19,11 @@ function handleError(context, err, errorBody, callback) {
   }
 
   // eslint-disable-next-line node/callback-return
-  callback(null, new nunjucks.runtime.SafeString('This chart could not be displayed.'))
+  callback(null, new nunjucks.runtime.SafeString(`Query failed: ${err}`))
 }
 
-function ChartExtension(apiKey) {
-  this.tags = ['chart']
+function NrqlExtension(apiKey) {
+  this.tags = ['nrql']
   this.apiKey = apiKey
 
   this.parse = function(parser, nodes, lexer) {
@@ -38,12 +38,12 @@ function ChartExtension(apiKey) {
     parser.advanceAfterBlockEnd(tok.value)
 
     // parse the body and possibly the error block, which is optional
-    const body = parser.parseUntilBlocks('error', 'endchart')
+    const body = parser.parseUntilBlocks('error', 'endnrql')
     let errorBody = null
 
     if (parser.skipSymbol('error')) {
       parser.skip(lexer.TOKEN_BLOCK_END)
-      errorBody = parser.parseUntilBlocks('endchart')
+      errorBody = parser.parseUntilBlocks('endnrql')
     }
 
     parser.advanceAfterBlockEnd()
@@ -81,39 +81,35 @@ function ChartExtension(apiKey) {
       })
 
       if (!query) {
-        logger.warn('Missing query')
+        logger.warn('missing query')
         callback(null, '')
         return
       }
 
-      context.setVariable(options.var || 'chartUrl', null)
+      context.setVariable(options.var || 'result', null)
 
       const vars = context.getVariables(),
         newContext = new Context(vars, options),
-        accountId = requireAccountId(newContext),
-        chartOptions = {
-          type: options.type,
-          format: options.format,
-          width: options.width ? toNumber(options.width) : 640,
-          height: options.height ? toNumber(options.height) : 480,
-        },
+        accountIds = requireAccountIds(newContext),
         nerdgraph = new NerdgraphClient()
 
       logTrace(logger, log => {
         log(newContext, 'Extension render context')
       })
 
-      const result = await nerdgraph.getShareableChartUrl(
+      const result = await nerdgraph.runNrql(
         this.apiKey,
-        accountId,
+        accountIds,
         env.renderString(query, newContext),
-        chartOptions,
         {
           timeout: options.timeout || 5,
         },
       )
 
-      context.setVariable(options.var || 'chartUrl', result)
+      context.setVariable(
+        options.var || 'result',
+        result,
+      )
 
       body((err, src) => {
         if (err) {
@@ -121,20 +117,7 @@ function ChartExtension(apiKey) {
           return
         }
 
-        let source = src
-
-        if (!source || source.trim().length === 0) {
-          source = new nunjucks.runtime.SafeString((
-            vars.isMarkdown ? `![](${result})` : `
-              <img ${options.class ? `class="${options.class}"` : ''} src="${result}"
-                width="${chartOptions.width}"
-                height="${chartOptions.height}"
-              />
-            `
-          ))
-        }
-
-        callback(null, source)
+        callback(null, src)
       })
     } catch (err) {
       handleError(context, err, errorBody, callback)
@@ -142,4 +125,4 @@ function ChartExtension(apiKey) {
   }
 }
 
-module.exports = ChartExtension
+module.exports = NrqlExtension

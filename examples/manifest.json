@@ -1,40 +1,18 @@
 [
   {
-    "name": "golden-signals",
-    "templateName": "golden-signals.html",
+    "name": "hello-world",
+    "templateName": "hello-world.html",
     "parameters": {
-      "title": "New Relic Golden Signals Weekly Report",
-      "author": "Alice Reli",
-      "authorTitle": "SRE",
-      "accountId": 9999999,
-      "accountName": "NEWRELIC_ACCOUNT_NAME",
-      "appName": "NEWRELIC_APPLICATION_NAME"
+      "accountId": 1234567,
+      "appName": "Shop Service"
     },
-    "channels": [{
-      "type": "email",
-      "from": "me@nowhere.local",
-      "to": "you@nowhere.local",
-      "subject": "{{ title }}",
-      "template": "email/message.html"
-    }, {
-      "type": "s3",
-      "bucket": "MY_S3_BUCKET"
-    }]
+    "channels": []
   },
   {
-    "name": "performance-summary-dashboards",
+    "name": "performance-summary-dashboard",
     "dashboards": [
-      "DASHBOARD_ENTITY_GUID_1",
-      "DASHBOARD_ENTITY_GUID_1",
-      "DASHBOARD_ENTITY_GUID_1"
+      "ABCDEF123456"
     ],
-    "combinePdfs": false,
-    "channels": [{
-      "type": "email",
-      "from": "me@nowhere.local",
-      "to": "you@nowhere.local",
-      "subject": "{{ title }}",
-      "template": "email/message.html"
-    }]
+    "channels": []
   }
 ]

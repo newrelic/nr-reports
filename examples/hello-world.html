@@ -1,0 +1,14 @@
+{% extends "base/report.html" %}
+
+{% block content %}
+<h1>My Application Throughput</h1>
+<p>
+    This is our application throughput for last week.
+</p>
+<div>
+    {% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
+        type="AREA",
+        accountId=1234567
+    %}{% endchart %}
+</div>
+{% endblock %}

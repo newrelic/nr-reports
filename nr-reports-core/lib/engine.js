@@ -60,17 +60,16 @@ class Engine {
       })
 
       const reportIndex = manifest.reports.findIndex(shouldRender),
-        templatePath = getOption(args.options, 'templatePath', 'TEMPLATE_PATH')
+        templatePath = getOption(args.options, 'templatePath', 'TEMPLATE_PATH'),
+        context = this.context.context({
+          browser: null,
+          templatePath,
+          ...manifest.variables,
+        })
 
-      templateGenerator.configureNunjucks(
-        this.context.apiKey,
-        templatePath,
-      )
-
-      const context = this.context.context({
-        browser: null,
-        ...manifest.variables,
-      })
+      templateGenerator.init(context)
+      queryGenerator.init(context)
+      dashboardGenerator.init(context)
 
       if (reportIndex >= 0) {
         logger.trace('Found 1 or more PDF reports. Launching browser...')
@@ -114,22 +113,23 @@ class Engine {
             )
           })
 
-          const outputs = await generator.generate(
+          const output = await generator.generate(
             reportContext,
             manifest,
             report,
             tempDir,
           )
 
-          if (Array.isArray(outputs) && outputs.length > 0) {
+          if (output) {
             await publish(
               context,
               manifest,
               report,
-              outputs,
+              output,
+              tempDir,
             )
           } else {
-            logger.warn(`No outputs generated for report ${report.name || index}.`)
+            logger.warn(`No output generated for report ${report.name || index}.`)
           }
 
           logger.debug(`Completed report ${report.name || index}.`)

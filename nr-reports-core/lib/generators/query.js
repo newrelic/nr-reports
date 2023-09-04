@@ -1,15 +1,16 @@
 'use strict'
 
-const path = require('path'),
-  { createLogger, logTrace } = require('../logger'),
+const {
+    createLogger,
+    logTrace,
+  } = require('../logger'),
   {
     DEFAULT_CONCURRENCY,
-    writeCsv,
-    getFormattedDateTime,
     requireAccountIds,
-    strToLower,
+    trimStringAndLower,
     doAsyncWork,
   } = require('../util'),
+  { Output, QueryOutput } = require('../output'),
   { NerdgraphClient } = require('../nerdgraph')
 
 const logger = createLogger('query-generator'),
@@ -19,7 +20,9 @@ const logger = createLogger('query-generator'),
     FACET: 2,
   }
 
-async function writeFile(context, output, nrqlResults) {
+function init() {}
+
+async function processNrqlResults(context, report, manifest, nrqlResults) {
   const { metadata: md0 } = nrqlResults[0],
     columns = {},
     rows = []
@@ -73,31 +76,35 @@ async function writeFile(context, output, nrqlResults) {
 
     results.forEach(r => {
       const { facet, ...rest } = r,
-        row = []
+        row = orderedColumnProps.reduce((accumulator, prop) => {
+          const columnType = columns[prop]
 
-      orderedColumnProps.reduce((accumulator, prop) => {
-        const columnType = columns[prop]
+          if (columnType === COLUMN_TYPES.ACCOUNT_ID) {
+            accumulator.push(accountId)
+          } else if (columnType >= COLUMN_TYPES.FACET && Array.isArray(facet)) {
+            const val = facet[columnType - COLUMN_TYPES.FACET]
 
-        if (columnType === COLUMN_TYPES.ACCOUNT_ID) {
-          row.push(accountId)
-        } else if (columnType >= COLUMN_TYPES.FACET && Array.isArray(facet)) {
-          const val = facet[columnType - COLUMN_TYPES.FACET]
+            accumulator.push(val ? `${val}` : '')
+          } else if (typeof rest[prop] !== 'undefined') {
+            accumulator.push(`${rest[prop]}`)
+          } else {
+            accumulator.push('')
+          }
 
-          accumulator.push(val ? `${val}` : '')
-        } else if (typeof rest[prop] !== 'undefined') {
-          accumulator.push(`${rest[prop]}`)
-        } else {
-          accumulator.push('')
-        }
-
-        return accumulator
-      }, row)
+          return accumulator
+        }, [])
 
       rows.push(row)
     })
   }
 
-  await writeCsv(output, orderedColumnProps, rows)
+  return new QueryOutput(
+    {
+      columns: orderedColumnProps,
+      rows,
+    },
+    true,
+  )
 }
 
 function runMultiConcurrentNrql(context, report, accountIds) {
@@ -130,7 +137,7 @@ function runMultiConcurrentNrql(context, report, accountIds) {
   }
 
   return new Promise((resolve, reject) => {
-    logger.debug(
+    logger.trace(
       `Running concurrent queries for ${accountIds.length} accounts...`,
     )
 
@@ -175,7 +182,7 @@ async function runMultiNrql(context, report, accountIds) {
     nerdgraph = new NerdgraphClient()
   let q = ''
 
-  logger.debug(`Running aliased queries for ${accountIds.length} accounts...`)
+  logger.trace(`Running aliased queries for ${accountIds.length} accounts...`)
 
   for (let index = 0; index < accountIds.length; index += 1) {
     q += `
@@ -219,14 +226,14 @@ async function runNrql(context, report) {
       query,
       timeout,
     } = report,
-    multiAccountMode = strToLower(context.get(
+    multiAccountMode = trimStringAndLower(context.get(
       'multiAccountMode',
       null,
       'cross-account',
     )),
     nerdgraph = new NerdgraphClient()
 
-  logger.debug(`Running query report for query "${query}"...`)
+  logger.trace(`Running query report for query "${query}"...`)
 
   if (multiAccountMode === 'per-account') {
     return await runMultiNrql(context, report, accountIds)
@@ -253,7 +260,7 @@ async function runNrql(context, report) {
   return [result]
 }
 
-async function generateQueryReport(context, manifest, report, tempDir) {
+async function generateQueryReport(context, manifest, report) {
   try {
     const results = await runNrql(context, report)
 
@@ -262,17 +269,11 @@ async function generateQueryReport(context, manifest, report, tempDir) {
       return null
     }
 
-    const outputFileName = context.outputFileName,
-      output = outputFileName ? path.join(tempDir, outputFileName) : (
-        path.join(
-          tempDir,
-          `${report.name || 'query-report'}-${getFormattedDateTime()}.csv`,
-        )
-      )
+    if (report.passThrough) {
+      return new QueryOutput(results)
+    }
 
-    await writeFile(context, output, results)
-
-    return [output]
+    return await processNrqlResults(context, manifest, report, results)
   } catch (err) {
     logger.error(err)
   }
@@ -281,5 +282,6 @@ async function generateQueryReport(context, manifest, report, tempDir) {
 }
 
 module.exports = {
+  init,
   generate: generateQueryReport,
 }

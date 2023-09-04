@@ -28,11 +28,14 @@ The New Relic Reports engine supports several different report types.
 
 #### Template Reports
 
-Template reports provide a mechanism for building custom, content-rich reports
-containing user defined content alongside New Relic charts and data. Template
-reports are typically built with HTML or Markdown and produce PDF output, but
-this is not a requirement. Template reports can be built from any text-based
-content and produce any text-based output.
+Template reports provide a mechanism for building custom reports using
+[templates](#templates). Templates are text-based, user-defined documents that
+can contain both content and logic. Templates are processed when a template
+report is run to produce text-based output. Special bits of logic called
+[extensions](#template-extensions) are provided that make it easy to use New
+Relic data in template reports. By default, the output is rendered in a browser
+to produce PDF output, but it is just as easy to disable rendering and deliver
+the template output in a variety of ways.
 
 #### Dashboard Reports
 
@@ -46,9 +49,8 @@ single PDF.
 Query reports provide a mechanism to export the results of running a
 NRQL query by simply specifying a query and one or more account IDs to run the
 query against. No additional configuration is required. By default, query
-results are exported to CSV but query results can also be exported as a simple
-HTML table or can be formatted using a [Nunjucks](https://mozilla.github.io/nunjucks/)
-template.
+results are exported to CSV but query results can also be formatted using a
+[Nunjucks](https://mozilla.github.io/nunjucks/) template.
 
 ### Channel Types
 
@@ -61,6 +63,8 @@ supported.
 * Email: Report output is included inline or as attachments to an email using a
   user defined email template and sent via SMTP.
 * S3: Report output is saved to a file and uploaded to an S3 bucket.
+* Slack: Report output is posted to a Slack channel via a
+  [Slack webhook](https://api.slack.com/messaging/webhooks).
 
 ### Running Reports
 
@@ -92,11 +96,13 @@ There are three ways to run reports.
 
 To develop reports and run them locally, you will need the following.
 
-* Node/NPM >= 12.0.0
+* Node >= 14.0.0
 * A terminal application that supports Bash scripts
 * Your favorite IDE
-* For the email channel, SMTP server settings (for testing locally try Mailhog)
+* For the email channel, SMTP server settings (for testing locally try [Mailhog](https://github.com/mailhog/MailHog))
 * For the S3 channel, AWS credentials and an S3 bucket
+* For the Slack channel, an [Incoming Webhook](https://api.slack.com/messaging/webhooks)
+  URL.
 
 To build and deploy CRON based images, you will need the following.
 
@@ -113,7 +119,7 @@ To build and deploy Lambda based images, you will need the following.
 ## Installation
 
 ```bash
-git clone git@github.com:newrelic-experimental/nr-reports.git
+git clone git@github.com:newrelic/nr-reports.git
 cd nr-reports
 npm install
 ```
@@ -141,42 +147,26 @@ with your New Relic User key.
 
 ```bash
 cd path/to/nr-reports
-export NEW_RELIC_API_KEY=[YOUR USER KEY]
+export NEW_RELIC_API_KEY="[YOUR USER KEY]"
 ```
 
 ### Copy the example template
 
-Next, copy the example template to a new template named `hello-world.html`.
+Next, make a copy of the example `hello-world.html` template in the `include`
+directory.
 
 ```bash
-cp ./examples/golden-signals.html ./include/hello-world.html
+cp ./examples/hello-world.html ./include/hello-world.html
 ```
 
 ### Update the example template
 
-Next, delete everything in the new template and replace it with the following
-content, making sure to replace `Shop Service` with an appropriate APM service
-name and `1234567` with the account ID for the service. Then save the template.
+Next, edit the new template and replace the string `Shop Service` with an
+appropriate APM service name and the account ID `1234567` with the account ID
+for the service. Then save the template.
 
-```html
-{% extends "base/report.html" %}
-
-{% block content %}
-<h1>My Application Throughput</h1>
-<p>
-    This is our application throughput for last week.
-</p>
-<div>
-    {% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
-        type="AREA",
-        accountId=1234567
-    %}{% endchart %}
-</div>
-{% endblock %}
-```
-
-Don't worry for now what all that means. It looks more complicated than it is
-and will be explained [in the usage section](#usage).
+Don't worry for now what all the rest of the content in the file means. It looks
+more complicated than it is and will be explained [in the usage section](#usage).
 
 ### Run the template report
 
@@ -218,7 +208,13 @@ The `chart` tag should now look something like the following.
 
 ### Create a template parameter values file
 
-Copy the example values file to a new template named `hello-world.json`.
+Now we will create a [values file](#values-file). The values file is a
+[JSON](https://www.json.org/json-en.html) or [YAML](https://yaml.org/) file
+with a flat structure that is a set of key/value pairs. It let's us separate out
+specific values from the template so that we can use the same template with
+different values without having to change the template.
+
+Copy the example values file to a new file named `hello-world.json`.
 
 ```bash
 cp ./examples/values.json ./include/hello-world.json
@@ -226,21 +222,9 @@ cp ./examples/values.json ./include/hello-world.json
 
 ### Update the example values file
 
-Next, delete everything in the new values file and replace it with the following
-content, making sure to replace `Shop Service` with an appropriate APM service
-name and `1234567` with the account ID for the service. Then save the file.
-
-```json
-{
-  "accountId": 1234567,
-  "appName": "Shop Service"
-}
-```
-
-The values file is a [JSON](https://www.json.org/json-en.html) or
-[YAML](https://yaml.org/) file with a flat structure that is a set of key/value
-pairs. All we've done above is separate out the account ID and application name
-so it isn't hardcoded in the template.
+Next, edit the new file and replace the string `Shop Service` and the account
+ID `1234567` with the values you removed from the template in the previous step.
+Then save the file.
 
 ### Re-run the template report
 
@@ -260,15 +244,16 @@ option that is used to specify the path to the values file.
 
 Now there should be a new PDF file in the current directory called
 `hello-world.pdf`. Open it up and it should look exactly the same as before.
-That is because all we did was move the values out of the template. We didn't
-actually change the values.
+That is because all we've done above is separate out the account ID and
+application name so it isn't hardcoded in the template. We didn't actually
+change the values.
 
 ### Run a dashboard report
 
 So far we have been running template reports, i.e. reports based on a template
 file. New Relic Reports supports another report type called dashboard reports.
 Dashboard reports are much simpler. You specify a list of dashboard GUIDs and
-the report engine will use Nerdgraph to download a dashboard snapshot PDF for
+the reporting engine will use Nerdgraph to download a dashboard snapshot PDF for
 each dashboard and optionally combine multiple snapshots in a single PDF.
 
 Here's how you run a dashboard report.
@@ -313,8 +298,8 @@ Let's see how that works by running a simple query report to show the average
 latency of all APM services in your account grouped by application name and URL
 using the following NRQL.
 
-```text
-SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri AS 'URL'`
+```sql
+SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri AS 'URL'
 ```
 
 To do that, run the following command, replacing the string `1234567` with your
@@ -325,9 +310,8 @@ account ID.
 ```
 
 Now there should be a new CSV file in the current directory called
-`query-report-[DATE_TIME].csv` where `[DATE_TIME]` is a date and time string
-for the current UTC time.  Open it up in a text editor and you should see
-something like the following.
+`query-report.csv`. Open it up in a text editor and you should see something
+like the following.
 
 ```csv
 Application Name,URL,Duration
@@ -350,7 +334,7 @@ First, delete the previous report so we can be sure this run re-creates a new
 one.
 
 ```bash
-rm ./hello-world.pdf dashboard-[DASHBOARD_GUID].pdf
+rm hello-world.pdf dashboard-[DASHBOARD_GUID].pdf query-report.csv
 ```
 
 Make sure to replace `[DASHBOARD_GUID]` with the GUID of your dashboard.
@@ -365,34 +349,12 @@ cp ./examples/manifest.json ./include/manifest.json
 
 ### Update the example manifest file
 
-Next, delete everything in the new manifest file and replace it with the
-following content, making sure to replace `Shop Service` with an appropriate
-APM service name, `1234567` with the account ID for the service, and
-`ABCDEF123456` with your dashboard GUID. Then save the template.
-
-```json
-[
-  {
-    "name": "hello-world",
-    "templateName": "hello-world.html",
-    "parameters": {
-      "accountId": 1234567,
-      "appName": "Shop Service"
-    },
-    "channels": []
-  },
-  {
-    "name": "performance-summary-dashboard",
-    "dashboards": [
-      "ABCDEF123456"
-    ],
-    "channels": []
-  }
-]
-```
+Next, edit the new file and replace the string `Shop Service` and the account
+ID `1234567` and the string `ABCDEF123456` with the values you used in the
+previous steps. Then save the file.
 
 Again, don't worry for now what all that means. It looks more complicated than
-it is and will be explained [in the manifest file section](#manifest-file).
+it is and will be explained in the section [manifest file](#manifest-file).
 
 ### Run the report using the manifest file
 
@@ -420,22 +382,22 @@ Here's what we just did.
    timeseries chart for the given NRQL query.
 2. Modifed the template to use template parameters as placeholders for the
    values that we hardcoded in step 1 by creating a values file.
-3. Used the CLI script to run an ad-hoc report at the command line using the
-   template and the values file from steps 1 and 2.
+3. Used the CLI script to run a report at the command line using the template
+   and the values file from steps 1 and 2.
 4. Without knowing it, used the `file` channel to store the resulting PDF
    report in the current directory.
-5. Used the CLI script to run an ad-hoc report at the command line using a
-   dashboard entity GUID.
+5. Used the CLI script to run a report at the command line using a dashboard
+   entity GUID.
 6. Without knowing it, used the `file` channel to store the resulting PDF
    report in the current directory.
-7. Used the CLI script to run an ad-hoc query report at the command line using
-   a simple NRQL query.
+7. Used the CLI script to run a query report at the command line using a simple
+   NRQL query.
 8. Without knowing it, used the `file` channel to store the query results as a
    CSV file in the current directory.
 9. Created a [manifest file](#manifest-file) with report definitions for the
    HTML template report and dashboard report from the previous steps.
-10. Used the CLI script to run an ad-hoc report at the command line using the
-   default manifest file located at `include/manifest.json`.
+10. Used the CLI script to run a report at the command line using the default
+   manifest file located at `include/manifest.json`.
 11. Without knowing it, used the `file` channel to store the resulting PDF
    reports in the current directory.
 
@@ -449,7 +411,7 @@ provided mechanisms for automating the generation and delivery of reports. See
 ### Template Reports
 
 Template reports are created from [templates](#templates). Templates are stored
-in template files. Template files are plain text documents containing text mixed
+in template files. Template files are text files that contain text mixed
 with template "instructions". Template "instructions" are written using a
 special syntax that is understood by the [the Nunjucks template "engine"](https://mozilla.github.io/nunjucks/).
 Reports are produced from a template file by passing the content of the file
@@ -541,12 +503,29 @@ templates.
 
 #### Template Content
 
-Template reports are typically built with HTML or Markdown and produce PDF
-output. By default, the reporting engine assumes the content in the template is
-HTML. It will process the content of the template by passing it through the
-template engine, load the content into a headless Chrome instance for rendering,
-and save the rendered page as a PDF file. The PDF file is then distributed to
-all [channels](#channels) defined for the report.
+Template reports are built out of text. The template engine does not care about
+the semantics of the text that it processes. In other words, the template engine
+does not care if the text represents CSV data or HTML data. Just that it is
+text. 
+
+There is one special case which applies to the default behavior of the reporting
+engine. In this case, the output of the template engine will be loaded into a
+headless Chrome instance and the rendered page will be saved as a PDF file.
+While just about any text-based document can be rendered by Chrome in one way or
+another, the reporting engine applies special handling if, and only if, the
+[`isMarkdown` flag](#template-report-properties) is present and set to `true` in
+the report definition or if the template name has a `.md` extension.
+
+In either of these conditions are met, the reporting engine assumes that the
+template contains [GitHub Flavored Markdown](https://github.github.com/gfm/).
+This will result in _two_ passes through the template engine. The first pass is
+the standard pass the templating engine makes over any template. The additional
+_second_ pass renders the [`report.md.html`](./templates//base/report.md.html)
+template and inserts the output from the first pass into the `content` section
+after converting the output to HTML using
+[the showdown Markdown converter](https://github.com/showdownjs/showdown).
+
+##### HTML Template Example
 
 Following is an example of an HTML template. You might recognize this from the
 section [Update the example template](#update-the-example-template) in the
@@ -569,11 +548,7 @@ section [Update the example template](#update-the-example-template) in the
 {% endblock %}
 ```
 
-The reporting engine also supports building templates in Markdown. Prior to
-processing and rendering a template, the reporting engine will convert the
-Markdown to HTML if either the [`isMarkdown` flag](#template-report-properties)
-is present and set to `true` in the report definition or if the template name
-has a `.md` extension.
+##### Markdown Template Example
 
 Following is an example of a Markdown template that will produce something very
 similar to the example HTML template above.
@@ -589,11 +564,12 @@ This is our application throughput for last week.
 %}{% endchart %}
 ```
 
-HTML and Markdown are not the only supported content types. In fact, template
-reports can be built from any text-based content and produce any text-based
-output. A report could produce CSV, XML, or JSON output. For example, following
-is a template that produces a CSV file from the result of running a NRQL query
-using [the `nrql` tag](#the-nrql-tag).
+##### CSV Template Example
+
+As mentioned, template reports can be built from any text-based content and
+produce any text-based output. A report could produce CSV, XML, or JSON output.
+For example, following is a template that produces a CSV file from the result of
+running a NRQL query using [the `nrql` tag](#the-nrql-tag).
 
 ```nunjucks
 App Name,Duration
@@ -604,7 +580,6 @@ App Name,Duration
 {{ item.facet[0] }},{{ item.duration }}
    {%- endfor -%}
 {%- endnrql -%}
-
 ```
 
 In the above case, the output from the template engine is probably not meant to
@@ -666,9 +641,10 @@ that make it easy to integrate New Relic charts and data in your reports.
 ##### The `chart` Tag
 
 The `chart` tag is used to include a [New Relic chart](https://docs.newrelic.com/docs/query-your-data/explore-query-data/use-charts/use-your-charts/)
-in a report. It can be used with an HTML or markdown based template. For an HTML
-based template, the `chart` tag will inject an HTML `<img />` tag into the
-generated output. For a markdown based template, the `chart` tag will inject
+in a report. It should only be used with HTML or markdown based templates that
+will be rendered in Chrome to produce a PDF. For an HTML based template, the
+`chart` tag will inject an HTML `<img />` tag into the generated output. For a
+markdown based template, the `chart` tag will inject
 [the markdown to create an image](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#images)
 into the generated output.
 
@@ -908,21 +884,9 @@ or [YAML](https://yaml.org/) object. For example, the following JSON specifies
 }
 ```
 
-When processing a template, the template engine builds the set of template
-parameters to use as follows.
-
-* If a [manifest file](#manifest-file) is specified, add all properties from
-  the `variables` section at the top-level and all properties from the
-  `parameters` property for the template report being processed to the set.
-* If no [manifest file](#manifest-file) is specified and a [values file](#values-file)
-  is specified, add all properties from the top-level object in the values file
-  to the set.
-* If the report is being run [from a Lambda](#using-the-aws-lambda-function)
-  function,
-  * If a `body` property is present in the `event` object passed to the
-    handler function, add all properties from the `body` property to the set.
-  * If a `body` property is _not_ present in the `event` object passed to the
-    handler function, add all properties from the `event` object to the set.
+When processing a template, the reporting engine makes all properties in the
+[report execution context](#report-execution-context) available as template
+parameters. 
 
 ### Dashboard Reports
 
@@ -1100,6 +1064,69 @@ The `per-account` and `per-account-concurrent` modes are not "native" query
 types like `cross-account`. Rather, they are implemented in the reporting
 engine.
 
+### Report Execution Context
+
+The reporting engine creates an "execution context" each time it runs a report.
+The execution context is a collection of properties that can be used by the
+components that generate the report. When the execution context is created, the
+reporting engine populates it as follows.
+
+* If a [manifest file](#manifest-file) is specified:
+   * Add all properties from the `variables` section at the top-level
+   * Add properties from the `report` definition
+   * If the report is a [template report](#template-reports):
+      * Add all properties from the `parameters` property from the report definition
+      * If the report is being run [from a Lambda](#using-the-aws-lambda-function)
+        function:
+        * If a `body` property is present in the `event` object passed to the
+          handler function, add all properties from the `body` property
+        * If a `body` property is _not_ present in the `event` object passed to
+          the handler function, add all properties from the `event` object
+* If no [manifest file](#manifest-file) is specified:
+   * Add report name and the [`outputFileName`](#output-file-name) if one
+     is specified
+   * If the report is a [template report](#template-reports):
+      * Add the template name
+      * If a [values file](#values-file) is specified, add all properties from
+        the top-level object
+      * If the report is being run [from a Lambda](#using-the-aws-lambda-function)
+        function:
+        * If a `body` property is present in the `event` object passed to the
+          handler function, add all properties from the `body` property
+        * If a `body` property is _not_ present in the `event` object passed to
+          the handler function, add all properties from the `event` object
+   * If the report is a [dashboard report](#dashboard-reports), add an array
+     property named `dashboards` containing all dashboard GUIDs
+   * If the report is a [query report](#query-reports), add the query and the
+     account ID
+     property named `dashboards` containing all dashboard GUIDs
+
+**NOTE:**
+When populating the context, if two properties with the same name are added by
+different steps, the later property will overwrite the earlier property.
+
+### Report Output
+
+Every report produces output. The output can either be a text buffer stored in
+local memory or a file stored in the temporary work directory created when the
+reporting engine starts.
+
+The type of output depends on the type of report.
+
+| Report Type | Output Type |
+| --- | --- |
+| [Template Report](#template-reports) (default / `render` == `true`) | File |
+| [Template Report](#template-reports) (`render` == `false`) | Text |
+| [Dashboard Report](#dashboard-reports) | File |
+| [Query Report](#query-reports) | Text |
+
+Note that the type of output generated for a given report type is not always the
+same as the format used to send the output via a particular channel.
+For example, the default output of a [query report](#query-reports) is a string
+of text that contains CSV data. But this data can be sent via the
+[email channel](#email-channel) as the body of the email _or_ in a file
+attached to the email. 
+
 ### Channels
 
 After a report has been run, the generated outputs are distributed via channels.
@@ -1109,6 +1136,7 @@ destinations. The following channels are supported:
 * [File](#file-channel) (the default when running [from the CLI](#using-the-cli))
 * [Email](#email-channel)
 * [S3](#s3-channel) (the default when running [from a Lambda](#using-the-aws-lambda-function))
+* [Slack](#slack-channel)
 
 #### Channel parameters
 
@@ -1122,9 +1150,12 @@ be used to connect to the SMTP server.
 Channel configuration parameters can be specified via [a manifest file](#manifest-file),
 via environment variables, or using a combination of both. The recommended way
 is to use a manifest file as it makes it very clear what values will be used and
-it allows for multiple channels of the same type to use different values. For
-more details on the supported channel configuration parameters see the specific
-sections below.
+it allows for multiple channels of the same type to use different values.
+Additionally, all channel configuration parameters specified via a manifest file
+are automatically added to the [report execution context](#report-execution-context).
+
+For more details on the supported channel configuration parameters see the
+specific sections below.
 
 #### Channel parameter interpolation
 
@@ -1142,8 +1173,28 @@ would be `Report generated for alice@newrelic.com`.
 
 #### Specifying channels
 
-When a report is run using the CLI, the channels to use are specified at the
-command line. For example, the CLI command used in the
+When the reporting engine is run using a [manifest file](#manifest-file), the
+channels to use for a given report are part of the channel definition for the
+report as specified in the manifest file.
+
+If the reporting engine is run without a [manifest file](#manifest-file), the
+reporting engine will use the value of the `CHANNEL_IDS` environment variable.
+If a non-empty value is specified, it is interpreted as a comma-separated list
+of channel IDs. For example, the value `s3,email` specifies that the report
+output(s) should be published to the [S3](#s3-channel) and
+[Email](#email-channel) channels.
+
+If no value is specified for the `CHANNEL_IDS` environment variable _and_ the
+reporting engine was run [from the CLI](#using-the-cli), the value of the `-c`
+option will be used. It will be interpreted in the same way as the value of the
+`CHANNEL_IDS` environment variable.
+
+If no channel is specified using any of the above mechanisms, report output(s)
+will be published to the [file channel](#file-channel) when running
+[from the CLI](#using-the-cli) or the [s3 channel](#s3-channel) when running
+[from a Lambda](#using-the-aws-lambda-function)
+
+As an example, the CLI command used in the
 [Run the template report](#run-the-template-report) section could have
 explicitly specified the file channel as follows.
 
@@ -1152,27 +1203,85 @@ explicitly specified the file channel as follows.
 ```
 
 This is not necessary since the [file channel](#file-channel) is the default.
-However, if we wanted to use the [email channel](#email-channel) instead, we
-would have to specify it as follows.
+However, to use the [email channel](#email-channel) instead, it would be
+specified as follows.
 
 ```bash
 ./nr-reports-cli/bin/nr-reports.sh -n hello-world.html -c email
 ```
 
-In both of the above cases, the respective channel implementation will attempt
-to locate the configuration parameters it needs in the environment and will
-default any optional parameters.
+**NOTE:**
+[Channel parameters](#channel-parameters) can not be specified when using the
+`CHANNEL_IDS` environment variable or the `-c` CLI option, or when using the
+default `file` channel. In these cases, the respective channel implementation
+will attempt to locate the configuration parameters it needs in the environment
+(where supported) and will default any optional parameters.
+
+#### Output File Name
+
+For report types that produce file output, file names are calculated as follows.
+
+* For [template reports](#template-reports) where the `render` parameter is not
+  set or is set to `true`, the rendered page will be saved to a file named
+  `<REPORTNAME>.pdf`. If a [manifest file](#manifest-file) is used to run the
+  report, `<REPORTNAME>` will be the value of the `name` attribute of the
+  [report definition](#report-definitions). Otherwise, `<REPORTNAME>` will be
+  the same as the name of the template minus any extension, i.e. if the template
+  name is `hello-world.html`, `<REPORTNAME>` will be `hello-world.`.
+* For [dashboard reports](#dashboard-reports) where the `combinePdfs` is not set
+  or set to `false`, the snapshot for each dashboard GUID specified in the
+  report definition will be saved to a file named `dashboard-<GUID>.pdf`.
+* For [dashboard reports](#dashboard-reports) where the `combinePdfs` is set to
+  `true`, the snapshots for all dashboards will be saved in a file called
+  `consolidated_dashboards.pdf`.
+
+For report types that produce text output, most of the channel implementations
+support the option to save the output to a file and to use the file in place of
+or in conjuction with the assets published by the channel. For example, in
+addition to being able to copy file(s) from report types that produce file(s),
+the [file channel](#file-channel) supports the ability to save text data to a
+file from report types that produce text.
+
+In such cases, the name of the file to which the text data is written is
+determined as follows.
+
+* If a property named `outputFileName` exists in the
+  [report execution context](#report-execution-context), it will be used as the
+  file name.
+* Otherwise, the file name will be set to `<REPORTNAME>.<EXT>`, calculated as
+  follows:
+   * If a [manifest file](#manifest-file) is used to run the
+     report, `<REPORTNAME>` will be the value of the `name` attribute of the
+     [report definition](#report-definitions). Otherwise, for
+     [template reports](#template-reports) `<REPORTNAME>` will be the same as
+     the name of the template minus any extension. For
+     [query reports](#query-reports), `<REPORTNAME>` will be `query-report`.
+   * `<EXT>` will be set to the value of the property named `fileExtension` in
+     the [report execution context](#report-execution-context). If no such
+     property exists, it will be set to the value of the `FILE_EXTENSION`
+     environment variable. If no value is specified for the `FILE_EXTENSION`
+     environment variable, the extension `txt` will be used.
 
 #### File Channel
 
-The `file` channel copies all generated report outputs to a destination
-directory on the local filesystem. It is mostly meant for development and
-testing although it could be used to copy reports to volumes locally attached
-to a docker container. The destination directory to use will be determined as
-follows, listed in order of decreasing precedence.
+The `file` channel writes generated report outputs to a destination directory on
+the local filesystem. It is mostly meant for development and testing although it
+could be used to copy reports to volumes locally attached to a docker container.
 
-* The `destDir` property in the `file` channel configuration from
-  [the manifest file](#manifest-file)
+For report types that produce file output, all generated files are moved from
+the temporary work directory created when the reporting engine starts into the
+destination directory.
+
+For report types that produce text, the text will be written to a file. The file
+name will be calculated as specified in the section
+[Output File Name](#output-file-name). If the calculated file name is absolute,
+the file will be written at the specified location. Otherwise, the file will
+be written to the destination directory. 
+
+The destination directory to use will be determined as follows, listed in order
+of decreasing precedence.
+
+* The `destDir` property in the [report execution context](#report-execution-context)
 * The `FILE_DEST_DIR` environment variable
 * The current working directory
 
@@ -1198,67 +1307,111 @@ The `file` channel is the default channel when running [from the CLI](#using-the
 
 #### Email Channel
 
-The `email` channel generates a single email from a template (not to be
-confused with a report template) and sends the email with all generated report
-outputs as attachments. Email is sent over SMTP using the
-[Nodemailer](https://nodemailer.com/about/) module.
+The `email` channel delivers report outputs via email.
 
-The following configuration parameters are supported for the email channel. Note
-that all options can be specified via environment variables and some options can
-be specified via channel configuration in a [manifest file](#manifest-file).
+Messages are constructed based on [output type](#report-output) and
+[channel configuration parameters](#channel-parameters) using the following
+process.
 
-| Name | Description | Source | Interpolated | Required | Default |
-| --- | --- | --- | --- | --- | --- |
-| Recipient(s) | "To" addresses | `to` property in channel config, `EMAIL_TO` environment variable | N | Y | |
-| Sender | "From" address | `from` property in channel config, `EMAIL_FROM` environment variable | N | Y | |
-| Subject | "Subject" line | `subject` property in channel config, `EMAIL_SUBJECT` environment variable | Y | N | `''` |
-| Template name | Name of _email_ template for generating email body. [Resolved](#template-resolution) against the template path at run time. | `template` property in channel config, `EMAIL_TEMPLATE` environment variable | N | N | `''` |
-| SMTP Host | SMTP server hostname | `EMAIL_SMTP_SERVER` environment variable | N | Y | |
-| SMTP Port | SMTP server port | `EMAIL_SMTP_PORT` environment variable | N | N | 587 |
-| SMTP Secure | SMTP TLS option - true/yes/on/1 forces TLS, anything else defaults to no TLS unless the server upgrades with `STARTTLS` | `EMAIL_SMTP_SECURE` environment variable | N | N | true |
-| SMTP User | Username for SMTP authentication | `EMAIL_SMTP_USER` environment variable | N | N | |
-| SMTP Password | Password for SMTP authentication - only used if SMTP User is also specified | `EMAIL_SMTP_PASS` environment variable | N | N | |
+* A new message is created using the Recipient(s), Sender, and Subject values
+  specified in the channel configuration or the corresponding environment
+  variables. Prior to being set, the Subject is also run through the template
+  engine using the current [report execution context](#report-execution-context).
+* If the report type produces file output:
+   * All generated files are added to the message as attachments.
+   * The body of the message is set to the result of running the template engine
+     with the current [report execution context](#report-execution-context) and
+     the template specified in the `emailTemplateName` parameter in the channel
+     configuration or the `EMAIL_TEMPLATE` environment variable. If no template
+     was specified, the [default attachments template](./templates/email/message-attachments.html)
+     is used. 
+* If the report type produces text:
+   * If the `attachOutput` channel configuration parameter is set to `true`,
+     the text will be written to a file. The file name will be calculated as
+     specified in the section [Output File Name](#output-file-name). The file
+     name must *NOT* be absolute. Message construction will continue as if the
+     report type produces file output with the generated file as the output.
+   * If the `passThrough` parameter in the channel configuration is set to
+     `true`, the body of the message is set to the raw text output.
+   * Otherwise, the body of the message is set to the result of running the
+     template engine with the current [report execution context](#report-execution-context)
+     and the template specified in the `emailTemplateName` parameter in the
+     channel configuration or the `EMAIL_TEMPLATE` environment variable. If no
+     template was specified, the [default message template](./templates/email/message.html)
+     is used.
+* The content type for the message is set using the `format` parameter in the
+  channel configuration. If no format was specified, the content type is set to
+  `html` by default. If the `format` parameter is set but is anything other
+  than `html` or `text`, an error is raised. 
+
+The following configuration parameters are supported for the email channel.
+These options can be specified both via channel configuration in a
+[manifest file](#manifest-file) and as environment variables.
+
+| Name | Environment Variable | Description | Required | Default |
+| --- | --- | --- | --- | --- |
+| `to` | `EMAIL_TO` | Recipient emails | Y | |
+| `from` | `EMAIL_FROM` | Sender email | Y | |
+| `subject` | `EMAIL_SUBJECT` | Subject line | N | `''` |
+| `emailTemplateName` | `EMAIL_TEMPLATE` | Template name for generating body; [Resolved](#template-resolution) against the template path at run time. | N | `''` |
+
+Messages are sent using the [Nodemailer](https://nodemailer.com/about/) module.
+SMTP is the only protocol currently supported. The SMTP server configuration can
+be set only via environment variables for security purposes. The following
+parameters are suppoted.
+
+| Environment Variable | Description | Required | Default |
+| --- | --- | --- | --- |
+| `EMAIL_SMTP_SERVER` | SMTP server hostname | Y | |
+| `EMAIL_SMTP_PORT` | SMTP server port | N | `587` |
+| `EMAIL_SMTP_SECURE` | SMTP TLS option; `true`/`yes`/`on`/`1` forces TLS, anything else defaults to no TLS unless the server upgrades with `STARTTLS` | N | `true` |
+| `EMAIL_SMTP_USER` | Username for SMTP authentication | N | |
+| `EMAIL_SMTP_PASS` | Password for SMTP authentication; only used if `EMAIL_SMTP_USER` is also specified | N | |
 
 Here is an example of specifying an email channel configuration in a
 [manifest file](#manifest-file).
 
-```json
-   {
-      "template": "template.html",
-      ...
-      "channels": [{
-         "type": "email",
-         "from": "me@nowhere.local",
-         "to": "you@nowhere.local",
-         "subject": "{{ title }}",
-         "template": "email-template.html"
-      }]
-   }
+```yaml
+reports:
+- name: chart
+  templateName: hello-world.html
+  parameters:
+    accountId: 1234567
+    appName: Shop Service
+  channels:
+  - type: email
+    from: "me@nowhere.local"
+    to: "you@nowhere.local"
+    subject: "{{ title }}",
+    template: "email-template.html"
 ```
-
-Along with the supported configuration parameters listed above, any number
-of additional parameters may be specified. _All_ parameters, including the
-supported ones, as well as all [template parameters](#template-parameters) (if
-running a template report) will be made available to the email template when it
-is processed.
-
-The [default email template](./templates/email/message.html) is located in the
-`templates/email` directory.
 
 Because why not? Everyone needs more email.
 
-### S3 Channel
+#### S3 Channel
 
-The `s3` channel uploads all generated report outputs to an S3 bucket. The
-destination bucket must be specified either using the `bucket` property in the
-`s3` channel configuration from [the manifest file](#manifest-file) or using the
-value of the `S3_DEST_BUCKET` environment variable. If neither are specified
-and the report is being run [from a Lambda](#using-the-aws-lambda-function)
-function, the destination bucket will default to the `sourceBucket` property
-of the engine options or the value of the `S3_SOURCE_BUCKET` environment
-variable. If the report is being run [from the CLI](#using-the-cli), the
-destination bucket will default to the value of the `S3_SOURCE_BUCKET`
-environment variable.
+The `s3` channel uploads generated report outputs to an S3 bucket.
+
+For report types that produce file output, all generated files are uploaded from
+the temporary work directory created when the reporting engine starts into the
+S3 bucket.
+
+For report types that produce text, the text will be uploaded to the S3 bucket.
+The key for the object will be calculated as specified in the section
+[Output File Name](#output-file-name). The calculated file name must be a valid
+key name.
+
+The destination bucket to use will be determined as follows, listed in order
+of decreasing precedence.
+
+* The `bucket` property in the [report execution context](#report-execution-context)
+* The value of the `S3_DEST_BUCKET` environment variable
+* If the report is being run [from a Lambda](#using-the-aws-lambda-function)
+  function:
+   * The `sourceBucket` property of the [engine options](#engine-options)
+   * The value of the `S3_SOURCE_BUCKET` environment variable
+* If the report is being run [from the CLI](#using-the-cli):
+   * The value of the `S3_SOURCE_BUCKET` environment variable
 
 Here is an example of specifying an s3 channel configuration in a
 [manifest file](#manifest-file).
@@ -1279,6 +1432,29 @@ Here is an example of specifying an s3 channel configuration in a
 ```
 
 The `s3` channel is the default channel when running [from a Lambda](#using-the-aws-lambda-function).
+
+#### Slack Channel
+
+The `slack` channel posts report output to a Slack channel via a
+[Slack webhook](https://api.slack.com/messaging/webhooks). A Slack webhook URL
+must be specified using the `SLACK_WEBHOOK_URL` environment variable.
+
+Because Slack webhooks do not support transferring files, the `slack` channel
+only supports report types that produce text. Specifying a `slack` channel for a
+report type that produces file output will cause a warning message to be logged.
+
+Messages are constructed based using the following process.
+
+* If the `passThrough` parameter in the channel configuration is set to
+  `true`, the body of the message is set to the raw text output. In this case,
+  the text output *must* be a JSON string that conforms to the
+  [Incoming Webhook JSON payload format](https://api.slack.com/messaging/webhooks#posting_with_webhooks).
+  This method can be used to send messages containing [BlockKit](https://api.slack.com/block-kit)
+  visual components.
+* Otherwise, the body of the message is set to a JSON object with a single
+  property named `text` with the text output as it's value. The text output is
+  automatically escaped so that it may safely include
+  [all mrkdwn formatting options](https://api.slack.com/reference/surfaces/formatting).
 
 ### Manifest File
 
@@ -1411,101 +1587,230 @@ Lambda options, see the section [Using the AWS Lambda Function](#using-the-aws-l
 
 | Option | Description | CLI Option | Lambda Option | Environment Variable |
 | --- | --- | --- | --- | --- |
-| Log Level | Enging log verbosity | `-v` / `-d` | `logLevel` | `LOG_LEVEL` |
+| Log Level | Engine log verbosity | `-v` / `-d` | `logLevel` | `LOG_LEVEL` |
 | Manifest file | Path to a manifest file | `-f` | `manifestFilePath` | `MANIFEST_FILE` |
 | Template name | A template name | `-n` | `templateName` | `TEMPLATE_NAME` |
-| Template path | Additional paths to search during [template resolution](#template-resolution)  | `-p` | `templatePath` | `TEMPLATE_PATH` |
 | Values file | Path to a manifest file | `-v` | `valuesFilePath` | `VALUES_FILE` |
+| Template path | Additional paths to search during [template resolution](#template-resolution)  | `-p` | `templatePath` | `TEMPLATE_PATH` |
 | Dashboard IDs | List of dashboard entity GUIDs  | `-d` | `dashboardIds` | `DASHBOARD_IDS` |
-| Account ID | The account ID to use with a query report. Multiple account IDs an be specified separated by commas (see note below).  | `-a` | `accountId` | `NEW_RELIC_ACCOUNT_ID` |
 | NRQL Query | An NRQL query | `-q` | `nrqlQuery` | `NRQL_QUERY` |
+| Account ID | The account ID to use with a query report. Multiple account IDs an be specified separated by commas (see note below).  | `-a` | `accountId` | `NEW_RELIC_ACCOUNT_ID` |
 | Channel IDs | List of channel IDs | `-c` | `channelIds` | `CHANNEL_IDS` |
 | S3 Source Bucket | Name of S3 bucket to read manifest file/template from. _Unsupported in CLI._ | Unsupported | `sourceBucket` | `SOURCE_BUCKET` |
 
 **NOTE:** As mentioned above, multiple account IDs can be specified via the `-a`
-option by separating each ID with a `,`. You should _not_ do this with the
-`NEW_RELIC_ACCOUNT_ID` environment variable as this variable is the same as that
-used by [the New Relic Node.js agent](https://docs.newrelic.com/docs/apm/agents/nodejs-agent/getting-started/introduction-new-relic-nodejs/).
+CLI option and the `accountId` Lambda option by separating each ID with a `,`.
+You should _not_ do this with the `NEW_RELIC_ACCOUNT_ID` environment variable
+when running [using the AWS Lambda function](#using-the-aws-lambda-function)
+as this value is used by the New Relic Lambda extension.
 
 ### Using the CLI
 
-The CLI (command line interface) is used to run reports by [the CLI image](#using-the-cli-image)
-and by [the CRON image](#using-the-cron-image). Reports can also be run directly
-from the command line using [the provided wrapper script](nr-reports-cli/bin/nr-reports.sh).
-The latter is mostly meant to be used locally for development and testing
-purposes. The CLI is used as follows.
+The New Relic Reports CLI runs reports using the New Relic Reports engine. It is
+used by [the CLI image](#using-the-cli-image) and by [the CRON image](#using-the-cron-image).
+Reports can also be run directly from the command line using
+[the provided wrapper script](nr-reports-cli/bin/nr-reports.sh). However, usage
+at the command line is mostly meant to be used locally for development and
+testing purposes.
 
-```sh
-node index.js ([-f manifest-file] | ([-n name -v values-file] [-p template-path] | [-d dashboard-ids] | [-a account-id -q nrql-query]) [-c channel-ids]) [--verbose] [--debug] [--full-chrome])
+The reports to run can be specified via the CLI options or environment variables.
+When the engine starts, it resolves the set of reports to process in the
+following order of precedence.
+
+* The `-f` option or `MANIFEST_FILE_PATH` environment variable
+* The `-n` option or `TEMPLATE_NAME` environment variable
+* The `-d` option or `DASHBOARD_IDS` environment variable
+* The `-q` option or `NRQL_QUERY` environment variable
+
+If none of the options or environment variables are specified, the engine will
+attempt to load a manifest file at the path "include/manifest.json".
+
+Refer to [the Options section](#cli-options) or for additional options and
+details.
+
+#### CLI Usage
+
+```
+index.js -f <manifest-file>
+index.js -n <name> [-v <values-file>] [-p <template-path>] [--skip-render] [-c <channel-ids>] [-o <output-file>] [--full-chrome]
+index.js -d <dashboard-ids> [-c <channel-ids>]
+index.js -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
 ```
 
-The CLI accepts the following options.
+#### CLI Options
 
-| Option | Description | Example |
-| --- | --- | --- |
-| `-f manifest-file` | Run all reports defined in the manifest file `manifest-file`. Takes precedence over `-n` and `-d` and defaults to `manifest.json` if neither `-n` nor `-d` are specified. | `-f manifest.json` |
-| `-n name` | Render the template named `name`. `name` must be a template on the template path. Takes precedence over `-d`. | `-n my-report.html` |
-| `-p name` | Additional directories for the template path (delimited by the system path separator) | `-p examples:another-dir` |
-| `-v values-file` | Run the report using template parameter values defined in the file `values-file`. Ignored with `-f` or `-d`.  | `-v values.json` |
-| `-d dashboard-ids` | Download dashboard snapshots for all dashboard GUIDs listed in `dashboards` (comma delimited). Ignored with `-f` or `-n`. | `-d abc123,xyz456` |
-| `-a account-id` | Account ID to use with `<nrql-query>`. Multiple account IDs an be specified separated by commas. Required with `-q`. | `-a 12345671` |
-| `-q nrql-query` | Export results of `<nrql-query>` as a CSV. Requires `-a`. | `-q 'SELECT average(duration) FROM Transaction'` |
-| `-c channel-ids` | Send report output files to the channels listed in `channels` (comma delimited) | `-c file,email` |
-| `--verbose` | Enable verbose mode | |
-| `--debug` | Enable debug mode (be very verbose) | |
-| `--full-chrome` | Don't launch Chromium in headless mode (useful for testing templates) | |
+* `--help`
+
+  Show help
+* `--version`
+  
+  Show version number
+* `-f, --manifest`
+  
+  Run all reports defined in the manifest file `<manifest-file>`. Takes
+  precedence over `-n`, `-d`, and `-q` and their corresponding environment
+  variables.
+
+  The `MANIFEST_FILE_PATH` environment variable may also be used to specify a
+  manifest file. If both are specified, the `-f` option takes precedence.
+* `-n, --template-name`
+  
+  Run a template report using the template named `<name>`. Takes precedence over
+  `-d` and `-a` and their corresponding environment variables. Ignored if a
+  manifest file is specified.
+
+  The `TEMPLATE_NAME` environment variable may also be used to specify a
+  template name. If both are specified, the `-n` option takes precedence. 
+* `-v, --values-file`
+
+  Use the template parameters defined in `<values-file>` when running a template
+  report. The `VALUES_FILE_PATH` environment variable may also be used to
+  specify a values file.
+* `-p, --template-path`
+
+  Include paths in `<template-path>` on the template search path when running a
+  template report. Multiple paths are separated by the OS path separator
+  character.
+
+  The `TEMPLATE_PATH` environment variable may also be used to specify the
+  template search path.
+* `--skip-render`
+
+  Skip template rendering when running a template report.
+  
+  When specified, the raw output of the template report will be passed through
+  to the channels. The engine will not launch a headless Chrome instance and
+  will not render a PDF using the browser.
+
+* `-d, --dashboard-ids`
+  Run a dashboard report with the dashboard GUIDs listed in `<dashboard-ids>`.
+  Dashboard GUIDs are separated by commas. Takes precedence over `-q`. Ignored
+  if a manifest file or a template name is specified.
+  
+  The `DASHBOARD_IDS` environment variable may also be used to specify the
+  dashboard GUIDs. If both are specified, the `-d` option takes precedence.
+
+* `-q, --nrql-query`
+
+  Run a query report with the NRQL query `<nrql-query>`. Requires `-a`. Ignored
+  if a manifest file, template name, or a dashboard GUID string is specified.
+  
+  The `NRQL_QUERY` environment variable may also be used to specify the a NRQL
+  query. If both are specified, the `-q` option takes precedence.
+* `-a, --account-id`
+
+  Use the account `<account-id>` when running a query report with `-q`. Multiple
+  account IDs can be specified separated by commas. Required with `-q`.
+* `-c, --channel-ids`
+
+  Publish report output to the channels listed in `<channel-ids>`. Channel IDs
+  are separated by commas. Ignored if a manifest file is specified.
+* `-o, --output-file`
+
+  Use `<output-file>` as the name of the PDF file when running a template report
+  and `--skip-render` is not specified or when saving output to a file when
+  using the `file` or `s3` channels. Ignored if a manifest file or dashbuard
+  GUID string is specified.
+* `--verbose`
+  
+  Enable verbose mode.
+* `--debug`
+
+  Enable debug mode (be very verbose).
+* `--full-chrome`
+
+  Don't launch Chromium in headless mode. Use only for testing purposes when
+  rendering a template report with `-n`.
 
 #### CLI Examples
 
 The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
 
-* Run all reports using the defaults (read reports from `manifest.json` in the
-  `include` directory)
+* Run a [template report](#template-reports) using the template named
+  `chart.html` and save it to a file.
 
-   ```bash
-   ./nr-reports-cli/bin/nr-reports.sh
-   ```
+  ```bash
+  ./nr-reports-cli/bin/nr-reports.sh -n chart.html
+  ```
 
-* Run all reports defined in the manifest file `my-manifest.json` in the current
-  working directory
+  In this example, the reporting engine will process the template using the
+  template engine, render the output using the browser, export the rendered
+  output as a PDF, and publish the PDF to the default [file channel](#file-channel).
+  The file channel will copy the PDF to the current working directory as a file
+  named `chart.pdf`.
 
-   ```bash
-   ./nr-reports-cli/bin/nr-reports.sh -f my-manifest.json
-   ```
+* Run a [template report](#template-reports) using the template named
+  `chart.html` and the template parameters specified in the values file
+  `chart-values.json` and save it to a file.
 
-* Run a report using the template named `my-report.html` in the current working
-  directory with the values file `my-report-values.json` in the current working
-  directory and copy the result report into the current working directory
+  ```bash
+  ./nr-reports-cli/bin/nr-reports.sh -n chart.html -v chart-values.json
+  ```
 
-   ```bash
-   ./nr-reports-cli/bin/nr-reports.sh -n my-report.html -v my-report-values.json
-   ```
+  In this example the reporting engine proceeds the same as the above except
+  that the template engine will pass the template parameters defined in the
+  `chart-values.json` file as template variables when it processes the template.
 
-* Run a report using the template named `my-report.html` in the directory
-  `/opt/templates` with the values file `my-report-values.json` and upload the
-  result report to AWS S3 using the bucket name defined in the `S3_DEST_BUCKET`
-  environment variable
+* Run a [template report](#template-reports) using the template named
+  `chart.html` and the template path `/tmp/templates` and save it to a file.
 
-   ```bash
-   ./nr-reports-cli/bin/nr-reports.sh -n my-report.html -v my-report-values.json -p /opt/templates -c s3
-   ```
+  ```bash
+  ./nr-reports-cli/bin/nr-reports.sh -n chart.html -p /tmp/templates
+  ```
 
-* Run a report with a snapshot image of the dashboards with GUIDs `A1234` and
-  `B1234`, copy the result report into the current working directory, and email
-  the result report using the email channel configuration values specified in
-  the `EMAIL_*` environment variables
+  This example proceeds the same as the first except that the template engine
+  will search for templates in the directory `/tmp/templates` in addition to
+  the default directories.  
 
-   ```bash
-   ./nr-reports-cli/bin/nr-reports.sh -d A1234,B1234 -c file,email
-   ```
+* Run a [template report](#template-reports) using the template named
+  `errors.csv` and the template parameters specified in the values file
+  `apps.json` and save the raw template output to a file.
 
-* Run a report with the NRQL query `SELECT average(duration) FROM Transaction'`
-  against the account with ID `1234567` and upload the result CSV report to AWS
-  S3 using the bucket name defined in the `S3_DEST_BUCKET` environment variable.
+  ```bash
+  ./nr-reports-cli/bin/nr-reports.sh -n errors.csv -v apps.json -o errors-by-app.csv --skip-render
+  ```
 
-   ```bash
-   ./nr-reports-cli/bin/nr-reports.sh -a 1234567 -q 'SELECT average(duration) FROM Transaction' -c s3
-   ```
+  In this example, the reporting engine will process the template using the
+  template engine passing in the template parameters defined in the `apps.json`
+  file and then publish the raw template output directly to the to the default
+  [file channel](#file-channel). The file channel will save the output in a file
+  named `errors-by-app.csv` in the current working directory.
+
+* Run a [dashboard report](#dashboard-reports) to export a snapshot of the
+  dashboard with the GUID `ABCDEF123456` and save it to a file.
+
+  ```bash
+  ./nr-reports-cli/bin/nr-reports.sh -d ABCDEF123456
+  ```
+  
+  In this example, the reporting engine will export the dashboard snapshot as a
+  PDF and publish the PDF to the default [file channel](#file-channel).
+  The file channel will copy the PDF to the current working directory as a file
+  named `dashboard-ABCDEF123456.pdf`.
+
+* Run a [query report](#query-reports) that executes the specified NRQL query
+  against account `12345` and saves the query result in a CSV file.   
+
+  ```bash
+  ./nr-reports-cli/bin/nr-reports.sh \
+    -a 12345 \
+    -q "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri"
+  ```
+
+  In this example, the reporting engine will run the given NRQL query against
+  account `12345`, convert the query result to CSV data and publish the CSV data
+  to the default [file channel](#file-channel). The file channel will copy the
+  CSV file to the current working directory as a file named `query-report.csv`.
+
+* Run all reports specified in the given [manifest file](#manifest-file).
+
+  ```bash
+  ./nr-reports-cli/bin/nr-reports.sh -f include/tests/manifest/manifest.yaml
+  ```
+
+  In this example, the reporting engine will read all
+  [report definitions](#report-definitions) from the specified
+  [manifest file](#manifest-file) and run each report in turn.
 
 ### Using the CLI image
 
