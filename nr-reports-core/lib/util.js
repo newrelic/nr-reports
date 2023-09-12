@@ -219,29 +219,17 @@ function isYaml(fileName) {
   return ext === 'yml' || ext === 'yaml'
 }
 
-function parseManifest(manifestFile, contents, defaultChannel = null) {
-  logTrace(logger, log => {
-    log({ contents }, 'Parsing manifest:')
-  })
-
-  let data = isYaml(manifestFile) ? (
-    YAML.parse(contents)
-  ) : JSON.parse(contents)
-
-  logTrace(logger, log => {
-    log({ manifest: data }, 'Parsed manifest:')
-  })
-
-  if (Array.isArray(data)) {
+function normalizeManifest(manifest, defaultChannel) {
+  if (Array.isArray(manifest)) {
     logger.trace('Manifest starts with array')
-    data = {
-      reports: data,
+    manifest = {
+      reports: manifest,
     }
-  } else if (!Array.isArray(data.reports)) {
+  } else if (!Array.isArray(manifest.reports)) {
     throw new Error('Manifest is missing "reports" array or it is not an array')
   }
 
-  data.reports.forEach((report, index) => {
+  manifest.reports.forEach((report, index) => {
     if (!report.name) {
       throw new Error(`Report ${index} must include a 'name' property`)
     }
@@ -261,15 +249,15 @@ function parseManifest(manifestFile, contents, defaultChannel = null) {
     }
   })
 
-  if (!data.variables) {
-    data.variables = {}
+  if (!manifest.variables) {
+    manifest.variables = {}
   }
 
-  if (!data.config) {
-    data.config = {}
+  if (!manifest.config) {
+    manifest.config = {}
   }
 
-  return data
+  return manifest
 }
 
 function parseJaml(fileName, contents) {
@@ -566,7 +554,7 @@ module.exports = {
   getOption,
   makeChannel,
   loadFile,
-  parseManifest,
+  normalizeManifest,
   parseJaml,
   splitPaths,
   splitStringAndTrim,

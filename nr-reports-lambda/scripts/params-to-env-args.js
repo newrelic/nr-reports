@@ -37,7 +37,13 @@ const templateParams = yaml.load(fs.readFileSync(process.argv[2]), { schema }).P
 
 // eslint-disable-next-line no-console
 console.log(
-  Object.keys(obj).reduce((accumulator, value) => (
-    `${accumulator} -e ${constantCase(value)}="${obj[value]}"`
-  ), ''),
+  Object.keys(obj).reduce((accumulator, value) => {
+    let v = obj[value]
+
+    if (typeof v === 'string') {
+      v = v.replace(' ', '\\ ')
+    }
+
+    return `${accumulator} -e ${constantCase(value)}=${v}`
+  }, ''),
 )

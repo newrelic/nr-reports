@@ -6,7 +6,7 @@ const path = require('path'),
   {
     DEFAULT_CHANNEL,
     loadFile,
-    parseManifest,
+    normalizeManifest,
     parseJaml,
     getOption,
     requireAccountId,
@@ -14,6 +14,7 @@ const path = require('path'),
   {
     getS3ObjectAsString,
   } = require('./aws-util')
+const { NerdstorageClient } = require('./nerdstorage')
 
 const logger = createLogger('discovery')
 
@@ -55,18 +56,13 @@ function getChannels(defaultChannelType, options) {
   return data.length !== 0 ? data : [makeChannel(defaultChannelType, options)]
 }
 
-async function loadManifest(
-  fileLoader,
-  manifestFile,
+function prepareManifest(
+  data,
   defaultChannel,
   values,
-  extras,
+  extras
 ) {
-  const manifest = parseManifest(
-    manifestFile,
-    await fileLoader(manifestFile),
-    defaultChannel,
-  )
+  const manifest = normalizeManifest(data, defaultChannel)
 
   manifest.reports = manifest.reports.map(report => {
     if (report.templateName) {
@@ -90,6 +86,58 @@ async function loadManifest(
   })
 
   return manifest
+}
+
+async function loadManifest(
+  fileLoader,
+  manifestFile,
+  defaultChannel,
+  values,
+  extras,
+) {
+  return prepareManifest(
+    parseJaml(manifestFile, await fileLoader(manifestFile)),
+    defaultChannel,
+    values,
+    extras,
+  )
+}
+
+async function loadManifestFromNerdstorage(
+  context,
+  options,
+  values,
+  nerdletPackageId,
+) {
+  const accountId = requireAccountId(options),
+    manifestFile = getOption(
+      options,
+      'manifestFilePath',
+      'MANIFEST_FILE_PATH',
+      'manifest.json',
+    ),
+    nerdstorage = new NerdstorageClient(
+      context.apiKey,
+      nerdletPackageId,
+      accountId,
+    )
+
+  logger.trace(`Loading manifest ${manifestFile} from nerdstorage.`)
+
+  const doc = await nerdstorage.readDocument(
+    'manifests',
+    manifestFile,
+  )
+
+  if (!doc) {
+    throw new Error(`Document with ID ${manifestFile} does not exist in nerdstorage for nerdlet ${nerdletPackageId}.`)
+  }
+
+  return prepareManifest(
+    doc,
+    () => makeChannel(context.defaultChannelType, options),
+    values,
+  )
 }
 
 async function discoverReportsHelper(
@@ -231,7 +279,7 @@ async function discoverReportsHelper(
   )
 }
 
-async function discoverReports(args, defaultChannelType) {
+async function discoverReports(args, context) {
   if (Array.isArray(args)) {
     logger.trace('Args is an array of reports.')
     return args
@@ -258,12 +306,31 @@ async function discoverReports(args, defaultChannelType) {
 
   logger.trace('No sourceBucket found.')
 
+  const sourceNerdletId = getOption(
+    options,
+    'sourceNerdletId',
+    'SOURCE_NERDLET_ID',
+  )
+
+  if (sourceNerdletId) {
+    logger.trace(`Found sourceNerdletId ${sourceNerdletId}.`)
+
+    return await loadManifestFromNerdstorage(
+      context,
+      options,
+      values,
+      sourceNerdletId,
+    )
+  }
+
+  logger.trace('No sourceNerdletId found.')
+
   return await discoverReportsHelper(
     options,
     values,
     async filePath => await loadFile(filePath),
-    () => makeChannel(defaultChannelType, options),
-    defaultChannelType,
+    () => makeChannel(context.defaultChannelType, options),
+    context.defaultChannelType,
   )
 }
 

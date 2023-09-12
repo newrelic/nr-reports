@@ -40,7 +40,7 @@ class Engine {
     try {
       const manifest = await discoverReports(
         args,
-        this.context.defaultChannelType,
+        this.context,
       )
 
       logTrace(logger, log => {
