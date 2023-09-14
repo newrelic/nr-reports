@@ -506,7 +506,7 @@ templates.
 Template reports are built out of text. The template engine does not care about
 the semantics of the text that it processes. In other words, the template engine
 does not care if the text represents CSV data or HTML data. Just that it is
-text. 
+text.
 
 There is one special case which applies to the default behavior of the reporting
 engine. In this case, the output of the template engine will be loaded into a
@@ -886,7 +886,7 @@ or [YAML](https://yaml.org/) object. For example, the following JSON specifies
 
 When processing a template, the reporting engine makes all properties in the
 [report execution context](#report-execution-context) available as template
-parameters. 
+parameters.
 
 ### Dashboard Reports
 
@@ -1125,7 +1125,7 @@ same as the format used to send the output via a particular channel.
 For example, the default output of a [query report](#query-reports) is a string
 of text that contains CSV data. But this data can be sent via the
 [email channel](#email-channel) as the body of the email _or_ in a file
-attached to the email. 
+attached to the email.
 
 ### Channels
 
@@ -1276,7 +1276,7 @@ For report types that produce text, the text will be written to a file. The file
 name will be calculated as specified in the section
 [Output File Name](#output-file-name). If the calculated file name is absolute,
 the file will be written at the specified location. Otherwise, the file will
-be written to the destination directory. 
+be written to the destination directory.
 
 The destination directory to use will be determined as follows, listed in order
 of decreasing precedence.
@@ -1324,7 +1324,7 @@ process.
      the template specified in the `emailTemplateName` parameter in the channel
      configuration or the `EMAIL_TEMPLATE` environment variable. If no template
      was specified, the [default attachments template](./templates/email/message-attachments.html)
-     is used. 
+     is used.
 * If the report type produces text:
    * If the `attachOutput` channel configuration parameter is set to `true`,
      the text will be written to a file. The file name will be calculated as
@@ -1342,7 +1342,7 @@ process.
 * The content type for the message is set using the `format` parameter in the
   channel configuration. If no format was specified, the content type is set to
   `html` by default. If the `format` parameter is set but is anything other
-  than `html` or `text`, an error is raised. 
+  than `html` or `text`, an error is raised.
 
 The following configuration parameters are supported for the email channel.
 These options can be specified both via channel configuration in a
@@ -1589,6 +1589,7 @@ Lambda options, see the section [Using the AWS Lambda Function](#using-the-aws-l
 | --- | --- | --- | --- | --- |
 | Log Level | Engine log verbosity | `-v` / `-d` | `logLevel` | `LOG_LEVEL` |
 | Manifest file | Path to a manifest file | `-f` | `manifestFilePath` | `MANIFEST_FILE` |
+| Report names | List of report names to run | `-r` | `reportNames` | `REPORT_NAMES` |
 | Template name | A template name | `-n` | `templateName` | `TEMPLATE_NAME` |
 | Values file | Path to a manifest file | `-v` | `valuesFilePath` | `VALUES_FILE` |
 | Template path | Additional paths to search during [template resolution](#template-resolution)  | `-p` | `templatePath` | `TEMPLATE_PATH` |
@@ -1643,10 +1644,10 @@ index.js -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
 
   Show help
 * `--version`
-  
+
   Show version number
 * `-f, --manifest`
-  
+
   Run all reports defined in the manifest file `<manifest-file>`. Takes
   precedence over `-n`, `-d`, and `-q` and their corresponding environment
   variables.
@@ -1654,13 +1655,13 @@ index.js -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
   The `MANIFEST_FILE_PATH` environment variable may also be used to specify a
   manifest file. If both are specified, the `-f` option takes precedence.
 * `-n, --template-name`
-  
+
   Run a template report using the template named `<name>`. Takes precedence over
   `-d` and `-a` and their corresponding environment variables. Ignored if a
   manifest file is specified.
 
   The `TEMPLATE_NAME` environment variable may also be used to specify a
-  template name. If both are specified, the `-n` option takes precedence. 
+  template name. If both are specified, the `-n` option takes precedence.
 * `-v, --values-file`
 
   Use the template parameters defined in `<values-file>` when running a template
@@ -1677,7 +1678,7 @@ index.js -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
 * `--skip-render`
 
   Skip template rendering when running a template report.
-  
+
   When specified, the raw output of the template report will be passed through
   to the channels. The engine will not launch a headless Chrome instance and
   will not render a PDF using the browser.
@@ -1686,7 +1687,7 @@ index.js -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
   Run a dashboard report with the dashboard GUIDs listed in `<dashboard-ids>`.
   Dashboard GUIDs are separated by commas. Takes precedence over `-q`. Ignored
   if a manifest file or a template name is specified.
-  
+
   The `DASHBOARD_IDS` environment variable may also be used to specify the
   dashboard GUIDs. If both are specified, the `-d` option takes precedence.
 
@@ -1694,7 +1695,7 @@ index.js -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
 
   Run a query report with the NRQL query `<nrql-query>`. Requires `-a`. Ignored
   if a manifest file, template name, or a dashboard GUID string is specified.
-  
+
   The `NRQL_QUERY` environment variable may also be used to specify the a NRQL
   query. If both are specified, the `-q` option takes precedence.
 * `-a, --account-id`
@@ -1712,7 +1713,7 @@ index.js -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
   using the `file` or `s3` channels. Ignored if a manifest file or dashbuard
   GUID string is specified.
 * `--verbose`
-  
+
   Enable verbose mode.
 * `--debug`
 
@@ -1760,7 +1761,7 @@ The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
 
   This example proceeds the same as the first except that the template engine
   will search for templates in the directory `/tmp/templates` in addition to
-  the default directories.  
+  the default directories.
 
 * Run a [template report](#template-reports) using the template named
   `errors.csv` and the template parameters specified in the values file
@@ -1782,14 +1783,14 @@ The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
   ```bash
   ./nr-reports-cli/bin/nr-reports.sh -d ABCDEF123456
   ```
-  
+
   In this example, the reporting engine will export the dashboard snapshot as a
   PDF and publish the PDF to the default [file channel](#file-channel).
   The file channel will copy the PDF to the current working directory as a file
   named `dashboard-ABCDEF123456.pdf`.
 
 * Run a [query report](#query-reports) that executes the specified NRQL query
-  against account `12345` and saves the query result in a CSV file.   
+  against account `12345` and saves the query result in a CSV file.
 
   ```bash
   ./nr-reports-cli/bin/nr-reports.sh \

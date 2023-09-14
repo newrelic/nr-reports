@@ -22,8 +22,10 @@ const MANIFEST_FILE_PATH_OPTION = 'manifestFilePath',
   SOURCE_NERDLET_ID_OPTION = 'sourceNerdletId',
   SOURCE_NERDLET_ID_VAR = 'SOURCE_NERDLET_ID'
 
-// Manifest generator constants
-const DEFAULT_MANIFEST_FILE_NAME = 'manifest.json',
+// Manifest file constants
+const REPORT_NAMES_OPTION = 'reportNames',
+  REPORT_NAMES_VAR = 'REPORT_NAMES',
+  DEFAULT_MANIFEST_FILE_NAME = 'manifest.json',
   DEFAULT_MANIFEST_FILE_PATH = `${INCLUDE_DIR_NAME}/${DEFAULT_MANIFEST_FILE_NAME}`
 
 // Template generator constants
@@ -97,7 +99,9 @@ module.exports = {
   SOURCE_NERDLET_ID_OPTION,
   SOURCE_NERDLET_ID_VAR,
 
-  // Manifest generator constants
+  // Manifest file constants
+  REPORT_NAMES_OPTION,
+  REPORT_NAMES_VAR,
   DEFAULT_MANIFEST_FILE_NAME,
   DEFAULT_MANIFEST_FILE_PATH,
 

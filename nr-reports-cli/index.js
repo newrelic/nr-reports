@@ -38,7 +38,7 @@ function configureOptions() {
   y.wrap(y.terminalWidth())
     .usage(`Usage:
 
-$0 -f <manifest-file>
+$0 -f <manifest-file> -r <report-names>
 $0 -n <name> [-v <values-file>] [-p <template-path>] [-c <channel-ids>] [-o <output-file>] [--skip-render] [--full-chrome]
 $0 -d <dashboard-ids> [-c <channel-ids>]
 $0 -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
@@ -60,6 +60,7 @@ attempt to load a manifest file at the path "include/manifest.json".
 Refer to the "Options" section or documentation for additional options and
 details.`)
     .example('$0 -f manifest-file.json', 'run reports defined in manifest-file.json')
+    .example('$0 -f manifest-file.json -r hello-world,dashboards', 'run the reports named hello-world and dashboards defined in manifest-file.json')
     .example('$0 -n template.html', 'run a template report using the template named template.html')
     .example('$0 -n template.html -v values.json', 'run a template report using the template named template.html with template parameters from the file values.json')
     .example('$0 -n template.html --skip-render -c email,s3', 'run a template report using the template named template.html but do not render it as a PDF and publish output to email and s3 channels')
@@ -70,6 +71,13 @@ details.`)
       describe: `Run all reports defined in the manifest file \`<manifest-file>\`. Takes precedence over \`-n\`, \`-d\`, and \`-q\` and their corresponding environment variables.
 
     The \`MANIFEST_FILE_PATH\` environment variable may also be used to specify a manifest file. If both are specified, the \`-f\` option takes precedence.
+    `,
+    }).option('r', {
+      alias: 'report-name',
+      type: 'string',
+      describe: `Run only the reports with report names listed in <report-names>. Takes precedence over \`-n\`, \`-d\`, and \`-q\` and their corresponding environment variables. Ignored if a manifest file is not specified.
+
+    The \`REPORT_NAMES\` environment variable may also be used to specify report names. If both are specified, the \`-r\` option takes precedence.
     `,
     })
     .option('n', {
@@ -195,6 +203,7 @@ async function main() {
 
   const options = {
       manifestFilePath: argv.f,
+      reportNames: argv.r,
       templateName: argv.n,
       templatePath: argv.p,
       valuesFilePath: argv.v,

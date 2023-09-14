@@ -10,6 +10,7 @@ const path = require('path'),
     parseJaml,
     getOption,
     requireAccountId,
+    splitStringAndTrim,
   } = require('./util'),
   {
     getS3ObjectAsString,
@@ -19,6 +20,8 @@ const path = require('path'),
     CHANNEL_IDS_VAR,
     MANIFEST_FILE_PATH_OPTION,
     MANIFEST_FILE_PATH_VAR,
+    REPORT_NAMES_OPTION,
+    REPORT_NAMES_VAR,
     DEFAULT_MANIFEST_FILE_NAME,
     TEMPLATE_NAME_OPTION,
     TEMPLATE_NAME_VAR,
@@ -83,12 +86,24 @@ function getChannels(defaultChannelType, options) {
 }
 
 function prepareManifest(
+  options,
   data,
   defaultChannel,
   params,
   extras,
 ) {
-  const manifest = normalizeManifest(data, defaultChannel)
+  const manifest = normalizeManifest(data, defaultChannel),
+    reportNamesOpt = getOption(options, REPORT_NAMES_OPTION, REPORT_NAMES_VAR)
+
+  if (reportNamesOpt) {
+    logger.trace(`Found report names ${reportNamesOpt}.`)
+
+    const reportNames = splitStringAndTrim(reportNamesOpt)
+
+    manifest.reports = manifest.reports.filter(
+      r => reportNames.includes(r.name),
+    )
+  }
 
   manifest.reports = manifest.reports.map(report => {
     if (report.templateName) {
@@ -115,6 +130,7 @@ function prepareManifest(
 }
 
 async function loadManifest(
+  options,
   fileLoader,
   manifestFile,
   defaultChannel,
@@ -122,6 +138,7 @@ async function loadManifest(
   extras,
 ) {
   return prepareManifest(
+    options,
     parseJaml(manifestFile, await fileLoader(manifestFile)),
     defaultChannel,
     params,
@@ -160,6 +177,7 @@ async function loadManifestFromNerdstorage(
   }
 
   return prepareManifest(
+    options,
     doc,
     () => makeChannel(context.defaultChannelType, options),
     params,
@@ -186,6 +204,7 @@ async function discoverReportsHelper(
     logger.trace(`Found manifest file ${manifestFile}.`)
 
     return await loadManifest(
+      options,
       fileLoader,
       manifestFile,
       defaultChannel,
@@ -306,6 +325,7 @@ async function discoverReportsHelper(
 
   // Try to load a default manifest from local storage
   return await loadManifest(
+    options,
     async filePath => await loadFile(filePath),
     DEFAULT_MANIFEST_FILE_PATH,
     defaultChannel,

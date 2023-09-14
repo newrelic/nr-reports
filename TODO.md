@@ -20,15 +20,15 @@
 - [ ] Specify time period for query reports
 - [X] Add Pino
 - [X] Add New Relic agent support to CLI
-- [ ] Add slack channel channel
+- [X] Add slack channel channel
 - [ ] Push reports to nerdstorage, generic nerdlet to show reports in nerdstorage
-- [ ] Rename channels to destinations
-- [ ] Add ability to specify channel params at CLI using ;key=value
+- ~~[ ] Rename channels to destinations~~
 - [X] Honor template path when rendering email templates
 - [ ] Send report summary custom events
-- [ ] Switch from `Promise.all` to custom concurrent promise handler
-- [ ] Add support for output filename from env var and document `outputFilename`
-- [ ] Support non-file output
+- [X] Switch from `Promise.all` to custom concurrent promise handler
+- [ ] Add support for output filename from env var and
+- [X] Document `outputFilename`
+- [X] Support non-file output
 - [ ] Collect any caught errors during reports and surface them on response
 - [ ] Add variable substitution support to queries
 - [ ] Support global GraphQL/NRQL timeout in `config` section
@@ -42,7 +42,7 @@
   Would need to add a way to silence any logging or send to stderr
 - [ ] Add support for `otherResult` for faceted NRQL queries.
 - [ ] Add archive option
-- [ ] Add slack Webhook destination
+- [X] Add slack Webhook destination
 - [ ] Add slack API destination (`postMessage`)
 - [ ] Add Google Drive destination
 - [ ] Inline templates in YML
@@ -59,7 +59,7 @@
 - [ ] Can discovery/everything be refactored so that logic is all encapsulated
   in the generators?
 - [ ] Add New Relic Metrics/Events as a channel
-- [ ] Run manifest reports by name
+- [X] Run manifest reports by name
 - [ ] Specify dashboard output file names
 
 ## Low
@@ -73,6 +73,7 @@
 - [ ] Development preview support
 - [ ] Remove dependency on puppeteer from core?
 - [ ] Support other email transporters
+- [ ] Add ability to specify channel params at CLI using ;key=value
 
 ## Ideas
 
