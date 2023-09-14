@@ -219,16 +219,7 @@ function isYaml(fileName) {
   return ext === 'yml' || ext === 'yaml'
 }
 
-function normalizeManifest(manifest, defaultChannel) {
-  if (Array.isArray(manifest)) {
-    logger.trace('Manifest starts with array')
-    manifest = {
-      reports: manifest,
-    }
-  } else if (!Array.isArray(manifest.reports)) {
-    throw new Error('Manifest is missing "reports" array or it is not an array')
-  }
-
+function normalizeManifestHelper(manifest, defaultChannel) {
   manifest.reports.forEach((report, index) => {
     if (!report.name) {
       throw new Error(`Report ${index} must include a 'name' property`)
@@ -258,6 +249,24 @@ function normalizeManifest(manifest, defaultChannel) {
   }
 
   return manifest
+}
+
+function normalizeManifest(manifest, defaultChannel) {
+  if (Array.isArray(manifest)) {
+    logger.trace('Manifest starts with array')
+    return normalizeManifestHelper(
+      {
+        reports: manifest,
+      },
+      defaultChannel,
+    )
+  }
+
+  if (!Array.isArray(manifest.reports)) {
+    throw new Error('Manifest is missing "reports" array or it is not an array')
+  }
+
+  return normalizeManifestHelper(manifest, defaultChannel)
 }
 
 function parseJaml(fileName, contents) {
@@ -445,14 +454,26 @@ function buildCsv(columns, rows) {
   })
 }
 
-function requireAccountId(obj) {
-  const accountId = getOption(obj, 'accountId', 'NEW_RELIC_ACCOUNT_ID')
+function getAccountId(context) {
+  let accountId = getOption(context, 'accountId')
 
   if (!accountId) {
-    throw new Error('Missing account ID')
+    accountId = context.secrets.accountId
   }
 
-  const n = toNumber(accountId)
+  if (!accountId) {
+    accountId = getEnv('NEW_RELIC_ACCOUNT_ID')
+  }
+
+  if (!accountId) {
+    throw new Error('Missing account ID(s)')
+  }
+
+  return accountId
+}
+
+function requireAccountId(context) {
+  const n = toNumber(getAccountId(context))
 
   if (!n) {
     throw new Error(`'${n}' is not a valid account ID.`)
@@ -461,15 +482,11 @@ function requireAccountId(obj) {
   return n
 }
 
-function requireAccountIds(obj) {
-  let accountIds = getOption(obj, 'accountIds')
+function requireAccountIds(context) {
+  let accountIds = getOption(context, 'accountIds')
 
   if (!accountIds) {
-    const accountId = getOption(obj, 'accountId', 'NEW_RELIC_ACCOUNT_ID')
-
-    if (!accountId) {
-      throw new Error('No valid account IDs found.')
-    }
+    const accountId = getAccountId(context)
 
     accountIds = typeof accountId === 'string' ? (
       splitStringAndTrim(accountId)

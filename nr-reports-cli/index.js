@@ -76,7 +76,7 @@ details.`)
       alias: 'template-name',
       type: 'string',
       describe: `Run a template report using the template named \`<name>\`. Takes precedence over \`-d\` and \`-a\` and their corresponding environment variables. Ignored if a manifest file is specified.
-     
+
     The \`TEMPLATE_NAME\` environment variable may also be used to specify a template name. If both are specified, the \`-n\` option takes precedence.
   `,
     })
@@ -85,28 +85,28 @@ details.`)
       type: 'string',
       describe: `Use the template parameters defined in \`<values-file>\` when running a template report.
 
-    The \`VALUES_FILE_PATH\` environment variable may also be used to specify a values file.      
+    The \`VALUES_FILE_PATH\` environment variable may also be used to specify a values file.
   `,
     })
     .option('p', {
       alias: 'template-path',
       type: 'string',
       describe: `Include paths in \`<template-path>\` on the template search path when running a template report. Multiple paths are separated by the OS path separator character.
-      
+
     The \`TEMPLATE_PATH\` environment variable may also be used to specify the template search path.
   `,
     })
     .boolean('skip-render')
     .default('skip-render', false)
     .describe('skip-render', `Skip template rendering when running a template report.
-    
+
     When specified, the raw output of the template report will be passed through to the channels. The engine will not launch a headless Chrome instance and will not render a PDF using the browser.
   `)
     .option('d', {
       alias: 'dashboard-ids',
       type: 'string',
       describe: `Run a dashboard report with the dashboard GUIDs listed in \`<dashboard-ids>\`. Dashboard GUIDs are separated by commas. Takes precedence over \`-q\`. Ignored if a manifest file or a template name is specified.
-      
+
     The \`DASHBOARD_IDS\` environment variable may also be used to specify the dashboard GUIDs. If both are specified, the \`-d\` option takes precedence.
   `,
     })
@@ -114,7 +114,7 @@ details.`)
       alias: 'nrql-query',
       type: 'string',
       describe: `Run a query report with the NRQL query \`<nrql-query>\`. Requires \`-a\`. Ignored if a manifest file, template name, or a dashboard GUID string is specified.
-      
+
     The \`NRQL_QUERY\` environment variable may also be used to specify the a NRQL query. If both are specified, the \`-q\` option takes precedence.
   `,
     })
@@ -147,14 +147,26 @@ details.`)
   return y
 }
 
-function getApiKey() {
+function getSecretData(accountId) {
   const apiKey = getEnv('NEW_RELIC_API_KEY')
 
   if (!apiKey) {
     throw Error('No api key found in NEW_RELIC_API_KEY')
   }
 
-  return apiKey
+  // This is done so we don't accidentally expose the context.secrets
+  // info when dumping the context to a log or to the screen. The properties
+  // have to explicitly be referenced in code. Otherwise, something like
+  // [apiKey getter] will be shown, not the value behind it.
+
+  return {
+    get apiKey() {
+      return apiKey
+    },
+    get accountId() {
+      return accountId
+    },
+  }
 }
 
 function processPendingData() {
@@ -181,8 +193,19 @@ async function main() {
 
   configureLogger(argv)
 
-  const engine = new Engine(
-      getApiKey(),
+  const options = {
+      manifestFilePath: argv.f,
+      templateName: argv.n,
+      templatePath: argv.p,
+      valuesFilePath: argv.v,
+      dashboardIds: argv.d,
+      channelIds: argv.c,
+      nrqlQuery: argv.q,
+      outputFileName: argv.o,
+      noRender: argv.skipRender,
+    },
+    engine = new Engine(
+      getSecretData(argv.a),
       DEFAULT_CHANNEL,
       {
         getPuppetArgs: async () => ({
@@ -199,24 +222,9 @@ async function main() {
           }
         },
       },
-    ),
-    values = {
-      options: {
-        manifestFilePath: argv.f,
-        templateName: argv.n,
-        templatePath: argv.p,
-        valuesFilePath: argv.v,
-        dashboardIds: argv.d,
-        channelIds: argv.c,
-        accountId: argv.a,
-        nrqlQuery: argv.q,
-        outputFileName: argv.o,
-        noRender: argv.skipRender,
-        // sourceBucket: null, // TODO
-      },
-    }
+    )
 
-  await engine.run(values)
+  await engine.run(options)
 
   logger.trace('Recording job status...')
 
@@ -224,7 +232,7 @@ async function main() {
     'NrReportsStatus',
     {
       error: false,
-      ...values.options,
+      ...options,
     },
   )
 }

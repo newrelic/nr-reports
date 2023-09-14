@@ -10,7 +10,7 @@ const {
     trimStringAndLower,
     doAsyncWork,
   } = require('../util'),
-  { Output, QueryOutput } = require('../output'),
+  { QueryOutput } = require('../output'),
   { NerdgraphClient } = require('../nerdgraph')
 
 const logger = createLogger('query-generator'),
@@ -146,7 +146,7 @@ function runMultiConcurrentNrql(context, report, accountIds) {
       DEFAULT_CONCURRENCY,
       async accountId => {
         const nrqlResult = await nerdgraph.runNrql(
-          context.apiKey,
+          context.secrets.apiKey,
           [accountId],
           query,
           {
@@ -202,7 +202,7 @@ async function runMultiNrql(context, report, accountIds) {
   }
 
   const results = await nerdgraph.query(
-    context.apiKey,
+    context.secrets.apiKey,
     `{${q}}`,
     variables,
   )
@@ -244,7 +244,7 @@ async function runNrql(context, report) {
   }
 
   const result = await nerdgraph.runNrql(
-    context.apiKey,
+    context.secrets.apiKey,
     accountIds,
     query,
     {

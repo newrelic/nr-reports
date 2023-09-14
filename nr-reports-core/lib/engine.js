@@ -25,22 +25,23 @@ const { publish } = require('./channels'),
 const logger = createLogger('engine')
 
 class Engine {
-  constructor(apiKey, defaultChannelType, callbacks) {
-    this.context = new Context({ apiKey, defaultChannelType })
+  constructor(secrets, defaultChannelType, callbacks) {
+    this.context = new Context({ secrets, defaultChannelType })
     this.callbacks = callbacks
   }
 
-  async run(args) {
+  async run(options, params) {
     logSafe(logger, LOG_LEVEL_DEBUG, log => {
-      log({ ...this.context, ...args.options }, 'Engine started.')
+      log({ ...this.context, ...options }, 'Engine started.')
     })
 
     let browser
 
     try {
       const manifest = await discoverReports(
-        args,
         this.context,
+        options,
+        params,
       )
 
       logTrace(logger, log => {
@@ -53,6 +54,8 @@ class Engine {
         throw new Error('No reports selected.')
       }
 
+      // pick single report here?
+
       logger.debug(`Running ${manifest.reports.length} reports...`)
 
       logTrace(logger, log => {
@@ -60,7 +63,7 @@ class Engine {
       })
 
       const reportIndex = manifest.reports.findIndex(shouldRender),
-        templatePath = getOption(args.options, 'templatePath', 'TEMPLATE_PATH'),
+        templatePath = getOption(options, 'templatePath', 'TEMPLATE_PATH'),
         context = this.context.context({
           browser: null,
           templatePath,

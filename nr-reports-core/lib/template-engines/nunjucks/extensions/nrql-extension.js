@@ -22,9 +22,8 @@ function handleError(context, err, errorBody, callback) {
   callback(null, new nunjucks.runtime.SafeString(`Query failed: ${err}`))
 }
 
-function NrqlExtension(apiKey) {
+function NrqlExtension() {
   this.tags = ['nrql']
-  this.apiKey = apiKey
 
   this.parse = function(parser, nodes, lexer) {
 
@@ -98,7 +97,7 @@ function NrqlExtension(apiKey) {
       })
 
       const result = await nerdgraph.runNrql(
-        this.apiKey,
+        newContext.secrets.apiKey,
         accountIds,
         env.renderString(query, newContext),
         {

@@ -22,9 +22,8 @@ function handleError(context, err, errorBody, callback) {
   callback(null, new nunjucks.runtime.SafeString('This chart could not be displayed.'))
 }
 
-function ChartExtension(apiKey) {
+function ChartExtension() {
   this.tags = ['chart']
-  this.apiKey = apiKey
 
   this.parse = function(parser, nodes, lexer) {
 
@@ -104,7 +103,7 @@ function ChartExtension(apiKey) {
       })
 
       const result = await nerdgraph.getShareableChartUrl(
-        this.apiKey,
+        newContext.secrets.apiKey,
         accountId,
         env.renderString(query, newContext),
         chartOptions,

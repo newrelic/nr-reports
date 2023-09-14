@@ -4,7 +4,6 @@ const fs = require('fs'),
   nodemailer = require('nodemailer'),
   { createLogger, logTrace } = require('../logger'),
   {
-    getEnv,
     getOption,
     isUndefined,
     toBoolean,
@@ -36,27 +35,28 @@ const fs = require('fs'),
 const logger = createLogger('email'),
   { writeFile } = fs.promises
 
-function createSmtpTransport() {
-  const server = getEnv(EMAIL_SMTP_SERVER_VAR)
+function createSmtpTransport(context) {
+  const { secrets } = context,
+    server = getOption(secrets, 'emailSmtpServer', EMAIL_SMTP_SERVER_VAR)
 
   if (!server) {
     throw new Error('Missing SMTP server')
   }
 
-  const port = getEnv(EMAIL_SMTP_PORT_VAR),
-    secure = getEnv(EMAIL_SMTP_SECURE_VAR),
+  const port = getOption(secrets, 'emailSmtpPort', EMAIL_SMTP_PORT_VAR),
+    secure = getOption(secrets, 'emailSmtpSecure', EMAIL_SMTP_SECURE_VAR),
     smtpConfig = {
       host: server,
       port: port ? toNumber(port) : EMAIL_SMTP_PORT_DEFAULT,
       secure: isUndefined(secure) ? true : toBoolean(secure),
       logger,
     },
-    user = getEnv(EMAIL_SMTP_USER_VAR)
+    user = getOption(secrets, 'emailSmtpUser', EMAIL_SMTP_USER_VAR)
 
   if (user) {
     smtpConfig.auth = {
-      user: getEnv(EMAIL_SMTP_USER_VAR),
-      pass: getEnv(EMAIL_SMTP_PASS_VAR),
+      user,
+      pass: getOption(secrets, 'emailSmtpPass', EMAIL_SMTP_PASS_VAR),
     }
   }
 
@@ -90,8 +90,8 @@ async function makeMessage(context, report) {
   return message
 }
 
-async function send(message) {
-  const transporter = createSmtpTransport()
+async function send(context, message) {
+  const transporter = createSmtpTransport(context)
 
   logTrace(logger, log => {
     log({ ...message, from: '[REDACTED]', to: '[REDACTED]' }, 'Message:')
@@ -101,6 +101,7 @@ async function send(message) {
 }
 
 async function sendMailWithBody(
+  context,
   channelConfig,
   message,
   body,
@@ -130,7 +131,7 @@ async function sendMailWithBody(
   /*
    * Finally, send the completely built message.
    */
-  await send(message)
+  await send(context, message)
 }
 
 async function sendMailWithAttachments(
@@ -163,7 +164,7 @@ async function sendMailWithAttachments(
   /*
    * Send the message with the rendered body.
    */
-  await sendMailWithBody(channelConfig, message, body)
+  await sendMailWithBody(context, channelConfig, message, body)
 }
 
 async function renderOutputAndSendMailWithAttachments(
@@ -230,10 +231,10 @@ async function sendMail(
   }
 
   const text = await output.render(
-      context,
-      report,
-      channelConfig,
-    )
+    context,
+    report,
+    channelConfig,
+  )
 
   /*
    * If no email template was specified, the email body will be rendered using
@@ -244,6 +245,7 @@ async function sendMail(
    * Otherwise, the email body will be rendered using the template.
    */
   await sendMailWithBody(
+    context,
     channelConfig,
     message,
     channelConfig.passThrough ? text : (

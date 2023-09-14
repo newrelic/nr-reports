@@ -63,7 +63,7 @@ function obfuscate(obj, level = 0) {
   Object.getOwnPropertyNames(obj).forEach(prop => {
     const type = typeof obj[prop]
 
-    if (/key|token|password/iu.test(prop)) {
+    if (/key|token|password|secret|account|id/iu.test(prop)) {
       objPrime[prop] = '[REDACTED]'
       return
     }

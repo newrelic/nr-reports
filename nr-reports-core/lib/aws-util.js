@@ -10,13 +10,13 @@ const logger = createLogger('aws-util'),
   s3 = new S3(),
   secretsManager = new SecretsManager()
 
-function getSecretValue(secretName, secretKey) {
+function getSecret(secretName) {
   const getParams = {
     SecretId: secretName,
   }
 
   return new Promise((resolve, reject) => {
-    logger.trace(`Retrieving secret value for secret ${secretName} with key ${secretKey}...`)
+    logger.trace(`Retrieving secret ${secretName}...`)
 
     secretsManager.getSecretValue(getParams, (err, data) => {
       if (err) {
@@ -39,18 +39,25 @@ function getSecretValue(secretName, secretKey) {
         secret = buff.toString('ascii')
       }
 
-      if (!secretKey) {
-        resolve(secret)
-        return
-      }
-
-      logger.trace(`Parsing secret value for ${secretName} as JSON...`)
-
-      const secretObj = JSON.parse(secret)
-
-      resolve(secretObj[secretKey])
+      resolve(secret)
     })
   })
+}
+
+function getSecretAsJson(secretName) {
+  return getSecret(secretName)
+    .then(secret => {
+      logger.trace(`Parsing secret value for ${secretName} as JSON...`)
+
+      return JSON.parse(secret)
+    })
+}
+
+function getSecretValue(secretName, secretKey) {
+  logger.trace(`Retrieving secret value for secret ${secretName} with key ${secretKey}...`)
+
+  return getSecretAsJson(secretName)
+    .then(secretObj => secretObj[secretKey])
 }
 
 function getS3Object(bucket, key) {
@@ -110,6 +117,8 @@ function putS3Object(bucket, key, content) {
 }
 
 module.exports = {
+  getSecret,
+  getSecretAsJson,
   getSecretValue,
   getS3Object,
   getS3ObjectAsString,

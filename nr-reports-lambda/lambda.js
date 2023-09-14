@@ -11,6 +11,7 @@ const chromium = require('chrome-aws-lambda'),
     Engine,
     getEnv,
     getSecretValue,
+    getSecretAsJson,
     trimStringAndLower,
     DEFAULT_LOG_LEVEL,
   } = require('nr-reports-core')
@@ -51,6 +52,56 @@ async function getApiKey() {
   return secret
 }
 
+function makeSecretData(
+  apiKey,
+  accountId = null,
+  sourceNerdletId = null,
+) {
+  if (!apiKey) {
+    throw Error('No api key found')
+  }
+
+  // This is done so we don't accidentally expose the context.secrets
+  // info when dumping the context to a log or to the screen. The properties
+  // have to explicitly be referenced in code. Otherwise, something like
+  // [apiKey getter] will be shown, not the value behind it.
+
+  return {
+    get apiKey() {
+      return apiKey
+    },
+    get accountId() {
+      return accountId
+    },
+    get sourceNerdletId() {
+      return sourceNerdletId
+    },
+  }
+}
+
+async function getSecretData(options) {
+  if (!options || !options.secretName) {
+    return makeSecretData(await getApiKey())
+  }
+
+  // TODO: Should provide a secure way to pass secretName as if a third party
+  // were able to get the secretName _and_ had access to the lambda, it could
+  // compromise data in the secret.
+
+  const secret = await getSecretAsJson(options.secretName),
+    accountId = options.accountId || secret.accountId
+
+  // Remove it from the options just to be safe
+
+  delete options.accountId
+
+  return makeSecretData(
+    secret.apiKey,
+    accountId,
+    secret.sourceNerdletId,
+  )
+}
+
 function lambdaResponse(
   statusCode,
   success = false,
@@ -76,11 +127,15 @@ function lambdaResponse(
 }
 
 async function handler(event) {
-  const values = event.body || event
+  const payload = event.body || event,
+    {
+      options,
+      ...params
+    } = payload
 
   try {
     const engine = new Engine(
-      await getApiKey(),
+      await getSecretData(options),
       's3',
       {
         getPuppetArgs: async () => ({
@@ -99,7 +154,7 @@ async function handler(event) {
       },
     )
 
-    await engine.run(values)
+    await engine.run(options, params)
 
     logger.trace('Recording job status...')
 
@@ -107,7 +162,7 @@ async function handler(event) {
       'NrReportsStatus',
       {
         error: false,
-        ...values.options,
+        ...options,
       },
     )
 
@@ -119,6 +174,7 @@ async function handler(event) {
     logger.error('Uncaught exception:')
     logger.error(err.message)
 
+    // eslint-disable-next-line no-console
     console.error(err)
 
     newrelic.noticeError(err)

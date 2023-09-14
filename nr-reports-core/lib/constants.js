@@ -1,5 +1,43 @@
 'use strict'
 
+// Common keys
+const TEMPLATE_NAME_KEY = 'templateName',
+  OUTPUT_FILE_NAME_KEY = 'outputFileName',
+  INCLUDE_DIR_NAME = 'include'
+
+// Engine option constants
+const MANIFEST_FILE_PATH_OPTION = 'manifestFilePath',
+  MANIFEST_FILE_PATH_VAR = 'MANIFEST_FILE_PATH',
+  TEMPLATE_NAME_OPTION = TEMPLATE_NAME_KEY,
+  TEMPLATE_NAME_VAR = 'TEMPLATE_NAME',
+  VALUES_FILE_PATH_OPTION = 'valuesFilePath',
+  VALUES_FILE_PATH_VAR = 'VALUES_FILE_PATH',
+  OUTPUT_FILE_NAME_OPTION = OUTPUT_FILE_NAME_KEY,
+  DASHBOARD_IDS_OPTION = 'dashboardIds',
+  DASHBOARD_IDS_VAR = 'DASHBOARD_IDS',
+  NRQL_QUERY_OPTION = 'nrqlQuery',
+  NRQL_QUERY_VAR = 'NRQL_QUERY',
+  CHANNEL_IDS_OPTION = 'channelIds',
+  CHANNEL_IDS_VAR = 'CHANNEL_IDS',
+  SOURCE_NERDLET_ID_OPTION = 'sourceNerdletId',
+  SOURCE_NERDLET_ID_VAR = 'SOURCE_NERDLET_ID'
+
+// Manifest generator constants
+const DEFAULT_MANIFEST_FILE_NAME = 'manifest.json',
+  DEFAULT_MANIFEST_FILE_PATH = `${INCLUDE_DIR_NAME}/${DEFAULT_MANIFEST_FILE_NAME}`
+
+// Template generator constants
+const NO_RENDER_OPTION = 'noRender'
+
+// Dashboard generator constants
+const COMBINE_PDFS_KEY = 'combinePdfs'
+
+// Query generator constants
+const DEFAULT_QUERY_REPORT_NAME = 'query-report'
+
+// Nerdstorage constants
+const MANIFESTS_COLLECTION_NAME = 'manifests'
+
 // Email channel constants
 const EMAIL_SMTP_SERVER_VAR = 'EMAIL_SMTP_SERVER',
   EMAIL_SMTP_PORT_VAR = 'EMAIL_SMTP_PORT',
@@ -35,10 +73,45 @@ const S3_DEST_BUCKET_VAR = 'S3_DEST_BUCKET',
 // Slack channel constants
 const SLACK_WEBHOOK_URL = 'SLACK_WEBHOOK_URL'
 
-// Common attribute keys
-const TEMPLATE_NAME_KEY = 'templateName'
-
 module.exports = {
+
+  // Common keys
+  TEMPLATE_NAME_KEY,
+  OUTPUT_FILE_NAME_KEY,
+  INCLUDE_DIR_NAME,
+
+  // Engine options
+  MANIFEST_FILE_PATH_OPTION,
+  MANIFEST_FILE_PATH_VAR,
+  TEMPLATE_NAME_OPTION,
+  TEMPLATE_NAME_VAR,
+  VALUES_FILE_PATH_OPTION,
+  VALUES_FILE_PATH_VAR,
+  OUTPUT_FILE_NAME_OPTION,
+  DASHBOARD_IDS_OPTION,
+  DASHBOARD_IDS_VAR,
+  NRQL_QUERY_OPTION,
+  NRQL_QUERY_VAR,
+  CHANNEL_IDS_OPTION,
+  CHANNEL_IDS_VAR,
+  SOURCE_NERDLET_ID_OPTION,
+  SOURCE_NERDLET_ID_VAR,
+
+  // Manifest generator constants
+  DEFAULT_MANIFEST_FILE_NAME,
+  DEFAULT_MANIFEST_FILE_PATH,
+
+  // Template generator constants
+  NO_RENDER_OPTION,
+
+  // Dashboard generator constants
+  COMBINE_PDFS_KEY,
+
+  // Query generator constants
+  DEFAULT_QUERY_REPORT_NAME,
+
+  // Nerdstorage constants
+  MANIFESTS_COLLECTION_NAME,
 
   // Email channel constants
   EMAIL_SMTP_SERVER_VAR,
@@ -74,7 +147,4 @@ module.exports = {
 
   // Slack channel constants
   SLACK_WEBHOOK_URL,
-
-  // Common attribute keys
-  TEMPLATE_NAME_KEY,
 }

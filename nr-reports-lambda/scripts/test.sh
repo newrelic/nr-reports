@@ -45,7 +45,7 @@ docker run -a stdout -t --name lambda --rm \
     -e NEW_RELIC_LAMBDA_HANDLER=nr-reports-lambda/lambda.handler \
     --platform=linux/amd64 \
     "${ENV_ARGS[@]}" \
-    $PACKAGE_NAME:$ECR_IMAGE_TAG 
+    $PACKAGE_NAME:$ECR_IMAGE_TAG | tr -s "\r" "\n"
 
 if [ "$TMP_DIR" != "" -a "$TMP_DIR" != "/" -a "$TMP_DIR" != '.' -a "$TMP_DIR" != '..' -a -d $TMP_DIR ]; then
     rm -rf $TMP_DIR

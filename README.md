@@ -1594,7 +1594,7 @@ Lambda options, see the section [Using the AWS Lambda Function](#using-the-aws-l
 | Template path | Additional paths to search during [template resolution](#template-resolution)  | `-p` | `templatePath` | `TEMPLATE_PATH` |
 | Dashboard IDs | List of dashboard entity GUIDs  | `-d` | `dashboardIds` | `DASHBOARD_IDS` |
 | NRQL Query | An NRQL query | `-q` | `nrqlQuery` | `NRQL_QUERY` |
-| Account ID | The account ID to use with a query report. Multiple account IDs an be specified separated by commas (see note below).  | `-a` | `accountId` | `NEW_RELIC_ACCOUNT_ID` |
+| Account ID | The account ID to use with a query report. Multiple account IDs can be specified separated by commas (see note below).  | `-a` | `accountId` | `NEW_RELIC_ACCOUNT_ID` |
 | Channel IDs | List of channel IDs | `-c` | `channelIds` | `CHANNEL_IDS` |
 | S3 Source Bucket | Name of S3 bucket to read manifest file/template from. _Unsupported in CLI._ | Unsupported | `sourceBucket` | `SOURCE_BUCKET` |
 
