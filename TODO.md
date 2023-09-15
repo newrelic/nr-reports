@@ -46,7 +46,7 @@
 - [ ] Add slack API destination (`postMessage`)
 - [ ] Add Google Drive destination
 - [ ] Inline templates in YML
-- [ ] Multiple email to
+- [X] Multiple email to
 - [ ] Can't include html inside nrql or chart tag
 - [ ] Run reports on different schedules
 - [ ] Central repo/db for reports w/ polling to discover new reports
@@ -56,8 +56,6 @@
 
 ## Medium
 
-- [ ] Can discovery/everything be refactored so that logic is all encapsulated
-  in the generators?
 - [ ] Add New Relic Metrics/Events as a channel
 - [X] Run manifest reports by name
 - [ ] Specify dashboard output file names
@@ -74,6 +72,8 @@
 - [ ] Remove dependency on puppeteer from core?
 - [ ] Support other email transporters
 - [ ] Add ability to specify channel params at CLI using ;key=value
+- [ ] Can discovery/everything be refactored so that logic is all encapsulated
+  in the generators?
 
 ## Ideas
 

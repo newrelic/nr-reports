@@ -1350,7 +1350,8 @@ These options can be specified both via channel configuration in a
 
 | Name | Environment Variable | Description | Required | Default |
 | --- | --- | --- | --- | --- |
-| `to` | `EMAIL_TO` | Recipient emails | Y | |
+| `to` | `EMAIL_TO` | Recipient emails; Multiple email addresses can be specified separated by commas. | Y | |
+| `cc` | `EMAIL_CC` | CC recipient emails; Multiple email addresses can be specified separated by commas. | N | |
 | `from` | `EMAIL_FROM` | Sender email | Y | |
 | `subject` | `EMAIL_SUBJECT` | Subject line | N | `''` |
 | `emailTemplateName` | `EMAIL_TEMPLATE` | Template name for generating body; [Resolved](#template-resolution) against the template path at run time. | N | `''` |
@@ -1358,7 +1359,7 @@ These options can be specified both via channel configuration in a
 Messages are sent using the [Nodemailer](https://nodemailer.com/about/) module.
 SMTP is the only protocol currently supported. The SMTP server configuration can
 be set only via environment variables for security purposes. The following
-parameters are suppoted.
+parameters are supported.
 
 | Environment Variable | Description | Required | Default |
 | --- | --- | --- | --- |
@@ -1382,6 +1383,7 @@ reports:
   - type: email
     from: "me@nowhere.local"
     to: "you@nowhere.local"
+    cc: "them@nowhere.local,them-too@nowhere.local"
     subject: "{{ title }}",
     template: "email-template.html"
 ```
