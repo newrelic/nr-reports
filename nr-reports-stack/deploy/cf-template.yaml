@@ -1,0 +1,452 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for the New Relic Reports stack.
+
+Parameters:
+  #
+  # Customer ID.
+  #
+  CustomerId:
+    Type: String
+    Description: Customer ID used to namespace stuff.
+  #
+  # URI of the ECR repository for the runner lambda.
+  #
+  RunnerECRImageRepo:
+    Type: String
+    Description: URI of the ECR repository for the runner lambda.
+  #
+  # ECR image tag for the runner lambda.
+  #
+  RunnerECRImageTag:
+    Type: String
+    Description: ECR image tag for the runner lambda.
+  #
+  # Name of the runner lambda function.
+  #
+  # Used during deployment.
+  #
+  RunnerFunctionName:
+    Type: String
+    Description: Name of the lambda function.
+    Default: RunNewRelicReport
+  #
+  # Timeout (in seconds) for the runner lambda function.
+  #
+  # Used during deployment.
+  #
+  RunnerFunctionTimeout:
+    Type: Number
+    Description: Timeout (in seconds) for the lambda function.
+    MinValue: 1
+    MaxValue: 900
+    Default: 60
+  #
+  # Memory size for the runner lambda function.
+  #
+  # Used during deployment.
+  #
+  RunnerFunctionMemorySize:
+    Type: Number
+    Description: Memory size for the lambda function.
+    MinValue: 128
+    MaxValue: 10240
+    Default: 256
+  #
+  # URI of the ECR repository for the scheduler lambda.
+  #
+  SchedulerECRImageRepo:
+    Type: String
+    Description: URI of the ECR repository for the scheduler lambda.
+  #
+  # ECR image tag for the scheduler lambda.
+  #
+  SchedulerECRImageTag:
+    Type: String
+    Description: ECR image tag for the scheduler lambda.
+  #
+  # Name of the scheduler lambda function.
+  #
+  # Used during deployment.
+  #
+  SchedulerFunctionName:
+    Type: String
+    Description: Name of the scheduler lambda function.
+    Default: NewRelicReportScheduler
+  #
+  # Timeout (in seconds) for the scheduler lambda function.
+  #
+  # Used during deployment.
+  #
+  SchedulerFunctionTimeout:
+    Type: Number
+    Description: Timeout (in seconds) for the scheduler lambda function.
+    MinValue: 1
+    MaxValue: 900
+    Default: 60
+  #
+  # Memory size for the scheduler lambda function.
+  #
+  # Used during deployment.
+  #
+  SchedulerFunctionMemorySize:
+    Type: Number
+    Description: Memory size for the scheduler lambda function.
+    MinValue: 128
+    MaxValue: 10240
+    Default: 256
+  #
+  # The schedule group name of the schedule group the scheduler will use to
+  # create report schedules.
+  #
+  EventBridgeSchedulerScheduleGroupName:
+    Type: String
+    Description: The schedule group name of the schedule group the scheduler will use to create report schedules.
+    Default: ScheduleGroup
+  #
+  # New Relic account ID.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  #
+  NRAccountId:
+    Type: String
+    Description: Your New Relic account ID; necessary for distributed tracing.
+    AllowedPattern: '[0-9]+'
+  #
+  # New Relic license key. Defaults to empty but either this or the
+  # NRLicenseKeySecret parameter should be specified.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # NOTE: It is not recommended to use this. Instead, specify a secret ARN via
+  # the NRLicenseKeySecret parameter.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  #
+  NRLicenseKey:
+    Type: String
+    Description: Your New Relic license key.
+    AllowedPattern: '[a-zA-Z0-9\-_]*'
+    Default: ''
+  #
+  # Name of an AWS Secrets Manager secret containing your New Relic license key.
+  # The secret must contain a 'LicenseKey' property for the license key.
+  # Defaults to empty but either this or the NRLicenseKey should be specified.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  #
+  NRLicenseKeySecret:
+    Type: String
+    Description: ARN of an AWS Secrets Manager secret containing your New Relic license key.
+    AllowedPattern: (^$)|(^arn:(aws[a-zA-Z-]*)?:secretsmanager:.+:\d{12}:secret:[a-zA-Z0-9/_+=\.@\-]+$)
+    Default: ''
+  #
+  # Log level for the New Relic AWS lambda extension. Defaults to 'INFO'.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  #
+  NRLogLevel:
+    Type: String
+    Description: Log level for the New Relic Lamba extension.
+    Default: INFO
+    AllowedValues:
+      - INFO
+      - DEBUG
+  #
+  # Name of an AWS Secrets Manager secret containing the customer secret
+  # data.
+  #
+  SecretName:
+    Type: String
+    Description: Name of a Secret containing the customer secret data.
+    AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]+'
+    Default: NewRelicReportsSecret
+  #
+  # New Relic User API key used for GraphQL Nerdstorage queries and mutations.
+  #
+  UserApiKey:
+    Type: String
+    Description: The New Relic User API key to use.
+    AllowedPattern: '[a-zA-Z0-9._\-]*'
+  #
+  # New Relic nerdlet ID where report data will be stored.
+  #
+  NerdletPackageId:
+    Type: String
+    Description: New Relic nerdlet ID where report data will be stored.
+    AllowedPattern: '[a-zA-Z0-9\-]+'
+  #
+  # New Relic account ID used for Nerdstorage queries.
+  #
+  NerdletAccountId:
+    Type: String
+    Description: New Relic account ID used for Nerdstorage queries.
+    AllowedPattern: '[0-9]+'
+  #
+  # Log level for the lambda functions. Note that this is separate from the
+  # NRLogLevel which specifies the level for the New Relic lambda extension.
+  # Defaults to 'INFO'.
+  #
+  LogLevel:
+    Type: String
+    Description: Log level for the lambda (not the extension).
+    Default: INFO
+    AllowedValues:
+      - INFO
+      - VERBOSE
+      - DEBUG
+
+Conditions:
+  IsNRLicenseKeySecretEmpty: !Equals [!Ref "NRLicenseKeySecret", ""]
+
+Resources:
+
+  #
+  # Secret holding customer credentials and config
+  #
+
+  NrReportsSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: A secret that holds customer data used by the reports runner and scheduler.
+      Name: !Sub ${CustomerId}-${SecretName}
+      SecretString: !Sub '{"apiKey":"${UserApiKey}","sourceNerdletId":"${NerdletPackageId}","accountId":"${NerdletAccountId}"}'
+
+  #
+  # Execution role for report runner lambda.
+  #
+
+  NrReportRunnerLambdaExecRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Execution role for the New Relic Report Runner lambda.
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSLambdaExecute'
+      Policies:
+      - PolicyName: ReadSecrets
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+              - 'secretsmanager:GetResourcePolicy'
+              - 'secretsmanager:GetSecretValue'
+              - 'secretsmanager:DescribeSecret'
+              - 'secretsmanager:ListSecretVersionIds'
+              Resource:
+                !If
+                - IsNRLicenseKeySecretEmpty
+                - [ !Ref NrReportsSecret ]
+                - [ !Ref NrReportsSecret, !Ref NRLicenseKeySecret ]
+      RoleName: !Sub ${CustomerId}-ReportRunnerRole
+
+  #
+  # The report runner.
+  #
+
+  NrReportRunnerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      PackageType: Image
+      Code:
+        ImageUri: !Sub ${RunnerECRImageRepo}:${RunnerECRImageTag}
+      Role: !GetAtt NrReportRunnerLambdaExecRole.Arn
+      Description: A lambda for generating New Relic reports.
+      FunctionName: !Sub ${CustomerId}-${RunnerFunctionName}
+      Timeout: !Ref RunnerFunctionTimeout
+      MemorySize: !Ref RunnerFunctionMemorySize
+      Environment:
+        Variables:
+          # New Relic Lambda Extension variables
+          # https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+          NEW_RELIC_LAMBDA_HANDLER: nr-reports-lambda/lambda.handler
+          NEW_RELIC_LAMBDA_EXTENSION_ENABLED: true
+          NEW_RELIC_EXTENSION_SEND_FUNCTION_LOGS: true
+          NEW_RELIC_EXTENSION_LOG_LEVEL: !Ref NRLogLevel
+          NEW_RELIC_ACCOUNT_ID: !Ref NRAccountId
+          #
+          # By default the extension will read the license key from a secret
+          # named NEW_RELIC_LICENSE_KEY which is setup when you install the
+          # Lambda integration using the newrelic-lamda CLI. Alternately...
+          #
+          # Uncomment to specify your license key manually (not recommended)
+          #NEW_RELIC_LICENSE_KEY: !Ref NRLicenseKey
+          #
+          # Name of an AWS Secrets Manager secret containing your New Relic
+          # license key. The extension will read from a secret named
+          # NEW_RELIC_LICENSE_KEY by default.
+          NEW_RELIC_LICENSE_KEY_SECRET: !Ref NRLicenseKeySecret
+
+          # Lambda environment variables
+          #AWS_REGION: !Ref AwsRegion
+          SECRET_NAME: !Ref NrReportsSecret
+          LOG_LEVEL: !Ref LogLevel
+
+  #
+  # Execution role for report scheduler lambda.
+  #
+
+  NrReportSchedulerLambdaExecRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Execution role for the New Relic Report Scheduler lambda.
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSLambdaExecute'
+      Policies:
+      - PolicyName: SchedulerLambdaExecute
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+              - 'secretsmanager:GetResourcePolicy'
+              - 'secretsmanager:GetSecretValue'
+              - 'secretsmanager:DescribeSecret'
+              - 'secretsmanager:ListSecretVersionIds'
+              Resource:
+                !If
+                - IsNRLicenseKeySecretEmpty
+                - [ !Ref NrReportsSecret ]
+                - [ !Ref NrReportsSecret, !Ref NRLicenseKeySecret ]
+            - Effect: Allow
+              Action:
+              - 'scheduler:ListSchedules'
+              Resource:
+              - !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/*/*
+            - Effect: Allow
+              Action:
+              - 'scheduler:GetSchedule'
+              - 'scheduler:UpdateSchedule'
+              - 'scheduler:CreateSchedule'
+              - 'scheduler:DeleteSchedule'
+              Resource:
+              - !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/${CustomerId}-${EventBridgeSchedulerScheduleGroupName}/*
+            - Effect: Allow
+              Action:
+              - 'iam:PassRole'
+              Resource:
+              - !Sub arn:aws:iam::${AWS::AccountId}:role/${CustomerId}-EBSchedulerReportRole
+      RoleName: !Sub ${CustomerId}-ReportSchedulerRole
+
+  #
+  # The report scheduler.
+  #
+
+  NrReportSchedulerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      PackageType: Image
+      Code:
+        ImageUri: !Sub ${SchedulerECRImageRepo}:${SchedulerECRImageTag}
+      Role: !GetAtt NrReportSchedulerLambdaExecRole.Arn
+      Description: A lambda for scheduling New Relic reports.
+      FunctionName: !Sub ${CustomerId}-${SchedulerFunctionName}
+      Timeout: !Ref SchedulerFunctionTimeout
+      MemorySize: !Ref SchedulerFunctionMemorySize
+      Environment:
+        Variables:
+          # New Relic Lambda Extension variables
+          # https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+          NEW_RELIC_LAMBDA_HANDLER: nr-reports-scheduler/lambda.handler
+          NEW_RELIC_LAMBDA_EXTENSION_ENABLED: true
+          NEW_RELIC_EXTENSION_SEND_FUNCTION_LOGS: true
+          NEW_RELIC_EXTENSION_LOG_LEVEL: !Ref NRLogLevel
+          NEW_RELIC_ACCOUNT_ID: !Ref NRAccountId
+          #
+          # By default the extension will read the license key from a secret
+          # named NEW_RELIC_LICENSE_KEY which is setup when you install the
+          # Lambda integration using the newrelic-lamda CLI. Alternately...
+          #
+          # Uncomment to specify your license key manually (not recommended)
+          #NEW_RELIC_LICENSE_KEY: !Ref NRLicenseKey
+          #
+          # Name of an AWS Secrets Manager secret containing your New Relic
+          # license key. The extension will read from a secret named
+          # NEW_RELIC_LICENSE_KEY by default.
+          NEW_RELIC_LICENSE_KEY_SECRET: !Ref NRLicenseKeySecret
+
+          # Lambda environment variables
+          #AWS_REGION: !Ref AwsRegion
+          SECRET_NAME: !Ref NrReportsSecret
+          SCHEDULE_GROUP_NAME: !Sub ${CustomerId}-${EventBridgeSchedulerScheduleGroupName}
+          REPORTS_LAMBDA_ARN: !GetAtt NrReportRunnerLambda.Arn
+          REPORTS_LAMBDA_ROLE_ARN: !Sub arn:aws:iam::${AWS::AccountId}:role/${CustomerId}-EBSchedulerReportRole
+          LOG_LEVEL: !Ref LogLevel
+
+  #
+  # Execution role for report scheduler eventbridge schedule.
+  #
+
+  EventBridgeSchedulerReportExecRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - scheduler.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: Execution role for the EventBridge scheduler target invocation.
+      Policies:
+      - PolicyName: InvokeSchedulerLambda
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+              - 'lambda:InvokeFunction'
+              Resource:
+              - !GetAtt NrReportRunnerLambda.Arn
+              - !GetAtt NrReportSchedulerLambda.Arn
+      RoleName: !Sub ${CustomerId}-EBSchedulerReportRole
+
+  #
+  # The schedule group the scheduler will use to create report schedules.
+  #
+
+  NrReportsEventBridgeSchedulerSchedulerScheduleGroup:
+    Type: AWS::Scheduler::ScheduleGroup
+    Properties:
+      Name: !Sub ${CustomerId}-${EventBridgeSchedulerScheduleGroupName}
+
+  #
+  # The schedule that will invoke the scheduler to poll Nerdstorage and sync
+  # up the schedules.
+  #
+
+  NrReportsSchedulerSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: This schedule will invoke the scheduler lambda so it can sync the report schedules with Nerdstorage.
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      GroupName: !Ref NrReportsEventBridgeSchedulerSchedulerScheduleGroup
+      Name: RunScheduler
+      ScheduleExpression: "cron(*/5 * * * ? *)"
+      ScheduleExpressionTimezone: UTC
+      State: ENABLED
+      Target:
+        Arn: !GetAtt NrReportSchedulerLambda.Arn
+        Input: "{}"
+        RoleArn: !GetAtt EventBridgeSchedulerReportExecRole.Arn

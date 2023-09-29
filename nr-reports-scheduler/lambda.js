@@ -4,18 +4,19 @@
 // eslint-disable-next-line node/no-missing-require
 const newrelic = require('newrelic')
 
-const chromium = require('chrome-aws-lambda'),
-  {
+const {
     rootLogger,
     setLogLevel,
-    Engine,
     getEnv,
-    getSecretValue,
     getSecretAsJson,
+    NerdstorageClient,
     trimStringAndLower,
     DEFAULT_LOG_LEVEL,
     CORE_CONSTANTS,
-  } = require('nr-reports-core')
+  } = require('nr-reports-core'),
+  { NerdstorageRepository } = require('./lib/repositories/nerdstorage'),
+  { EventBridgeBackend } = require('./lib/backends/eventbridge'),
+  { Scheduler } = require('./lib/scheduler')
 
 const logger = rootLogger,
   { SECRET_NAME_VAR } = CORE_CONSTANTS
@@ -36,70 +37,45 @@ function configureLogger() {
 
 configureLogger()
 
-async function getApiKey() {
-  const apiKey = getEnv('USER_API_KEY'),
-    apiKeySecret = getEnv('USER_API_KEY_SECRET'),
-    apiKeySecretKey = getEnv('USER_API_KEY_SECRET_KEY', 'UserApiKey')
-
-  if (!apiKeySecret) {
-    return apiKey
-  }
-
-  const secret = await getSecretValue(apiKeySecret, apiKeySecretKey)
-
-  if (!secret) {
-    return apiKey
-  }
-
-  return secret
-}
-
-function makeSecretData(
-  apiKey,
-  accountId = null,
-  sourceNerdletId = null,
-) {
-  if (!apiKey) {
+function makeSecretData(secret) {
+  if (!secret.apiKey) {
     throw Error('No api key found')
   }
 
-  // This is done so we don't accidentally expose the context.secrets
-  // info when dumping the context to a log or to the screen. The properties
+  if (!secret.accountId) {
+    throw Error('No account ID found')
+  }
+
+  if (!secret.sourceNerdletId) {
+    throw Error('No nerdlet ID found')
+  }
+
+  // This is done so we don't accidentally expose the secrets
+  // info if the object is dumped to a log or to the screen. The properties
   // have to explicitly be referenced in code. Otherwise, something like
   // [apiKey getter] will be shown, not the value behind it.
 
   return {
     get apiKey() {
-      return apiKey
+      return secret.apiKey
     },
     get accountId() {
-      return accountId
+      return secret.accountId
     },
     get sourceNerdletId() {
-      return sourceNerdletId
+      return secret.sourceNerdletId
     },
   }
 }
 
-async function getSecretData(options) {
+async function getSecretData() {
   const secretName = getEnv(SECRET_NAME_VAR)
 
   if (!secretName) {
-    return makeSecretData(await getApiKey())
+    throw Error(`No secret name found in ${SECRET_NAME_VAR}`)
   }
 
-  const secret = await getSecretAsJson(secretName),
-    accountId = options.accountId || secret.accountId
-
-  // Remove it from the options just to be safe
-
-  delete options.accountId
-
-  return makeSecretData(
-    secret.apiKey,
-    accountId,
-    secret.sourceNerdletId,
-  )
+  return makeSecretData(await getSecretAsJson(secretName))
 }
 
 function lambdaResponse(
@@ -126,43 +102,30 @@ function lambdaResponse(
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 async function handler(event) {
-  const payload = event.body || event,
-    {
-      options,
-      ...params
-    } = payload
-
   try {
-    const engine = new Engine(
-      await getSecretData(options),
-      's3',
-      {
-        getPuppetArgs: async () => ({
-          args: chromium.args,
-          defaultViewport: chromium.defaultViewport,
-          executablePath: await chromium.executablePath,
-          headless: chromium.headless,
-          ignoreHTTPSErrors: true,
-        }),
-        openChrome: async puppetArgs => (
-          await chromium.puppeteer.launch(puppetArgs)
-        ),
-        closeChrome: async browser => (
-          await browser.close()
-        ),
-      },
-    )
+    const secretData = await getSecretData(),
+      nerdstorage = new NerdstorageClient(
+        secretData.apiKey,
+        secretData.sourceNerdletId,
+        secretData.accountId,
+      ),
+      nerdstorageRepo = new NerdstorageRepository(nerdstorage),
+      eventBridgeBackend = new EventBridgeBackend(),
+      scheduler = new Scheduler(
+        nerdstorageRepo,
+        eventBridgeBackend,
+      )
 
-    await engine.run(options, params)
+    await scheduler.poll()
 
     logger.trace('Recording job status...')
 
     newrelic.recordCustomEvent(
-      'NrReportsStatus',
+      'NrReportsSchedulerStatus',
       {
         error: false,
-        ...options,
       },
     )
 
@@ -182,7 +145,7 @@ async function handler(event) {
     logger.trace('Recording job status...')
 
     newrelic.recordCustomEvent(
-      'NrReportsStatus',
+      'NrReportsSchedulerStatus',
       {
         error: true,
         message: err.message,

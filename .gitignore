@@ -126,6 +126,11 @@ dist
 # Any "local" files
 *.local.*
 
+# CloudFormation deployment files
+.cfenv*
+cf-params.json
+cf-params.*.json
+
 # Local templates and manifests
 include/*
 !include/.keep

@@ -3,7 +3,11 @@
 // Common keys
 const TEMPLATE_NAME_KEY = 'templateName',
   OUTPUT_FILE_NAME_KEY = 'outputFileName',
-  INCLUDE_DIR_NAME = 'include'
+  INCLUDE_DIR_NAME = 'include',
+  NEW_RELIC_API_KEY_VAR = 'NEW_RELIC_API_KEY',
+  NEW_RELIC_ACCOUNT_ID_VAR = 'NEW_RELIC_ACCOUNT_ID',
+  LOG_LEVEL_VAR = 'LOG_LEVEL',
+  SECRET_NAME_VAR = 'SECRET_NAME'
 
 // Engine option constants
 const MANIFEST_FILE_PATH_OPTION = 'manifestFilePath',
@@ -83,6 +87,10 @@ module.exports = {
   TEMPLATE_NAME_KEY,
   OUTPUT_FILE_NAME_KEY,
   INCLUDE_DIR_NAME,
+  NEW_RELIC_API_KEY_VAR,
+  NEW_RELIC_ACCOUNT_ID_VAR,
+  LOG_LEVEL_VAR,
+  SECRET_NAME_VAR,
 
   // Engine options
   MANIFEST_FILE_PATH_OPTION,

@@ -1,26 +1,26 @@
 [
     {
-        "ParameterKey": "ImageRepoUri",
+        "ParameterKey": "RunnerImageRepoUri",
         "ParameterValue": "12345.dkr.ecr.aws_region.amazonaws.com/example-repo-name"
     },
     {
-        "ParameterKey": "ImageTag",
+        "ParameterKey": "RunnerImageTag",
         "ParameterValue": "1.0.0"
     },
     {
-        "ParameterKey": "ExecRoleArn",
+        "ParameterKey": "RunnerExecRoleArn",
         "ParameterValue": "arn:aws:iam::12345:role/my-execute-lambda-role"
     },
     {
-        "ParameterKey": "FunctionName",
+        "ParameterKey": "RunnerFunctionName",
         "ParameterValue": "RunNewRelicReport"
     },
     {
-        "ParameterKey": "FunctionTimeout",
+        "ParameterKey": "RunnerFunctionTimeout",
         "ParameterValue": "120"
     },
     {
-        "ParameterKey": "FunctionMemorySize",
+        "ParameterKey": "RunnerFunctionMemorySize",
         "ParameterValue": "512"
     },
     {

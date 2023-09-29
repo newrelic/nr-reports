@@ -1,0 +1,54 @@
+[
+    {
+        "ParameterKey": "SchedulerECRImageRepo",
+        "ParameterValue": "12345.dkr.ecr.aws_region.amazonaws.com/example-scheduler-repo-name"
+    },
+    {
+        "ParameterKey": "SchedulerECRImageTag",
+        "ParameterValue": "2.0.0"
+    },
+    {
+        "ParameterKey": "SchedulerExecRoleArn",
+        "ParameterValue": "arn:aws:iam::12345:role/my-scheduler-execution-role"
+    },
+    {
+        "ParameterKey": "ScheduleFunctionName",
+        "ParameterValue": "MyNewRelicReportScheduler"
+    },
+    {
+        "ParameterKey": "ScheduleFunctionTimeout",
+        "ParameterValue": "120"
+    },
+    {
+        "ParameterKey": "ScheduleFunctionMemorySize",
+        "ParameterValue": "512"
+    },
+    {
+        "ParameterKey": "NRAccountId",
+        "ParameterValue": "123456"
+    },
+    {
+        "ParameterKey": "NRLicenseKeySecret",
+        "ParameterValue": "my/secret"
+    },
+    {
+        "ParameterKey": "NRLogLevel",
+        "ParameterValue": "INFO"
+    },
+    {
+        "ParameterKey": "SecretName",
+        "ParameterValue": "MyNewRelicReportsSecret"
+    },
+    {
+        "ParameterKey": "RunnerLambdaArn",
+        "ParameterValue": "arn:aws:lambda:us-east-1:12345:function:RunNewRelicReport"
+    },
+    {
+        "ParameterKey": "EventBridgeSchedulerRunnerLambdaTargetExecRoleArn",
+        "ParameterValue": "arn:aws:iam::12345:role/my-eventbridge-scheduler-invoke-runner-execution-role"
+    },
+    {
+        "ParameterKey": "LogLevel",
+        "ParameterValue": "INFO"
+    }
+]

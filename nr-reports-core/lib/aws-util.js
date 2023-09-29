@@ -2,13 +2,14 @@
 
 const S3 = require('aws-sdk/clients/s3'),
   SecretsManager = require('aws-sdk/clients/secretsmanager'),
+  Scheduler = require('aws-sdk/clients/scheduler'),
   { createLogger } = require('./logger')
-
 
 // Create an Amazon S3 service client object.
 const logger = createLogger('aws-util'),
   s3 = new S3(),
-  secretsManager = new SecretsManager()
+  secretsManager = new SecretsManager(),
+  scheduler = new Scheduler()
 
 function getSecret(secretName) {
   const getParams = {
@@ -116,7 +117,168 @@ function putS3Object(bucket, key, content) {
   })
 }
 
+function createSchedule(
+  groupName,
+  name,
+  scheduleExpression,
+  targetArn,
+  targetRoleArn,
+  input,
+  description = '',
+  enabled = true,
+  startDate = null,
+  endDate = null,
+  flexTimeWindowMax = null,
+) {
+  logger.trace(`Creating schedule with name ${name} in group name ${groupName}...`)
+
+  const target = {
+      Arn: targetArn,
+      Input: input,
+      RoleArn: targetRoleArn,
+    },
+    flexibleTimeWindow = flexTimeWindowMax ? {
+      MaximumWindowInMinutes: flexTimeWindowMax,
+      Mode: 'FLEXIBLE',
+    } : { Mode: 'OFF' },
+    createScheduleParams = {
+      GroupName: groupName,
+      Name: name,
+      Description: description,
+      ScheduleExpression: scheduleExpression,
+      FlexibleTimeWindow: flexibleTimeWindow,
+      State: enabled ? 'ENABLED' : 'DISABLED',
+      Target: target,
+    }
+
+  if (startDate) {
+    createScheduleParams.StartDate = startDate
+  }
+
+  if (endDate) {
+    createScheduleParams.EndDate = endDate
+  }
+
+  return new Promise((resolve, reject) => {
+    scheduler.createSchedule(createScheduleParams, (err, data) => {
+      if (err) {
+        reject(err)
+        return
+      }
+
+      resolve(data)
+    })
+  })
+}
+
+function listSchedulesHelper(resolve, reject, groupName, nextToken = null, schedules = []) {
+  const listSchedulesParams = {
+    GroupName: groupName,
+  }
+
+  if (nextToken) {
+    listSchedulesParams.NextToken = nextToken
+  }
+
+  scheduler.listSchedules(listSchedulesParams, (err, data) => {
+    if (err) {
+      reject(err)
+      return
+    }
+
+    if (data.NextToken) {
+      listSchedulesHelper(
+        resolve,
+        reject,
+        groupName,
+        data.NextToken,
+        schedules.concat(data.Schedules),
+      )
+      return
+    }
+
+    resolve(schedules.concat(data.Schedules))
+  })
+}
+
+function listSchedules(groupName) {
+  logger.trace(`Listing all schedules in group name ${groupName}...`)
+
+  return new Promise((resolve, reject) => {
+    listSchedulesHelper(resolve, reject, groupName)
+  })
+}
+
+function getSchedule(groupName, name) {
+  logger.trace(`Getting schedule with name ${name} in group name ${groupName}...`)
+
+  const getScheduleParams = {
+    GroupName: groupName,
+    Name: name,
+  }
+
+  return new Promise((resolve, reject) => {
+    scheduler.getSchedule(getScheduleParams, (err, data) => {
+      if (err) {
+        if (err.statusCode !== 404) {
+          reject(err)
+          return
+        }
+      }
+
+      resolve(data)
+    })
+  })
+}
+
+function updateSchedule(schedule) {
+  logger.trace(`Updating schedule with name ${schedule.Name} in group name ${schedule.GroupName}...`)
+
+  const updateScheduleParams = { ...schedule }
+
+  delete updateScheduleParams.Arn
+  delete updateScheduleParams.CreationDate
+  delete updateScheduleParams.LastModificationDate
+
+
+  return new Promise((resolve, reject) => {
+    scheduler.updateSchedule(updateScheduleParams, (err, data) => {
+      if (err) {
+        reject(err)
+        return
+      }
+
+      resolve(data)
+    })
+  })
+}
+
+function deleteSchedule(groupName, name) {
+  logger.trace(`Deleting schedule with name ${name} in group name ${groupName}...`)
+
+  const deleteScheduleParams = {
+    GroupName: groupName,
+    Name: name,
+  }
+
+  return new Promise((resolve, reject) => {
+    scheduler.deleteSchedule(deleteScheduleParams, (err, data) => {
+      if (err) {
+        reject(err)
+        return
+      }
+
+      resolve(data)
+    })
+  })
+}
+
 module.exports = {
+  createSchedule,
+  listSchedules,
+  getSchedule,
+  updateSchedule,
+  deleteSchedule,
   getSecret,
   getSecretAsJson,
   getSecretValue,
