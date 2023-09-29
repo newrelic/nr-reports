@@ -74,7 +74,7 @@ class EventBridgeBackend {
       JSON.stringify({
         options: {
           manifestFilePath: manifestFile,
-          reportName: report.name,
+          reportNames: report.name,
         },
       }),
     )
