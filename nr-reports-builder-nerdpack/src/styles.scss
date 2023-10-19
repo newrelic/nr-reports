@@ -1,0 +1,12 @@
+@import '~@newrelic/nr-labs-components/dist/styles.css';
+@import './components/styles.scss';
+
+.report-builder {
+    height: 100%;
+    margin-bottom: 0px;
+
+    .navigation {
+      padding: 10px;
+      border-right: 1px solid $unknown;
+    }
+}

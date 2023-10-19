@@ -1,0 +1,9 @@
+.dashboard-form {
+    .dashboard-list {
+        margin: 4px 0 10px 0;
+
+        & span > div[class*="Table-checkbox"] {
+            margin-bottom: 0px;
+        }
+    }
+}

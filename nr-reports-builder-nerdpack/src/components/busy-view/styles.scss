@@ -1,0 +1,28 @@
+.busy-view {
+  box-sizing: border-box;
+  padding: 24px;
+  text-align: center;
+
+  img {
+    margin: 20px 0;
+  }
+
+  h3 {
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 32px;
+    color: #464e4e;
+    text-transform: none;
+    margin-bottom: 10px;
+  }
+
+  h4 {
+    margin-top: 10px;
+  }
+
+  p {
+    font-size: 14px;
+    line-height: 20px;
+    color: #8e9494;
+  }
+}

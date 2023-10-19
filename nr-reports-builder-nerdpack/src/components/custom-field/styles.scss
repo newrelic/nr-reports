@@ -1,0 +1,12 @@
+.custom-field {
+    display: flex;
+    flex-direction: column;
+
+    .hidden-field {
+        margin-bottom: 0px;
+
+        div {
+            display: none;
+        }
+    }
+}

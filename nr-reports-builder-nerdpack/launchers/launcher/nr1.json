@@ -1,0 +1,7 @@
+{
+  "schemaType": "LAUNCHER",
+  "id": "launcher",
+  "displayName": "New Relic Reports Builder",
+  "description": "Build reports for use with New Relic Reports",
+  "rootNerdletId": "home"
+}

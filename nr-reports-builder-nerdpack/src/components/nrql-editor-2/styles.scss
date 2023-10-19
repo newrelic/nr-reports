@@ -1,0 +1,123 @@
+.nrql-editor {
+    $background: #212C31;
+
+    $select-back: #3A444B;
+    $action-color: #AEB4B7;
+
+    $normal: #E9ECEC;
+    $keyword: #AA1BC8;
+    $function: #3B79B8;
+    $string: #4F8400;
+    $regex: #606CD6;
+    $numeric: #AB6400;
+    $operator: #3D808A;
+    $muted: #9FA5A5;
+
+    $default-font-size: 16px;
+    $default-line-height: 19px;
+
+    display: flex;
+    flex-direction: column;
+    background-color: $background;
+    border-radius: 4px;
+
+    .account-picker {
+        display: flex;
+        width: 200px;
+        padding: 8px;
+
+        button {
+            background-color: $select-back;
+            color: $normal;
+            box-shadow: none;
+            svg {
+            fill: #FFFFFF;
+            }
+        }
+    }
+
+    .color-coded-nrql {
+        display: block;
+        overflow: hidden;
+        box-sizing: border-box;
+
+        &::before, &::after {
+            box-sizing: border-box;
+        }
+
+        * {
+            box-sizing: border-box;
+
+            &::before, &::after {
+            box-sizing: border-box;
+            }
+        }
+    }
+
+    .editor {
+        position: relative;
+        height: 60px;
+        display: block;
+    }
+
+    .entry, .display {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        padding: 8px;
+        background: transparent;
+        border: none;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font: $default-font-size monospace;
+        line-height: $default-line-height;
+    }
+
+    .entry {
+        opacity: 0.6;
+        margin: 0;
+        resize: none;
+        color: transparent;
+        caret-color: $normal;
+    }
+
+    .display {
+        pointer-events: none;
+        z-index: 3;
+        margin: 0;
+        overflow-y: auto;
+
+        code {
+            position: absolute;
+            top: 0;
+            left: 0;
+            margin: 0;
+            padding: 8px;
+            display: block;
+            color: $normal;
+            font: $default-font-size monospace;
+            padding-bottom: $default-line-height;
+        }
+    }
+
+    .actions {
+        display: flex;
+        border-top: 1px solid $select-back;
+        color: $normal;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .bump-right {
+        margin-left: auto;
+    }
+
+    .small-button {
+        min-height: 24px;
+        min-width: 24px;
+        padding: 4px 8px;
+    }
+}

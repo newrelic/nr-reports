@@ -1,0 +1,23 @@
+.checkbox-item-list {
+    width: 100%;
+
+    .checkbox-item-list-list {
+        height: 500px;
+        margin: 10px 0;
+
+        .checkbox-item-list-item {
+            padding: 0 5px;
+
+            .checkbox-item-list-checkbox {
+                padding: 4px 0;
+                display: flex;
+                font-size: 1.1em;
+                font-weight: bold;
+
+                input {
+                    margin-right: 8px;
+                }
+            }
+        }
+    }
+}

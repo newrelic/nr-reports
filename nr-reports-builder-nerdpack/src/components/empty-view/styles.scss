@@ -1,0 +1,25 @@
+.empty-view {
+  box-sizing: border-box;
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+
+  img {
+    margin: 20px 0;
+  }
+
+  h2 {
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 32px;
+    color: #464e4e;
+    text-transform: none;
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-size: 14px;
+    line-height: 20px;
+    color: #8e9494;
+  }
+}

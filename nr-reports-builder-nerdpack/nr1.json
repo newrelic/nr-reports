@@ -1,0 +1,6 @@
+{
+    "schemaType": "NERDPACK",
+    "id": "73e08001-aa61-4474-9c7e-95229e8ababb",
+    "displayName": "New Relic Reports Builder",
+    "description": "A nerdpack to build reports for use with the New Relic Reports stack"
+}
