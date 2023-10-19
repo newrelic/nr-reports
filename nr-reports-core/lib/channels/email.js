@@ -30,6 +30,7 @@ const fs = require('fs'),
     EMAIL_CC_KEY,
     EMAIL_SUBJECT_KEY,
     EMAIL_TEMPLATE_NAME_KEY,
+    EMAIL_TEMPLATE_KEY,
   } = require('../constants'),
   { FileOutput } = require('../output'),
   { renderTemplate } = require('../template-engines')
@@ -65,15 +66,29 @@ function createSmtpTransport(context) {
   return nodemailer.createTransport(smtpConfig)
 }
 
-function resolveEmailTemplate(
+async function renderEmailTemplate(
+  context,
+  report,
   channelConfig,
   defaultTemplate = null,
 ) {
-  return getOption(
+  const emailTemplate = getOption(channelConfig, EMAIL_TEMPLATE_KEY)
+
+  if (emailTemplate) {
+    return await renderTemplate(context, report, null, emailTemplate)
+  }
+
+  const emailTemplateName = getOption(
     channelConfig,
     EMAIL_TEMPLATE_NAME_KEY,
     EMAIL_TEMPLATE_VAR,
     defaultTemplate,
+  )
+
+  return await renderTemplate(
+    context,
+    report,
+    emailTemplateName,
   )
 }
 
@@ -155,13 +170,11 @@ async function sendMailWithAttachments(
    * environment variable, or using the default,
    * `email/message-attachments.html`
    */
-  const body = await renderTemplate(
+  const body = await renderEmailTemplate(
     context,
     report,
-    resolveEmailTemplate(
-      channelConfig,
-      EMAIL_ATTACHMENTS_TEMPLATE_DEFAULT,
-    ),
+    channelConfig,
+    EMAIL_ATTACHMENTS_TEMPLATE_DEFAULT,
   )
 
   /*
@@ -252,10 +265,11 @@ async function sendMail(
     channelConfig,
     message,
     channelConfig.passThrough ? text : (
-      await renderTemplate(
+      await renderEmailTemplate(
         context.context({ result: text }),
         report,
-        resolveEmailTemplate(channelConfig, EMAIL_TEMPLATE_DEFAULT),
+        channelConfig,
+        EMAIL_TEMPLATE_DEFAULT,
       )
     ),
   )

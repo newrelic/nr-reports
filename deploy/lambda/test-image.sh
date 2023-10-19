@@ -60,6 +60,10 @@ if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
     AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
 fi
 
+if [ -f "$APP_DIR/deploy/.docker-run.$BUILD_TYPE" ]; then
+  read -a DOCKER_RUN_ARGS <<<$(cat $APP_DIR/deploy/.docker-run.$BUILD_TYPE)
+fi
+
 if [ -f "$APP_DIR/deploy/.cfenv.$BUILD_TYPE" ]; then
   read -a CFENV_ARGS <<<$(cat $APP_DIR/deploy/.cfenv.$BUILD_TYPE | sed -E 's/([^=]+)=(.*)/-e \1=\2/gi')
 fi
@@ -76,6 +80,7 @@ docker run -a stdout -t --name lambda --rm \
     -e NEW_RELIC_LOG_SERVER_HOST=localhost \
     -e NEW_RELIC_LAMBDA_HANDLER=nr-reports-scheduler/lambda.handler \
     -e LOG_LEVEL=debug \
+    "${DOCKER_RUN_ARGS[@]}" \
     "${CFENV_ARGS[@]}" \
     "${USER_CFENV_ARGS[@]}" \
     --platform=linux/amd64 \

@@ -126,6 +126,9 @@ dist
 # Any "local" files
 *.local.*
 
+# Local docker run args files
+.docker-run*
+
 # CloudFormation deployment files
 .cfenv*
 cf-params.json
