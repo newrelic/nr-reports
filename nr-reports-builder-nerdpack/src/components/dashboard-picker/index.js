@@ -25,7 +25,7 @@ export default function DashboardPicker({ dashboards, open, onSubmit, onClose })
     }),
     itemListRef = useRef(null),
     isItemSelected = useCallback(item => (
-      dashboards.findIndex(dash => dash[0] === item[0]) !== -1
+      dashboards && dashboards.findIndex(dash => dash[0] === item[0]) !== -1
     ), [dashboards]),
     handleClose = useCallback(() => {
       onClose()
