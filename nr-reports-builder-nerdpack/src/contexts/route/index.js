@@ -1,4 +1,11 @@
-import { createContext, useCallback, useReducer } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useReducer,
+} from 'react'
+import { AppContext } from '../app'
 import { ROUTES } from '../../constants'
 
 const initialRoute = {
@@ -11,6 +18,12 @@ const initialRoute = {
 
 function reducer(routeState, action) {
   switch (action.type) {
+    case 'accountIdChanged':
+      return {
+        path: routeState.path,
+        params: { ...routeState.params, accountId: action.accountId },
+      }
+
     case 'navigate':
       return {
         path: action.path,
@@ -22,10 +35,13 @@ function reducer(routeState, action) {
 export const RouteContext = createContext(null)
 export const RouteDispatchContext = createContext(null)
 
-export default function RouteProvider({ accountId, children }) {
-  const [route, dispatch] = useReducer(reducer, {
+export default function RouteProvider({ children }) {
+  const { platformState } = useContext(AppContext),
+    [route, dispatch] = useReducer(reducer, {
       ...initialRoute,
-      params: { ...initialRoute.params, accountId },
+      params: {
+        ...initialRoute.params,
+        accountId: platformState.accountId },
     }),
     navigate = useCallback((path, params = {}) => {
       dispatch({
@@ -34,6 +50,10 @@ export default function RouteProvider({ accountId, children }) {
         params
       })
     }, [dispatch])
+
+  useEffect(() => {
+    dispatch({ type: 'accountIdChanged', accountId: platformState.accountId })
+  }, [platformState])
 
   return (
     <RouteContext.Provider value={route}>

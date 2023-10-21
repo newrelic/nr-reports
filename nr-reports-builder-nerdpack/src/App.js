@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import {
   Layout,
   LayoutItem,
@@ -20,7 +20,7 @@ import {
   ROUTES,
 } from './constants'
 
-export default function App({ accountId }) {
+export default function App() {
   const navigate = useContext(RouteDispatchContext),
     route = useContext(RouteContext),
     {
@@ -30,17 +30,6 @@ export default function App({ accountId }) {
     handleCreateReport = useCallback(() => {
       navigate(ROUTES.EDIT_REPORT, { selectedReportIndex: -1 })
     }, [navigate])
-
-  useMemo(() => {
-    nerdlet.setConfig({
-      actionControls: false,
-      accountPicker: false,
-      headerType: nerdlet.HEADER_TYPE.CUSTOM,
-      headerTitle: UI_CONTENT.GLOBAL.HEADER_TITLE,
-      headerType: nerdlet.HEADER_TYPE.CUSTOM,
-      timePicker: false,
-    })
-  }, [])
 
   const View = useMemo(() => {
     if (reading) {
