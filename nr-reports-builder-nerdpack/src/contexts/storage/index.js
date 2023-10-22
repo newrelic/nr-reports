@@ -1,4 +1,9 @@
-import { createContext, useContext, useEffect, useReducer } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+} from 'react'
 import {
   useDataReader,
   useDataWriter,
@@ -140,14 +145,7 @@ export default function StorageProvider({ children }) {
     if (state.writeFinished) {
       dispatch({ type: 'writeReset' })
     }
-  }, [
-    state,
-    dispatch,
-    writing,
-    writeError,
-    writeResult,
-    reset,
-  ])
+  }, [state, dispatch, writing, writeError, writeResult, reset])
 
   return (
     <StorageContext.Provider value={state}>

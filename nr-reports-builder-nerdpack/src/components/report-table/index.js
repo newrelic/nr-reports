@@ -16,14 +16,15 @@ export default function ReportTable(props) {
     {
       reports,
       onSelectReport,
+      onDeleteReports,
     } = props,
     getActions = () => {
       return [
         {
           label: UI_CONTENT.GLOBAL.ACTION_LABEL_DELETE,
-          onClick: (e, { items }) => {
+          onClick: e => {
             e.preventDefault()
-            onDelete(items)
+            onDeleteReports(selection)
           }
         },
       ]
@@ -79,5 +80,5 @@ export default function ReportTable(props) {
       </TableHeader>
       {renderRow}
     </Table>
-)
+  )
 }

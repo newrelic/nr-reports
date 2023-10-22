@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import { useCallback, useContext } from 'react'
 import {
   Button,
   Card,
@@ -13,12 +13,21 @@ import {
   RouteDispatchContext,
   StorageContext,
 } from '../../../contexts'
+import { useManifestWriter } from '../../../hooks'
 
-export default function HomeScreen({
-  onCreateReport,
-}) {
+export default function HomeScreen() {
   const navigate = useContext(RouteDispatchContext),
-    { manifest } = useContext(StorageContext)
+    {
+      writing,
+      manifest,
+    } = useContext(StorageContext),
+    { del } = useManifestWriter(),
+    handleCreateReport = useCallback(() => {
+      navigate(ROUTES.EDIT_REPORT, { selectedReportIndex: -1 })
+    }, [navigate]),
+    handleDeleteReports = useCallback(reportIndices => {
+      del(reportIndices)
+    }, [del])
 
   if (
     !manifest ||
@@ -32,7 +41,7 @@ export default function HomeScreen({
             type={Button.TYPE.PRIMARY}
             iconType={Button.ICON_TYPE.INTERFACE__SIGN__PLUS}
             spacingType={[Button.SPACING_TYPE.LARGE]}
-            onClick={onCreateReport}
+            onClick={handleCreateReport}
           >
             {UI_CONTENT.GLOBAL.EMPTY_STATE.DESCRIPTION}
           </Button>
@@ -48,7 +57,7 @@ export default function HomeScreen({
           type={Button.TYPE.PRIMARY}
           iconType={Icon.TYPE.INTERFACE__SIGN__PLUS}
           sizeType={Button.SIZE_TYPE.SMALL}
-          onClick={onCreateReport}
+          onClick={handleCreateReport}
         >
           {UI_CONTENT.HOME.BUTTON_LABEL_CREATE_REPORT}
         </Button>
@@ -60,6 +69,7 @@ export default function HomeScreen({
             ROUTES.EDIT_REPORT,
             { selectedReportIndex: index }
           )}
+          onDeleteReports={handleDeleteReports}
         />
       </CardBody>
     </Card>

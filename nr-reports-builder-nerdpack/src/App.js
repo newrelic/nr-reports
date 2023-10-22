@@ -12,7 +12,6 @@ import {
 } from './components'
 import {
   RouteContext,
-  RouteDispatchContext,
   StorageContext,
 } from './contexts'
 import {
@@ -21,15 +20,11 @@ import {
 } from './constants'
 
 export default function App() {
-  const navigate = useContext(RouteDispatchContext),
-    route = useContext(RouteContext),
+  const route = useContext(RouteContext),
     {
       reading,
       readError,
-    } = useContext(StorageContext),
-    handleCreateReport = useCallback(() => {
-      navigate(ROUTES.EDIT_REPORT, { selectedReportIndex: -1 })
-    }, [navigate])
+    } = useContext(StorageContext)
 
   const View = useMemo(() => {
     if (reading) {
@@ -41,14 +36,6 @@ export default function App() {
       )
     }
 
-    const {
-      path,
-      params: {
-        accountId,
-        selectedReportIndex,
-      },
-    } = route
-
     if (readError) {
       return (
         <ErrorView
@@ -59,20 +46,17 @@ export default function App() {
       )
     }
 
+    const { path } = route
+
     switch (path) {
       case ROUTES.HOME:
         return (
-          <HomeScreen
-            onCreateReport={handleCreateReport}
-          />
+          <HomeScreen />
         )
 
       case ROUTES.EDIT_REPORT:
         return (
-          <EditReportScreen
-            accountId={accountId}
-            selectedReportIndex={selectedReportIndex}
-          />
+          <EditReportScreen />
         )
     }
 
@@ -82,7 +66,7 @@ export default function App() {
         description={UI_CONTENT.ERRORS.UNKNOWN_ROUTE.DESCRIPTION}
       />
     )
-  }, [reading, readError, route, handleCreateReport])
+  }, [reading, readError, route ])
 
   return (
     <Layout className='report-builder'>
