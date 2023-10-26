@@ -1,11 +1,10 @@
 @import './variables.scss';
 @import './mixins.scss';
 @import './busy-view/styles.scss';
-@import './channel-modal/styles.scss';
-@import './channels-form/styles.scss';
+@import './channels-field/styles.scss';
 @import './checkbox-item-list/styles.scss';
 @import './custom-field/styles.scss';
-@import './dashboards-form/styles.scss';
+@import './dashboards-field/styles.scss';
 @import './dashboard-picker/styles.scss';
 @import './email-channel-form/styles.scss';
 @import './empty-view/styles.scss';
@@ -13,8 +12,11 @@
 @import './multi-select-2/styles.scss';
 @import './nrql-editor-2/styles.scss';
 @import './overlay/styles.scss';
-@import './query-form/styles.scss';
+@import './publish-configs-field/styles.scss';
+@import './query-field/styles.scss';
 @import './report-table/styles.scss';
 @import './slack-channel-form/styles.scss';
+@import './screens/edit-channel/styles.scss';
+@import './screens/edit-publish-config/styles.scss';
 @import './screens/edit-report/styles.scss';
 @import './screens/home/styles.scss';

@@ -249,7 +249,9 @@ async function discoverReportsHelper(
           render: !noRender,
           outputFileName,
           parameters: { ...valuesFileParams, ...params },
-          channels,
+          publishConfigs: {
+            default: { channels },
+          },
           ...extras,
         }],
       }
@@ -264,7 +266,9 @@ async function discoverReportsHelper(
         render: !noRender,
         outputFileName,
         parameters: params || {},
-        channels,
+        publishConfigs: {
+          default: { channels },
+        },
         ...extras,
       }],
     }
@@ -293,7 +297,9 @@ async function discoverReportsHelper(
         name: 'dashboard-report',
         dashboards: dashboardGuids,
         combinePdfs,
-        channels,
+        publishConfigs: {
+          default: { channels },
+        },
         ...extras,
       }],
     }
@@ -315,7 +321,9 @@ async function discoverReportsHelper(
         name: DEFAULT_QUERY_REPORT_NAME,
         query,
         outputFileName,
-        channels,
+        publishConfigs: {
+          default: { channels },
+        },
         ...extras,
       }],
     }

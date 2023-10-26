@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useContext, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   BlockText,
@@ -11,12 +11,13 @@ import {
   TableRow,
   TableRowCell,
 } from 'nr1'
-import ChannelModal from '../channel-modal'
 import CustomField from '../custom-field'
 import {
+  ROUTES,
   SYMBOLS,
   UI_CONTENT,
 } from '../../constants'
+import { RouteDispatchContext } from '../../contexts'
 
 function EmailChannelInfo({ channel }) {
   const {
@@ -107,28 +108,24 @@ function ChannelsTable({ channels, onEditChannel, onDeleteChannel }) {
   )
 }
 
-export default function ChannelsForm({
-  accountId,
+export default function ChannelsField({
   formState,
   updateFormState,
 }) {
-  const [showPicker, setShowPicker] = useState(false),
-    [selectedIndex, setSelectedIndex] = useState(-1),
+  const { navigate } = useContext(RouteDispatchContext),
     handleAddChannel = useCallback(() => {
-      setSelectedIndex(-1)
-      setShowPicker(true)
-    }, [setSelectedIndex, setShowPicker]),
+      navigate(ROUTES.EDIT_CHANNELS, { formState, selectedChannel: -1 })
+    }, [formState, navigate]),
     handleEditChannel = useCallback(index => {
-      setSelectedIndex(index)
-      setShowPicker(true)
-    }, [setSelectedIndex, setShowPicker]),
+      navigate(ROUTES.EDIT_CHANNELS, { formState, selectedChannel: index })
+    }, [formState, navigate]),
     handleDeleteChannel = useCallback(index => {
       const channels = [ ...formState.channels ]
 
       channels.splice(index, 1)
-      setSelectedIndex(-1)
       updateFormState({ channels })
-    }, [formState]),
+    }, [formState, updateFormState])
+    /*
     handleSubmit = useCallback(channel => {
         if (selectedIndex === -1) {
           updateFormState({ channels: [...formState.channels, channel] })
@@ -140,15 +137,12 @@ export default function ChannelsForm({
         }
         setShowPicker(false)
       }, [selectedIndex, formState, updateFormState]),
-    handleClose = useCallback(() => {
-      setSelectedIndex(-1)
-      setShowPicker(false)
-    }, [setSelectedIndex, setShowPicker])
+    */
 
   return (
-    <div className="channels-form">
+    <div className="channels-field">
       <CustomField
-        label={UI_CONTENT.CHANNELS_FORM.FIELD_LABEL_CHANNELS_CUSTOM}
+        label={UI_CONTENT.CHANNELS_FIELD.FIELD_LABEL_CHANNELS_CUSTOM}
       >
         <Stack
           directionType={Stack.DIRECTION_TYPE.HORIZONTAL}
@@ -165,7 +159,7 @@ export default function ChannelsForm({
               />
             ) : (
               <BlockText>
-                {UI_CONTENT.CHANNELS_FORM.NO_CHANNELS_MESSAGE}
+                {UI_CONTENT.CHANNELS_FIELD.NO_CHANNELS_MESSAGE}
               </BlockText>
             )
           }
@@ -184,29 +178,9 @@ export default function ChannelsForm({
           Button.SPACING_TYPE.NONE,
         ]}
       >
-        {UI_CONTENT.CHANNELS_FORM.BUTTON_LABEL_ADD_CHANNEL}
+        {UI_CONTENT.CHANNELS_FIELD.BUTTON_LABEL_ADD_CHANNEL}
       </Button>
 
-      {
-        showPicker && (
-          <ChannelModal
-            accountId={accountId}
-            channel={
-              selectedIndex === -1 ? (
-                {
-                  type: SYMBOLS.CHANNEL_TYPES.EMAIL,
-                  subject: '',
-                  to: '',
-                  cc: '',
-                }
-              ) : formState.channels[selectedIndex]
-            }
-            open={showPicker}
-            onSubmit={handleSubmit}
-            onClose={handleClose}
-          />
-        )
-      }
     </div>
   )
 }

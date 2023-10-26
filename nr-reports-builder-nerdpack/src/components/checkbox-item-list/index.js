@@ -1,4 +1,11 @@
-import { forwardRef, useCallback, useMemo, useRef, useImperativeHandle } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Checkbox,
   List,
@@ -7,6 +14,10 @@ import {
 } from 'nr1'
 import ErrorView from "../error-view";
 
+function isItemSelected(selectedItems, item) {
+  return selectedItems.findIndex(i => i[0] === item[0]) !== -1
+}
+
 const CheckboxItemList = forwardRef(function CheckboxItemList({
     className,
     loading,
@@ -14,25 +25,33 @@ const CheckboxItemList = forwardRef(function CheckboxItemList({
     count,
     items,
     fetchMore,
-    isItemSelected,
+    selectedItems = [],
   },
   ref
 ) {
   const pickRef = useRef(null),
+    [checkedItems, setCheckedItems] = useState(selectedItems),
     getSelectedItems = useCallback(() => {
-      const inputs = pickRef.current.querySelectorAll(
-          '.checkbox-item-list input:checked'
-        ),
-        items = []
+      return checkedItems
+    }, [checkedItems]),
+    handleSelectItem = useCallback(e => {
+      const { target } = e,
+        selected = target.checked,
+        index = checkedItems.findIndex(i => i[0] === target.id)
 
-      for (const item of inputs.values()) {
-        items.push([item.value, item.dataset.itemName])
+      if (selected && index === -1) {
+        setCheckedItems([ ...checkedItems, [target.value, target.dataset.itemName] ])
+        return
       }
 
-      return items
-    }, [pickRef]),
+      if (!selected && index >= 0) {
+        const newItems = [ ...checkedItems ]
+        newItems.splice(index, 1)
+        setCheckedItems(newItems)
+      }
+    }, [checkedItems, setCheckedItems]),
     View = useMemo(() => {
-      if (loading) {
+      if (loading && items && items.length === 0) {
         return <Spinner />
       }
 
@@ -63,10 +82,23 @@ const CheckboxItemList = forwardRef(function CheckboxItemList({
             >
               <div className="checkbox-item-list-checkbox">
                 {
-                  isItemSelected(item) ? (
-                    <input id={item[0]} type="checkbox" value={item[0]} data-item-name={item[1]} defaultChecked={true} />
+                  isItemSelected(checkedItems, item) ? (
+                    <input
+                      id={item[0]}
+                      type="checkbox"
+                      value={item[0]}
+                      data-item-name={item[1]}
+                      onChange={handleSelectItem}
+                      defaultChecked={true} />
                   ) : (
-                    <input id={item[0]} type="checkbox" value={item[0]} data-item-name={item[1]} defaultChecked={false} />
+                    <input
+                      id={item[0]}
+                      type="checkbox"
+                      value={item[0]}
+                      data-item-name={item[1]}
+                      onChange={handleSelectItem}
+                      defaultChecked={false}
+                    />
                   )
                 }
                 <label for={item[0]}>{item[1]}</label>
@@ -75,13 +107,13 @@ const CheckboxItemList = forwardRef(function CheckboxItemList({
           )}
         </List>
       )
-    }, [loading, error, items, count, fetchMore, isItemSelected])
+    }, [loading, error, items, count, fetchMore, handleSelectItem, checkedItems])
 
   useImperativeHandle(ref, () => {
     return {
       getSelectedItems,
     }
-  }, [])
+  }, [getSelectedItems])
 
   return (
     <div className={`checkbox-item-list ${className || ''}`} ref={pickRef}>

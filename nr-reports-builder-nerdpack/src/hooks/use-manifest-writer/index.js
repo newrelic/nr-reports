@@ -29,8 +29,6 @@ export default function useManifestWriter() {
     update = useCallback((report, reportIndex = -1) => {
       const manifestCopy = manifest ? clone(manifest) : { reports: [] }
 
-      console.log(reportIndex, report)
-
       manifestCopy.reports.splice(
         reportIndex >= 0 ? reportIndex : manifestCopy.reports.length,
         reportIndex >= 0 ? 1 : 0,

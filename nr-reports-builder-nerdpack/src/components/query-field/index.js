@@ -14,7 +14,7 @@ import CustomField from '../custom-field'
 import NrqlEditor2 from '../nrql-editor-2'
 import { UI_CONTENT } from '../../constants'
 
-export default function QueryForm({
+export default function QueryField({
   formState,
   updateFormState,
 }) {
@@ -63,7 +63,7 @@ export default function QueryForm({
   }, [skip, loading, data, error])
 
   return (
-    <div className="query-form">
+    <div className="query-field">
       <CustomField
         label={UI_CONTENT.QUERY_FORM.FIELD_LABEL_ACCOUNTS}
       >

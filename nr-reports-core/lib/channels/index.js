@@ -4,6 +4,7 @@ const email = require('./email'),
   file = require('./file'),
   s3 = require('./s3'),
   slack = require('./slack'),
+  { getOption } = require('../util'),
   { createLogger, logTrace } = require('../logger')
 
 const publishers = {
@@ -14,13 +15,39 @@ const publishers = {
   },
   logger = createLogger('publisher')
 
+function getPublishConfig(context, report) {
+  const publishConfigName = getOption(
+    context,
+    'publishConfigName',
+    'PUBLISH_CONFIG_NAME',
+    'default',
+  )
+
+  const { publishConfigs } = report
+
+  if (publishConfigs && publishConfigs[publishConfigName]) {
+    return {
+      publishConfigName,
+      publishConfig: publishConfigs[publishConfigName],
+    }
+  }
+
+  throw new Error(
+    `No publish configuration found with publish configuration name ${publishConfigName}`,
+  )
+}
+
 async function publish(context, manifest, report, output, tempDir) {
-  const { channels } = report
+  const {
+      publishConfigName,
+      publishConfig,
+    } = getPublishConfig(context, report),
+    { channels } = publishConfig
 
   logTrace(logger, log => {
     log(
       { channels },
-      `Publishing output for report ${report.name} to the following channels:`,
+      `Publishing output for report ${report.name} using publish config ${publishConfigName} to the following channels:`,
     )
   })
 
@@ -30,6 +57,7 @@ async function publish(context, manifest, report, output, tempDir) {
       publishContext = context.context({
         ...manifest.config[channel.type],
         ...report,
+        ...publishConfig,
         ...channel,
       })
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState} from 'react'
+import React, { useCallback, useEffect, useState} from 'react'
 import PropTypes from 'prop-types'
 import {
   BlockText,
@@ -18,6 +18,18 @@ import DashboardPicker from '../dashboard-picker'
 import {
   UI_CONTENT,
 } from '../../constants'
+
+function entitiesToDashboards(entities, dashboards) {
+  return dashboards.map(dash => {
+    const entity = entities.find(e => e.guid === dash)
+
+    if (!entity) {
+      throw new Error(`invalid state: dashboard ${dash} not found in entities`)
+    }
+
+    return [entity.guid, entity.name]
+  })
+}
 
 function DashboardsTable({ dashboards, onRemove }) {
   const getActions = () => {
@@ -57,7 +69,7 @@ function DashboardsTable({ dashboards, onRemove }) {
   )
 }
 
-export default function DashboardsForm({
+export default function DashboardsField({
   report,
   formState,
   updateFormState,
@@ -92,14 +104,14 @@ export default function DashboardsForm({
 
     if (!loading && entities) {
       updateFormState({
-        dashboards: entities.map(e => [e.guid, e.name]),
+        dashboards: entitiesToDashboards(entities, reportDashboards),
         loadedDashboards: true,
       }, false)
     }
   }, [loading, error, entities, updateFormState])
 
   return (
-    <div className="dashboard-form">
+    <div className="dashboards-field">
       <CustomField
         label={UI_CONTENT.DASHBOARDS_FORM.FIELD_LABEL_DASHBOARDS_CUSTOM}
       >

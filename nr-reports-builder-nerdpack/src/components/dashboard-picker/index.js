@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Button,
   HeadingText,
@@ -24,9 +24,6 @@ export default function DashboardPicker({ dashboards, open, onSubmit, onClose })
       entityDomain: '',
     }),
     itemListRef = useRef(null),
-    isItemSelected = useCallback(item => (
-      dashboards && dashboards.findIndex(dash => dash[0] === item[0]) !== -1
-    ), [dashboards]),
     handleClose = useCallback(() => {
       onClose()
     }, [onClose]),
@@ -47,7 +44,7 @@ export default function DashboardPicker({ dashboards, open, onSubmit, onClose })
           items={data?.entities?.map(e => [e.guid, e.name])}
           count={data?.count}
           fetchMore={fetchMore}
-          isItemSelected={isItemSelected}
+          selectedItems={dashboards || []}
           ref={itemListRef}
         />
 

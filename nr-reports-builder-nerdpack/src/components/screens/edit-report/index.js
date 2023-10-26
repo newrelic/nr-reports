@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   Button,
@@ -11,9 +11,9 @@ import {
   TextField,
   Toast,
 } from 'nr1'
-import ChannelsForm from '../../channels-form'
-import DashboardsForm from '../../dashboards-form'
-import QueryForm from '../../query-form'
+import DashboardsField from '../../dashboards-field'
+import PublishConfigurationsField from '../../publish-configs-field'
+import QueryField from '../../query-field'
 import {
   RouteContext,
   RouteDispatchContext,
@@ -22,7 +22,6 @@ import {
 import { useManifestWriter } from '../../../hooks'
 import { clone } from '../../../utils'
 import {
-  ROUTES,
   SYMBOLS,
   UI_CONTENT,
 } from '../../../constants'
@@ -37,8 +36,7 @@ function reportToFormState(report) {
     query: report.query,
     accountIds: report.accountIds,
     lastModifiedDate: report.lastModifiedDate,
-    channels: report.channels ? clone(report.channels) : [],
-    schedule: report.schedule,
+    publishConfigs: report.publishConfigs ? clone(report.publishConfigs) : {},
     loadedDashboards: report.dashboards ? false : true,
     dirty: false,
   }
@@ -49,7 +47,7 @@ function reportFromFormState(formState) {
     name: formState.name,
     lastModifiedDate: new Date().getTime(),
     schedule: formState.schedule,
-    channels: formState.channels,
+    publishConfigs: formState.publishConfigs,
   }
 
   if (formState.type === 'query') {
@@ -64,9 +62,9 @@ function reportFromFormState(formState) {
 
 export default function EditReportScreen() {
   const {
-      params: { accountId, selectedReportIndex }
+      params: { accountId, selectedReportIndex, formState: subFormState }
     } = useContext(RouteContext),
-    navigate = useContext(RouteDispatchContext),
+    { home } = useContext(RouteDispatchContext),
     {
       manifest,
       writing,
@@ -83,7 +81,10 @@ export default function EditReportScreen() {
       dashboards: [],
       channels: [],
     }),
-    [formState, setFormState] = useState(reportToFormState(report)),
+    prevState = useMemo(() => {
+      return subFormState || reportToFormState(report)
+    }, [subFormState, report]),
+    [formState, setFormState] = useState(prevState),
     [closeOnSave, setCloseOnSave] = useState(false),
     updateFormState = useCallback((updates, dirty) => {
       setFormState({
@@ -91,15 +92,12 @@ export default function EditReportScreen() {
         ...updates,
         dirty: typeof dirty === 'undefined' ? true : dirty
       })
-    }, [formState] ),
+    }, [formState, setFormState] ),
     handleChangeName = useCallback(e => {
       updateFormState({ name: e.target.value })
     }, [updateFormState]),
     handleChangeType = useCallback((_, v) => {
       updateFormState({ type: v })
-    }, [updateFormState]),
-    handleChangeSchedule = useCallback(e => {
-      updateFormState({ schedule: e.target.value })
     }, [updateFormState]),
     handleSave = useCallback(() => {
       update(reportFromFormState(formState), selectedReportIndex)
@@ -111,8 +109,8 @@ export default function EditReportScreen() {
         }
       }
 
-      navigate(ROUTES.HOME, { selectedReportIndex: -1 })
-    }, [navigate, formState]),
+      home()
+    }, [home, formState]),
     handleSaveAndClose = useCallback(() => {
       setCloseOnSave(true)
       handleSave()
@@ -158,10 +156,10 @@ export default function EditReportScreen() {
       updateFormState({}, false)
 
       if (closeOnSave) {
-        navigate(ROUTES.HOME, { selectedReportIndex: -1 })
+        home()
       }
     }
-  }, [error, writeError, writeFinished, formState.name, updateFormState, handleSave, handleClose, navigate])
+  }, [error, writeError, writeFinished, formState.name, updateFormState, handleSave, handleClose, home])
 
   return (
       <Form
@@ -216,13 +214,13 @@ export default function EditReportScreen() {
           <StackItem className="form-wrapper">
             {
               formState.type === SYMBOLS.REPORT_TYPES.DASHBOARD ? (
-                <DashboardsForm
+                <DashboardsField
                   report={report}
                   formState={formState}
                   updateFormState={updateFormState}
                 />
               ) : (
-                <QueryForm
+                <QueryField
                   report={report}
                   formState={formState}
                   updateFormState={updateFormState}
@@ -232,21 +230,10 @@ export default function EditReportScreen() {
           </StackItem>
 
           <StackItem className="form-wrapper">
-            <ChannelsForm
+            <PublishConfigurationsField
               accountId={accountId}
               formState={formState}
               updateFormState={updateFormState}
-            />
-          </StackItem>
-
-          <StackItem>
-            <TextField
-              placeholder={
-                UI_CONTENT.EDIT_REPORT_FORM.SCHEDULE_FIELD_PLACEHOLDER
-              }
-              label={UI_CONTENT.EDIT_REPORT_FORM.FIELD_LABEL_SCHEDULE}
-              value={formState.schedule}
-              onChange={handleChangeSchedule}
             />
           </StackItem>
 

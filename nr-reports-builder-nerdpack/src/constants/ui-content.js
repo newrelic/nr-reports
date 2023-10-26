@@ -41,13 +41,7 @@ export const UI_CONTENT = {
     BUTTON_LABEL_CREATE_REPORT: 'Create new report',
   },
 
-  CHANNEL_MODAL: {
-    CHANNEL_TYPE_LABEL_EMAIL: 'Email',
-    CHANNEL_TYPE_LABEL_SLACK: 'Slack',
-    HEADING: 'Edit channel',
-    FIELD_LABEL_CHANNEL_TYPE: 'Type',
-  },
-  CHANNELS_FORM: {
+  CHANNELS_FIELD: {
     BUTTON_LABEL_ADD_CHANNEL: 'Add channel',
     FIELD_LABEL_CHANNELS_CUSTOM: 'Channels',
     NO_CHANNELS_MESSAGE: 'No channels are defined.',
@@ -60,13 +54,20 @@ export const UI_CONTENT = {
   DASHBOARD_PICKER: {
     HEADING: 'Select dashboards',
   },
+  EDIT_CHANNELS_FORM: {
+    CHANNEL_TYPE_LABEL_EMAIL: 'Email',
+    CHANNEL_TYPE_LABEL_SLACK: 'Slack',
+    HEADING: 'Edit channel',
+    FIELD_LABEL_CHANNEL_TYPE: 'Type',
+  },
+  EDIT_CHANNELS_SCREEN: {
+    CANCEL_PROMPT: 'You have made changes to this channel. Are you sure you want to cancel?',
+  },
   EDIT_REPORT_FORM: {
     FIELD_LABEL_NAME: 'Name',
     FIELD_LABEL_TYPE: 'Type',
-    FIELD_LABEL_SCHEDULE: 'Schedule',
     HEADING: 'Edit report',
     REPORT_NAME_FIELD_PLACEHOLDER: 'Weekly Performance Dashboards Report',
-    SCHEDULE_FIELD_PLACEHOLDER: '* * * * *',
     REPORT_TYPE_LABEL_DASHBOARD: 'Dashboard',
     REPORT_TYPE_LABEL_QUERY: 'Query',
     FORM_ERROR_TITLE: 'Uh-oh! Something is not right.',
@@ -78,6 +79,16 @@ export const UI_CONTENT = {
   },
   EDIT_REPORT_SCREEN: {
     CANCEL_PROMPT: 'You have made changes to this report. Are you sure you want to cancel?',
+  },
+  EDIT_PUBLISH_CONFIGS_SCREEN: {
+    CANCEL_PROMPT: 'You have made changes to this publish configuration. Are you sure you want to cancel?',
+  },
+  EDIT_PUBLISH_CONFIGS_FORM: {
+    CONFIG_NAME_FIELD_PLACEHOLDER: 'email-team',
+    FIELD_LABEL_NAME: 'Name',
+    FIELD_LABEL_SCHEDULE: 'Schedule',
+    HEADING: 'Edit publish configuration',
+    SCHEDULE_FIELD_PLACEHOLDER: '* * * * *',
   },
   EMAIL_CHANNEL_FORM: {
     CC_FIELD_PLACEHOLDER: `robin@newrelic.com\npat@newrelic.com`,
@@ -91,6 +102,11 @@ export const UI_CONTENT = {
   },
   NRQL_EDITOR: {
     QUERY_FIELD_PLACEHOLDER: 'SELECT count(*) FROM Transaction FACET appName',
+  },
+  PUBLISH_CONFIGS_FIELD: {
+    BUTTON_LABEL_ADD_CONFIG: 'Add configuration',
+    FIELD_LABEL_PUBLISH_CONFIGS_CUSTOM: 'Publish configurations',
+    NO_CONFIGS_MESSAGE: 'No publish configurations are defined.',
   },
   QUERY_FORM: {
     FIELD_LABEL_ACCOUNTS: 'Accounts',

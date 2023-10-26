@@ -17,8 +17,8 @@ const logger = createLogger('eventbridge'),
   REPORTS_LAMBDA_ROLE_ARN_VAR = 'REPORTS_LAMBDA_ROLE_ARN'
 
 
-function scheduleExpressionFromCronExpression(report) {
-  const schedule = report.schedule,
+function scheduleExpressionFromCronExpression(report, publishConfigName) {
+  const schedule = report.publishConfigs[publishConfigName].schedule,
     parts = schedule.trim().split(/[\s]+/u)
 
   if (parts.length !== 5) {
@@ -64,23 +64,24 @@ class EventBridgeBackend {
       .map(s => s.Name)
   }
 
-  async createSchedule(manifestFile, report) {
+  async createSchedule(scheduleName, report, manifestFile, publishConfigName) {
     await createSchedule(
       this.scheduleGroupName,
-      report.name,
-      scheduleExpressionFromCronExpression(report),
+      scheduleName,
+      scheduleExpressionFromCronExpression(report, publishConfigName),
       this.reportsLamdbaArn,
       this.reportsLamdbaRoleArn,
       JSON.stringify({
         options: {
           manifestFilePath: manifestFile,
           reportNames: report.name,
+          publishConfigName,
         },
       }),
     )
   }
 
-  async updateSchedule(scheduleName, report) {
+  async updateSchedule(scheduleName, report, publishConfigName) {
     const schedule = await getSchedule(this.scheduleGroupName, scheduleName)
 
     if (!schedule) {
@@ -89,7 +90,10 @@ class EventBridgeBackend {
       )
     }
 
-    schedule.ScheduleExpression = scheduleExpressionFromCronExpression(report)
+    schedule.ScheduleExpression = scheduleExpressionFromCronExpression(
+      report,
+      publishConfigName,
+    )
 
     await updateSchedule(schedule)
   }

@@ -17,6 +17,7 @@ const initialRoute = {
 }
 
 function reducer(routeState, action) {
+  //console.log(JSON.stringify(action, null, 2))
   switch (action.type) {
     case 'accountIdChanged':
       return {
@@ -28,6 +29,18 @@ function reducer(routeState, action) {
       return {
         path: action.path,
         params: { ...routeState.params, ...action.params },
+      }
+
+    case 'home':
+      const { params: { accountId } } = routeState
+
+      return {
+        path: ROUTES.HOME,
+        params: {
+          accountId,
+          selectedReportIndex: -1,
+          ...action.params,
+        },
       }
   }
 }
@@ -49,7 +62,13 @@ export default function RouteProvider({ children }) {
         path,
         params
       })
-    }, [dispatch])
+    }, [dispatch]),
+    home = useCallback((params = {}) => {
+      dispatch({
+        type: 'home',
+        params,
+      })
+    })
 
   useEffect(() => {
     dispatch({ type: 'accountIdChanged', accountId: platformState.accountId })
@@ -57,7 +76,7 @@ export default function RouteProvider({ children }) {
 
   return (
     <RouteContext.Provider value={route}>
-      <RouteDispatchContext.Provider value={navigate}>
+      <RouteDispatchContext.Provider value={{ navigate, home }}>
         {children}
       </RouteDispatchContext.Provider>
     </RouteContext.Provider>

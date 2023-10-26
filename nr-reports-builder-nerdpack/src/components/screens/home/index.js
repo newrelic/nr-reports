@@ -16,7 +16,7 @@ import {
 import { useManifestWriter } from '../../../hooks'
 
 export default function HomeScreen() {
-  const navigate = useContext(RouteDispatchContext),
+  const { navigate } = useContext(RouteDispatchContext),
     {
       writing,
       manifest,

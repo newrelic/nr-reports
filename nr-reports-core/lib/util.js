@@ -235,8 +235,15 @@ function normalizeManifestHelper(manifest, defaultChannel) {
       ) : false
     }
 
-    if (!report.channels || report.channels.length === 0) {
-      report.channels = [getDefaultChannel(report, defaultChannel)]
+    if (
+      !report.publishConfigs ||
+      Object.keys(report.publishConfigs).length === 0
+    ) {
+      report.publishConfigs = {
+        default: {
+          channels: [getDefaultChannel(report, defaultChannel)],
+        },
+      }
     }
   })
 

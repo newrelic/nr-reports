@@ -1,14 +1,15 @@
-import { useCallback, useContext, useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 import {
   Layout,
   LayoutItem,
-  nerdlet,
 } from 'nr1'
 import {
   BusyView,
   ErrorView,
   HomeScreen,
   EditReportScreen,
+  EditPublishConfigScreen,
+  EditChannelScreen,
 } from './components'
 import {
   RouteContext,
@@ -57,6 +58,16 @@ export default function App() {
       case ROUTES.EDIT_REPORT:
         return (
           <EditReportScreen />
+        )
+
+      case ROUTES.EDIT_PUBLISH_CONFIGS:
+        return (
+          <EditPublishConfigScreen />
+        )
+
+      case ROUTES.EDIT_CHANNELS:
+        return (
+          <EditChannelScreen />
         )
     }
 
