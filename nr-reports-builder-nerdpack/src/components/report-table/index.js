@@ -39,7 +39,10 @@ export default function ReportTable(props) {
           </Link>
         </TableRowCell>
         <TableRowCell>{getReportType(item)}</TableRowCell>
-        <TableRowCell>{item.channels ? item.channels.length : 0}</TableRowCell>
+        <TableRowCell>{item.publishConfigs ? (
+          Object.keys(item.publishConfigs).length
+        ) : 0}
+        </TableRowCell>
       </TableRow>
     ), []),
     handleSelectRow = useCallback((evt, { index }) => {
@@ -75,7 +78,7 @@ export default function ReportTable(props) {
           Type
         </TableHeaderCell>
         <TableHeaderCell>
-          Channels
+          Publish configurations
         </TableHeaderCell>
       </TableHeader>
       {renderRow}
