@@ -64,6 +64,10 @@ class Scheduler {
       return
     }
 
+    logTrace(logger, log => {
+      log({ schedules }, 'Schedules to process:')
+    })
+
     const schedulesToDelete = [],
       schedulesToUpdate = []
 
@@ -73,7 +77,7 @@ class Scheduler {
       const index = schedules.findIndex(s => s.scheduleName === scheduleName)
 
       if (index >= 0) {
-        const schedule = schedules.splice(index, 1)
+        const schedule = schedules.splice(index, 1)[0]
 
         if (schedule.report.lastModifiedDate < lastPolledDate) {
           return
