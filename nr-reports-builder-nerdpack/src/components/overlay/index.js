@@ -1,5 +1,11 @@
-import React, { Component } from 'react'
-import ReactDOM from 'react-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import {
+  Button,
+  Stack,
+  StackItem,
+} from 'nr1'
+import { UI_CONTENT } from '../../constants'
 
 function createModalRoot() {
   let modalRoot = document.getElementById('modal-root')
@@ -13,34 +19,99 @@ function createModalRoot() {
   return modalRoot
 }
 
-export default class OverlayView extends Component {
-  constructor(props) {
-    super(props)
-    this.modalRoot = createModalRoot()
-    this.el = document.createElement('div')
-  }
+export default function OverlayView({ children, onClose }) {
+  const modalRoot = useMemo(() => createModalRoot(), []),
+    overlayContentRef = useRef(),
+    handleCancel = useCallback(() => {
+      onClose()
+    }, [onClose]),
+    handleKeyup = useCallback(evt => {
+      if (evt.code === 'Escape') {
+        onClose()
+      }
+    }, [onClose]),
+    handleClicksOutsideComponent = useCallback(evt => {
+      if (
+        overlayContentRef &&
+        !overlayContentRef.current.contains(evt.target)
+      ) {
+        onClose()
+      }
+    }, [overlayContentRef, onClose, contentWidth]),
+    setupHandlers = useCallback(() => {
+      // Delay here so that we don't capture button click events that may have
+      // triggered the overlay to open.
+      setTimeout(() => {
+        document.addEventListener('click', handleClicksOutsideComponent)
+        document.addEventListener('keyup', handleKeyup)
+      }, 200)
+    }, [handleClicksOutsideComponent, handleKeyup]),
+    cleanupHandlers = useCallback(() => {
+      document.removeEventListener('click', handleClicksOutsideComponent)
+      document.removeEventListener('keyup', handleKeyup)
+    }, [handleClicksOutsideComponent, handleKeyup])
+  let contentWidth = 0
 
-  componentDidMount() {
-    this.modalRoot.appendChild(this.el)
-  }
+  useEffect(() => {
+    contentWidth = overlayContentRef.current.clientWidth
 
-  componentWillUnmount() {
-    this.modalRoot.removeChild(this.el);
-  }
+    setupHandlers()
+    return cleanupHandlers
+  }, [setupHandlers, cleanupHandlers, overlayContentRef])
 
-  render() {
-    const {
-      children,
-    } = this.props
+  return createPortal(
+    <div className='overlay'>
+      <div className='overlay-backdrop'></div>
+      <div className='overlay-content' ref={overlayContentRef}>
+        <Stack
+          spacingType={[
+            Stack.SPACING_TYPE.NONE,
+          ]}
+          directionType={Stack.DIRECTION_TYPE.VERTICAL}
+          fullWidth
+        >
+          <StackItem>
+            { children }
+          </StackItem>
 
-    return ReactDOM.createPortal(
-      <div className='overlay'>
-        <div className='overlay-backdrop'></div>
-        <div className='overlay-content'>
-          { children }
-        </div>
-      </div>,
-      this.el
-    );
-  }
+          <StackItem>
+            <Stack
+              spacingType={[
+                Stack.SPACING_TYPE.LARGE,
+                Stack.SPACING_TYPE.NONE,
+              ]}
+            >
+              <StackItem>
+                <Button
+                  //onClick={handleSubmit}
+                  type={Button.TYPE.PRIMARY}
+                  spacingType={[
+                    Button.SPACING_TYPE.NONE,
+                    Button.SPACING_TYPE.SMALL,
+                    Button.SPACING_TYPE.NONE,
+                    Button.SPACING_TYPE.NONE,
+                  ]}
+                >
+                  {UI_CONTENT.GLOBAL.ACTION_LABEL_OK}
+                </Button>
+                <Button
+                  onClick={handleCancel}
+                  type={Button.TYPE.PLAIN}
+                  spacingType={[
+                    Button.SPACING_TYPE.NONE,
+                    Button.SPACING_TYPE.SMALL,
+                    Button.SPACING_TYPE.NONE,
+                    Button.SPACING_TYPE.NONE,
+                  ]}
+                >
+                  {UI_CONTENT.GLOBAL.ACTION_LABEL_CANCEL}
+                </Button>
+              </StackItem>
+            </Stack>
+          </StackItem>
+        </Stack>
+      </div>
+    </div>,
+    modalRoot
+  )
 }

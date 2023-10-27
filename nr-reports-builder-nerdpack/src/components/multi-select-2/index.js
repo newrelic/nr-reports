@@ -62,7 +62,7 @@ export default function MultiSelect2({
     document.addEventListener('click', handleClicksOutsideComponent)
 
     return cleanupClickHandler
-  })
+  }, [])
 
   return (
     <div className={`multiselect ${className || ''}`} ref={thisComponent}>

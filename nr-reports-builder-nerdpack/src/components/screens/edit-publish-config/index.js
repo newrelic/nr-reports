@@ -18,6 +18,7 @@ import {
   UI_CONTENT,
 } from '../../../constants'
 import { clone } from '../../../utils'
+import ScheduleField from '../../schedule-field'
 
 function formStateFromPublishConfig(parentFormState, selectedConfig) {
   const publishConfig = (
@@ -115,9 +116,6 @@ export default function EditPublishConfigScreen() {
     }, [navigate, formState, savedState]),
     handleChangeName = useCallback(e => {
       updateFormState({ name: e.target.value })
-    }, [updateFormState]),
-    handleChangeSchedule = useCallback(e => {
-      updateFormState({ schedule: e.target.value })
     }, [updateFormState])
 
   return (
@@ -141,6 +139,7 @@ export default function EditPublishConfigScreen() {
           spacingType={[
             Stack.SPACING_TYPE.NONE,
           ]}
+          gapType={Stack.GAP_TYPE.NONE}
           directionType={Stack.DIRECTION_TYPE.VERTICAL}
           fullWidth
         >
@@ -156,13 +155,9 @@ export default function EditPublishConfigScreen() {
           </StackItem>
 
           <StackItem>
-            <TextField
-              placeholder={
-                UI_CONTENT.EDIT_PUBLISH_CONFIGS_FORM.SCHEDULE_FIELD_PLACEHOLDER
-              }
-              label={UI_CONTENT.EDIT_PUBLISH_CONFIGS_FORM.FIELD_LABEL_SCHEDULE}
-              value={formState.schedule}
-              onChange={handleChangeSchedule}
+            <ScheduleField
+              formState={formState}
+              updateFormState={updateFormState}
             />
           </StackItem>
 

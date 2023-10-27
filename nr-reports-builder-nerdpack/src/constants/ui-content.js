@@ -86,9 +86,7 @@ export const UI_CONTENT = {
   EDIT_PUBLISH_CONFIGS_FORM: {
     CONFIG_NAME_FIELD_PLACEHOLDER: 'email-team',
     FIELD_LABEL_NAME: 'Name',
-    FIELD_LABEL_SCHEDULE: 'Schedule',
     HEADING: 'Edit publish configuration',
-    SCHEDULE_FIELD_PLACEHOLDER: '* * * * *',
   },
   EMAIL_CHANNEL_FORM: {
     CC_FIELD_PLACEHOLDER: `robin@newrelic.com\npat@newrelic.com`,
@@ -116,6 +114,11 @@ export const UI_CONTENT = {
   },
   REPORT_LIST: {
     HEADING: 'Reports',
+  },
+  SCHEDULE_FIELD: {
+    BUTTON_LABEL_EDIT_SCHEDULE: 'Edit schedule',
+    SCHEDULE_FIELD_PLACEHOLDER: '* * * * *',
+    FIELD_LABEL_SCHEDULE: 'Schedule',
   },
   SLACK_CHANNEL_FORM: {
     CC_FIELD_PLACEHOLDER: `robin@newrelic.com\npat@newrelic.com`,

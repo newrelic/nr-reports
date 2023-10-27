@@ -125,19 +125,6 @@ export default function ChannelsField({
       channels.splice(index, 1)
       updateFormState({ channels })
     }, [formState, updateFormState])
-    /*
-    handleSubmit = useCallback(channel => {
-        if (selectedIndex === -1) {
-          updateFormState({ channels: [...formState.channels, channel] })
-        } else {
-          const channels = [ ...formState.channels ]
-
-          channels[selectedIndex] = channel
-          updateFormState({ channels })
-        }
-        setShowPicker(false)
-      }, [selectedIndex, formState, updateFormState]),
-    */
 
   return (
     <div className="channels-field">
