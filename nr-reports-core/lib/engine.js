@@ -24,6 +24,26 @@ const { publish } = require('./channels'),
 
 const logger = createLogger('engine')
 
+function getPublishConfig(options, report) {
+  const publishConfigName = getOption(
+    options,
+    'publishConfigName',
+    'PUBLISH_CONFIG_NAME',
+    'default',
+  )
+
+  const { publishConfigs } = report
+
+  if (publishConfigs && publishConfigs[publishConfigName]) {
+    return publishConfigs[publishConfigName]
+  }
+
+  throw new Error(
+    `No publish configuration found with publish configuration name ${publishConfigName}`,
+  )
+}
+
+
 class Engine {
   constructor(secrets, defaultChannelType, callbacks) {
     this.context = new Context({ secrets, defaultChannelType })
@@ -53,8 +73,6 @@ class Engine {
         console.error('No reports selected.')
         throw new Error('No reports selected.')
       }
-
-      // pick single report here?
 
       logger.debug(`Running ${manifest.reports.length} reports...`)
 
@@ -124,11 +142,20 @@ class Engine {
           )
 
           if (output) {
+
+            // @TODO This needs some work. If there is more than report, should
+            // we allow specifying a publish config name per report? Or is it
+            // convenient to just specify one config as a common config across
+            // many reports?
+
+            const publishConfig = getPublishConfig(options, report)
+
             await publish(
               context,
               manifest,
               report,
               output,
+              publishConfig,
               tempDir,
             )
           } else {
