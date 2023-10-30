@@ -387,6 +387,7 @@ Resources:
           #AWS_REGION: !Ref AwsRegion
           SECRET_NAME: !Ref NrReportsSecret
           SCHEDULE_GROUP_NAME: !Sub ${CustomerId}-${EventBridgeSchedulerScheduleGroupName}
+          RUN_SCHEDULER_SCHEDULE_NAME: !Sub ${CustomerId}-RunScheduler
           REPORTS_LAMBDA_ARN: !GetAtt NrReportRunnerLambda.Arn
           REPORTS_LAMBDA_ROLE_ARN: !Sub arn:aws:iam::${AWS::AccountId}:role/${CustomerId}-EBSchedulerReportRole
           LOG_LEVEL: !Ref LogLevel
@@ -442,7 +443,7 @@ Resources:
       FlexibleTimeWindow:
         Mode: "OFF"
       GroupName: !Ref NrReportsEventBridgeSchedulerSchedulerScheduleGroup
-      Name: RunScheduler
+      Name: !Sub ${CustomerId}-RunScheduler
       ScheduleExpression: "cron(*/5 * * * ? *)"
       ScheduleExpressionTimezone: UTC
       State: ENABLED

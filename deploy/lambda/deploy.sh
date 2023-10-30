@@ -17,6 +17,10 @@ while [ $# -ne 0 ]; do
         --no-build)
             NOBUILD=1; shift;
             ;;
+        --build-type)
+            shift
+            if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then BUILD_TYPE=$1; shift; else err "missing build type with --build-type"; fi
+            ;;
         -t)
             shift
             if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then IMAGE_NAME=$1; shift; fi

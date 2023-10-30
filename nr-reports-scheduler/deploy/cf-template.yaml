@@ -132,6 +132,15 @@ Parameters:
     AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]+'
     Default: NewRelicReportsSecret
   #
+  # Name of the EventBridge schedule that runs the actual scheduler. This is
+  # needed so that it can be filtered out when returning schedule names.
+  #
+  EventBridgeSchedulerRunSchedulerScheduleName:
+    Type: String
+    Description: Name of the EventBridge schedule that runs the scheduler lambda.
+    AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]+'
+    Default: RunSchedule
+  #
   # ARN of the runner lambda. This is used by the eventbridge backend when
   # creating schedules.
   #
@@ -203,7 +212,8 @@ Resources:
           # Lambda environment variables
           #AWS_REGION: !Ref AwsRegion
           SECRET_NAME: !Ref SecretName
+          RUN_SCHEDULER_SCHEDULE_NAME: !Ref EventBridgeSchedulerRunSchedulerScheduleName
           SCHEDULE_GROUP_NAME: !Ref EventBridgeSchedulerScheduleGroupName
-          REPORTS_LAMBDA_ARN_VAR: !Ref RunnerLambdaArn
+          REPORTS_LAMBDA_ARN: !Ref RunnerLambdaArn
           REPORTS_LAMBDA_ROLE_ARN: !Ref EventBridgeSchedulerRunnerExecRoleArn
           LOG_LEVEL: !Ref LogLevel

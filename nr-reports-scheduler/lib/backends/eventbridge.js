@@ -11,7 +11,7 @@ const {
 } = require('nr-reports-core')
 
 const logger = createLogger('eventbridge'),
-  RUN_SCHEDULER_SCHEDULE_NAME = 'RunScheduler',
+  RUN_SCHEDULER_SCHEDULE_NAME_VAR = 'RUN_SCHEDULER_SCHEDULE_NAME',
   SCHEDULE_GROUP_NAME_VAR = 'SCHEDULE_GROUP_NAME',
   REPORTS_LAMBDA_ARN_VAR = 'REPORTS_LAMBDA_ARN',
   REPORTS_LAMBDA_ROLE_ARN_VAR = 'REPORTS_LAMBDA_ROLE_ARN'
@@ -40,6 +40,11 @@ function scheduleExpressionFromCronExpression(report, publishConfigName) {
 
 class EventBridgeBackend {
   constructor() {
+    this.runSchedulerScheduleName = getEnv(RUN_SCHEDULER_SCHEDULE_NAME_VAR)
+    if (!this.runSchedulerScheduleName) {
+      throw new Error('Missing run scheduler schedule name.')
+    }
+
     this.scheduleGroupName = getEnv(SCHEDULE_GROUP_NAME_VAR)
     if (!this.scheduleGroupName) {
       throw new Error('Missing schedule group name.')
@@ -60,7 +65,7 @@ class EventBridgeBackend {
     const schedules = await listSchedules(this.scheduleGroupName)
 
     return schedules
-      .filter(s => s.Name !== RUN_SCHEDULER_SCHEDULE_NAME)
+      .filter(s => s.Name !== this.runSchedulerScheduleName)
       .map(s => s.Name)
   }
 
