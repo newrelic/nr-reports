@@ -1,4 +1,4 @@
-import { SYMBOLS } from "./constants"
+import { SYMBOLS, UI_CONTENT } from "./constants"
 
 export function clone(obj) {
   return JSON.parse(JSON.stringify(obj))
@@ -42,4 +42,179 @@ export function getReportType(report) {
   }
 
   return SYMBOLS.REPORT_TYPES.DASHBOARD
+}
+
+function dayToLabel(day) {
+  switch (day) {
+    case 1:
+      return UI_CONTENT.BASIC_SCHEDULE_FORM.PERIOD_LABEL_SUNDAY
+
+    case 2:
+      return UI_CONTENT.BASIC_SCHEDULE_FORM.PERIOD_LABEL_MONDAY
+
+    case 3:
+      return UI_CONTENT.BASIC_SCHEDULE_FORM.PERIOD_LABEL_TUESDAY
+
+    case 4:
+      return UI_CONTENT.BASIC_SCHEDULE_FORM.PERIOD_LABEL_WEDNESDAY
+
+    case 5:
+      return UI_CONTENT.BASIC_SCHEDULE_FORM.PERIOD_LABEL_THURSDAY
+
+    case 6:
+      return UI_CONTENT.BASIC_SCHEDULE_FORM.PERIOD_LABEL_FRIDAY
+
+    case 7:
+      return UI_CONTENT.BASIC_SCHEDULE_FORM.PERIOD_LABEL_SATURDAY
+  }
+
+  return 'an unknown day'
+}
+
+function generateBasicScheduleDetails(settings) {
+  const {
+    amPm,
+    dayOfWeek,
+    daysOfWeek,
+    frequency,
+    hour,
+    minute,
+    period,
+    timeZone,
+    weekOfMonth,
+  } = settings
+  let frequencyLabel,
+    periodLabel
+
+  // @TODO $$NON-NLS$$
+
+  switch (frequency) {
+    case 'daily':
+      switch (period) {
+        case 'day':
+          periodLabel = 'every day'
+          break
+
+        case 'weekday':
+          periodLabel = 'every weekday'
+          break
+
+        case 'weekends':
+          periodLabel = 'every saturday and sunday'
+          break
+      }
+      break;
+
+    case 'weekly':
+      periodLabel = daysOfWeek.reduce((acc, day, index) => {
+        if (index > 0) {
+          acc += ', '
+          if (index + 1 === daysOfWeek.length) {
+            acc += 'and '
+          }
+        }
+
+        return `${acc}${dayToLabel(day.value)}`
+      }, 'every week on ')
+      break
+
+    case 'monthly':
+      periodLabel = `every month on ${dayToLabel(dayOfWeek)} of week ${weekOfMonth}`
+      break
+  }
+
+  const amPmLabel = amPm === 'am' ? 'AM' : 'PM',
+    hourLabel = hour === -1 ? 'every hour' : `hour ${hour}${amPmLabel}`,
+    minuteLabel = minute === -1 ? 'every minute' : `minute ${minute}`
+
+
+  return `Run this report ${periodLabel} on ${minuteLabel} of ${hourLabel}.`
+}
+
+function generateShortBasicScheduleDetails(settings) {
+  const {
+    amPm,
+    dayOfWeek,
+    daysOfWeek,
+    frequency,
+    hour,
+    minute,
+    period,
+    timeZone,
+    weekOfMonth,
+  } = settings
+  let frequencyLabel,
+    periodLabel
+
+  // @TODO $$NON-NLS$$
+
+  switch (frequency) {
+    case 'daily':
+      switch (period) {
+        case 'day':
+          periodLabel = 'Every day'
+          break
+
+        case 'weekday':
+          periodLabel = 'Every weekday'
+          break
+
+        case 'weekends':
+          periodLabel = 'Every weekend'
+          break
+      }
+      break;
+
+    case 'weekly':
+      periodLabel = daysOfWeek.reduce((acc, day, index) => {
+        if (index > 0) {
+          acc += ', '
+          if (index + 1 === daysOfWeek.length) {
+            acc += 'and '
+          }
+        }
+
+        return `${acc}${dayToLabel(day.value).slice(0, 3)}`
+      }, 'Every week on ')
+      break
+
+    case 'monthly':
+      periodLabel = `Every month on ${dayToLabel(dayOfWeek)} of week ${weekOfMonth}`
+      break
+  }
+
+  const amPmLabel = amPm === 'am' ? 'AM' : 'PM',
+    hourLabel = hour === -1 ? '*' : pad(hour, 2),
+    minuteLabel = minute === -1 ? '*' : `${pad(minute, 2)}${hour !== -1 ? amPmLabel : ''}`
+
+
+  return `${periodLabel} at ${hourLabel}:${minuteLabel}`
+}
+
+export function generateFullScheduleDetails(schedule, settings) {
+  const { mode, formState } = settings
+
+  if (mode === 'manual') {
+    return `This report will run as specified by the custom CRON expression "${schedule}".`
+  }
+
+  if (mode === 'basic') {
+    return generateBasicScheduleDetails(formState)
+  }
+
+  return 'No schedule defined'
+}
+
+export function generateShortScheduleDetails(schedule, settings) {
+  const { mode, formState } = settings
+
+  if (mode === 'manual') {
+    return `Custom: ${schedule}`
+  }
+
+  if (mode === 'basic') {
+    return generateShortBasicScheduleDetails(formState)
+  }
+
+  return 'No schedule defined'
 }

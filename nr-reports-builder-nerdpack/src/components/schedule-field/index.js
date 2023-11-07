@@ -1,12 +1,12 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   Button,
-  Stack,
-  StackItem,
 } from 'nr1'
+import CustomField from '../custom-field'
 import ScheduleBuilder from '../schedule-builder'
 import ScheduleBuilderProvider from '../schedule-builder/context'
 import { UI_CONTENT } from '../../constants'
+import { generateFullScheduleDetails } from '../../utils'
 
 export default function ScheduleField({
   formState,
@@ -33,36 +33,34 @@ export default function ScheduleField({
     }, [setShowModal]),
     handleHideModal = useCallback(() => {
       setShowModal(false)
-    }, [setShowModal])
-
+    }, [setShowModal]),
+    ScheduleDetails = useMemo(() => {
+      return generateFullScheduleDetails(schedule, settings)
+    }, [schedule, settings])
   return (
     <div className="schedule-field">
-      <Stack
-        spacingType={[
-          Stack.SPACING_TYPE.NONE,
-        ]}
-        directionType={Stack.DIRECTION_TYPE.VERTICAL}
-        fullWidth
+      <CustomField
+        label={UI_CONTENT.SCHEDULE_FIELD.FIELD_LABEL_SCHEDULE_CUSTOM}
       >
-        <StackItem>
-          <h3>{settings.stuff || 'No schedule'}</h3>
-        </StackItem>
-        <StackItem>
-          <Button
-            onClick={handleShowModal}
-            type={Button.TYPE.TERTIARY}
-            sizeType={Button.SIZE_TYPE.SMALL}
-            spacingType={[
-              Button.SPACING_TYPE.SMALL,
-              Button.SPACING_TYPE.SMALL,
-              Button.SPACING_TYPE.EXTRA_LARGE,
-              Button.SPACING_TYPE.NONE,
-            ]}
-          >
-            {UI_CONTENT.SCHEDULE_FIELD.BUTTON_LABEL_EDIT_SCHEDULE}
-          </Button>
-        </StackItem>
-      </Stack>
+        <div className="schedule-details">
+          {ScheduleDetails}
+        </div>
+      </CustomField>
+
+      <Button
+        onClick={handleShowModal}
+        type={Button.TYPE.TERTIARY}
+        sizeType={Button.SIZE_TYPE.SMALL}
+        spacingType={[
+          Button.SPACING_TYPE.MEDIUM,
+          Button.SPACING_TYPE.SMALL,
+          Button.SPACING_TYPE.LARGE,
+          Button.SPACING_TYPE.NONE,
+        ]}
+      >
+        {UI_CONTENT.SCHEDULE_FIELD.BUTTON_LABEL_EDIT_SCHEDULE}
+      </Button>
+
       {
         showModal && (
           <ScheduleBuilderProvider

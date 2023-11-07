@@ -148,8 +148,7 @@ export const UI_CONTENT = {
   },
   SCHEDULE_FIELD: {
     BUTTON_LABEL_EDIT_SCHEDULE: 'Edit schedule',
-    SCHEDULE_FIELD_PLACEHOLDER: '* * * * *',
-    FIELD_LABEL_SCHEDULE: 'Schedule',
+    FIELD_LABEL_SCHEDULE_CUSTOM: 'Schedule',
   },
   SLACK_CHANNEL_FORM: {
     CC_FIELD_PLACEHOLDER: `robin@newrelic.com\npat@newrelic.com`,

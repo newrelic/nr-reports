@@ -17,8 +17,10 @@ import {
   UI_CONTENT,
 } from '../../constants'
 import { RouteDispatchContext } from '../../contexts'
+import { generateShortScheduleDetails } from '../../utils'
 
 function PublishConfigsTable({
+  metadata,
   configs,
   onEditConfig,
   onDeleteConfig,
@@ -42,7 +44,7 @@ function PublishConfigsTable({
       return (
         <TableRow actions={getActions}>
           <TableRowCell>{ item }</TableRowCell>
-          <TableRowCell>{ config.schedule || 'None' }</TableRowCell>
+          <TableRowCell>{ generateShortScheduleDetails(config.schedule, metadata[item]['schedule-builder']) }</TableRowCell>
           <TableRowCell>{ config.channels.length }</TableRowCell>
         </TableRow>
       )
@@ -107,6 +109,7 @@ export default function PublishConfigurationsField({
               Object.keys(formState.publishConfigs).length > 0
             ) ? (
               <PublishConfigsTable
+                metadata={formState.metadata}
                 configs={formState.publishConfigs}
                 onEditConfig={handleEditConfig}
                 onDeleteConfig={handleDeleteConfig}
