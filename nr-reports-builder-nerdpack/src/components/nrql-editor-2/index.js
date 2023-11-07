@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react'
 import PropTypes from 'prop-types'
-import { AccountPicker } from 'nr1'
 import patterns from './patterns'
 import { UI_CONTENT } from '../../constants'
 

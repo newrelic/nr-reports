@@ -23,7 +23,7 @@ import ScheduleField from '../../schedule-field'
 function formStateFromPublishConfig(parentFormState, selectedConfig) {
   const publishConfig = (
     parentFormState.publishConfigs[selectedConfig] || {
-      schedule: '',
+      schedule: '* * * * ? *',
       channels: [],
     }
   )
@@ -31,6 +31,7 @@ function formStateFromPublishConfig(parentFormState, selectedConfig) {
   return {
     parentFormState: clone(parentFormState),
     name: selectedConfig || '',
+    metadata: parentFormState.metadata[selectedConfig] || {},
     ...publishConfig,
   }
 }
@@ -66,6 +67,10 @@ function publishConfigFromFormState(formState, selectedConfig) {
 
   return {
     ...formState.parentFormState,
+    metadata: {
+      ...formState.parentFormState.metadata,
+      [formState.name]: formState.metadata,
+    },
     publishConfigs,
     dirty: formState.dirty,
   }

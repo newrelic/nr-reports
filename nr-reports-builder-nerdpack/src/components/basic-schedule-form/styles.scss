@@ -1,0 +1,19 @@
+.basic-schedule-form {
+    .custom-field {
+        margin-bottom: 16px;
+    }
+
+    .time-select {
+        display: flex;
+        align-items: center;
+
+        & > div {
+            margin-right: 4px;
+            margin-bottom: 0;
+
+            &.colon {
+                font-weight: 600;
+            }
+        }
+    }
+}

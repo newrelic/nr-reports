@@ -4,12 +4,14 @@ export function clone(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
 
-export function getReportType(report) {
-  if (report.query) {
-    return SYMBOLS.REPORT_TYPES.QUERY
+export function pad(number, length) {
+  let str = `${number}`
+
+  while (str.length < length) {
+    str = `0${str}`
   }
 
-  return SYMBOLS.REPORT_TYPES.DASHBOARD
+  return str
 }
 
 const idMaps = {}
@@ -32,4 +34,12 @@ export function getObjectId(name, object) {
   }
 
   return objectId
+}
+
+export function getReportType(report) {
+  if (report.query) {
+    return SYMBOLS.REPORT_TYPES.QUERY
+  }
+
+  return SYMBOLS.REPORT_TYPES.DASHBOARD
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   Icon,
@@ -8,24 +8,44 @@ import Label from './label'
 
 export const NO_ICON = Symbol("NO_ICON")
 
+function handleClicksOutsideComponent(
+  componentRef,
+  showItemsRef,
+  setShowItemsList,
+) {
+  return evt => {
+    if (
+      showItemsRef.current &&
+      componentRef &&
+      !componentRef.current.contains(evt.target)
+    ) {
+      setShowItemsList(false)
+    }
+  }
+}
+
 export default function MultiSelect2({
   items = [],
   value = [],
   className = '',
   icon = NO_ICON,
+  showChips = true,
   placeholderText = '',
   onChange,
 }) {
-  const thisComponent = useRef(),
-    inputField = useRef(),
+  const thisComponentRef = useRef(),
+    inputFieldRef = useRef(),
+    showItemsRef = useRef(),
     [showItemsList, setShowItemsList] = useState(false),
-    checkHandler = useCallback((item, _, checked) => {
+    checkHandler = useCallback((e, item, _, checked) => {
+      e.stopPropagation()
+
       if (checked) {
         onChange(value.concat(item))
         return
       }
 
-      const idx = value.findIndex(v => v === item)
+      const idx = value.findIndex(v => v.value === item.value)
 
       if (idx >= 0) {
         const newValue = [...value]
@@ -34,39 +54,67 @@ export default function MultiSelect2({
         onChange(newValue)
       }
     }, [value, onChange]),
-    showItemsListHandler = useCallback(() => {
+    showItemsListHandler = useCallback(e => {
+      e.stopPropagation()
+
       setShowItemsList(!showItemsList)
-    }),
-    handleClicksOutsideComponent = useCallback(evt => {
-      if (
-        showItemsList &&
-        thisComponent &&
-        !thisComponent.current.contains(evt.target)
-      ) {
-        setShowItemsList(false)
-      }
-    }, [thisComponent, showItemsList, setShowItemsList]),
-    cleanupClickHandler = useCallback(() => {
-      document.removeEventListener('click', handleClicksOutsideComponent)
-    }, [handleClicksOutsideComponent])
+    }, [setShowItemsList, showItemsList]),
+    outsideClicksHandler = useMemo(() => {
+      // We intentionally don't want this function to ever change so we use
+      // [] as dependency list here.
+      return handleClicksOutsideComponent(
+        thisComponentRef,
+        showItemsRef,
+        setShowItemsList,
+      )
+    }, []),
+    setupHandlers = () => {
+      // Delay here so that we don't capture button click events that may have
+      // triggered the overlay to open.
+      setTimeout(() => {
+        document.addEventListener('click', outsideClicksHandler)
+      }, 200)
+    },
+    cleanupHandlers = () => {
+      document.removeEventListener('click', outsideClicksHandler)
+    }
   let itemsListWidth, checkboxWidth
 
   useEffect(() => {
-    itemsListWidth = inputField && inputField.current ? (
-      inputField.current.clientWidth - 14
-    ) : 'auto'
-    checkboxWidth = (
-      inputField && inputField.current ? (itemsListWidth - 32) / 2 : 'auto'
-    )
-
-    document.addEventListener('click', handleClicksOutsideComponent)
-
-    return cleanupClickHandler
+    setupHandlers()
+    return cleanupHandlers
   }, [])
 
+  useEffect(() => {
+    // These need to recalculate every time in case of resizes and such
+
+    itemsListWidth = inputFieldRef && inputFieldRef.current ? (
+      inputFieldRef.current.clientWidth - 14
+    ) : 'auto'
+    checkboxWidth = (
+      inputFieldRef && inputFieldRef.current ? (itemsListWidth - 32) / 2 : 'auto'
+    )
+    showItemsRef.current = showItemsList
+  })
+
   return (
-    <div className={`multiselect ${className || ''}`} ref={thisComponent}>
-      <div className="field" ref={inputField}>
+    <div className={`multiselect ${className || ''}`} ref={thisComponentRef}>
+      <div className="field" ref={inputFieldRef}>
+        <div
+          className={`input ${!value.length ? 'placeholder' : ''}`}
+          onClick={showItemsListHandler}
+        >
+          {
+            showChips && value.map((item, i) => (
+              <Label
+                key={i}
+                value={item.label}
+                onRemove={() => checkHandler(item, i, false)}
+              />
+            ))
+          }
+          {placeholderText}
+        </div>
         {
           icon && icon !== NO_ICON && (
             <div className="icon" onClick={showItemsListHandler}>
@@ -81,19 +129,6 @@ export default function MultiSelect2({
             </div>
           )
         }
-        <div
-          className={`input ${!value.length ? 'placeholder' : ''}`}
-          onClick={showItemsListHandler}
-        >
-          {value.map((item, i) => (
-            <Label
-              key={i}
-              value={item.label}
-              onRemove={() => checkHandler(item, i, false)}
-            />
-          ))}
-          {!value.length && placeholderText}
-        </div>
       </div>
       {showItemsList ? (
         <div className="list" style={{ width: itemsListWidth }}>
@@ -108,9 +143,9 @@ export default function MultiSelect2({
                 value={item.value}
                 id={item.value}
                 checked={(
-                  value.length && value.findIndex(v => v === item) !== -1
+                  value.length && value.findIndex(v => v.value === item.value) !== -1
                 )}
-                onChange={e => checkHandler(item, i, e.target.checked)}
+                onChange={e => checkHandler(e, item, i, e.target.checked)}
               />
               <label htmlFor={item.value}>
                 {item.label}

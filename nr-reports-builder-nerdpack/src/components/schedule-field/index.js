@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react'
 import {
   Button,
-  TextField,
   Stack,
   StackItem,
 } from 'nr1'
+import ScheduleBuilder from '../schedule-builder'
+import ScheduleBuilderProvider from '../schedule-builder/context'
 import { UI_CONTENT } from '../../constants'
 
 export default function ScheduleField({
@@ -12,8 +13,20 @@ export default function ScheduleField({
   updateFormState,
 }) {
   const [showModal, setShowModal] = useState(false),
-    handleChangeSchedule = useCallback(e => {
-      updateFormState({ schedule: e.target.value })
+    {
+      schedule,
+      metadata,
+    } = formState,
+    settings = metadata['schedule-builder'] || {},
+    handleChangeSchedule = useCallback(({ schedule, settings }) => {
+      updateFormState({
+        schedule,
+        metadata: {
+          ...metadata,
+          ['schedule-builder']: settings,
+        }
+      })
+      setShowModal(false)
     }, [updateFormState]),
     handleShowModal = useCallback(() => {
       setShowModal(true)
@@ -32,19 +45,36 @@ export default function ScheduleField({
         fullWidth
       >
         <StackItem>
-          <TextField
-            placeholder={
-              UI_CONTENT.SCHEDULE_FIELD.SCHEDULE_FIELD_PLACEHOLDER
-            }
-            label={UI_CONTENT.SCHEDULE_FIELD.FIELD_LABEL_SCHEDULE}
-            value={formState.schedule}
-            onChange={handleChangeSchedule}
-          />
+          <h3>{settings.stuff || 'No schedule'}</h3>
+        </StackItem>
+        <StackItem>
+          <Button
+            onClick={handleShowModal}
+            type={Button.TYPE.TERTIARY}
+            sizeType={Button.SIZE_TYPE.SMALL}
+            spacingType={[
+              Button.SPACING_TYPE.SMALL,
+              Button.SPACING_TYPE.SMALL,
+              Button.SPACING_TYPE.EXTRA_LARGE,
+              Button.SPACING_TYPE.NONE,
+            ]}
+          >
+            {UI_CONTENT.SCHEDULE_FIELD.BUTTON_LABEL_EDIT_SCHEDULE}
+          </Button>
         </StackItem>
       </Stack>
       {
         showModal && (
-          <div></div>
+          <ScheduleBuilderProvider
+            schedule={schedule}
+            settings={settings}
+          >
+            <ScheduleBuilder
+              open={showModal}
+              onClose={handleHideModal}
+              onSubmit={handleChangeSchedule}
+            />
+          </ScheduleBuilderProvider>
         )
       }
     </div>

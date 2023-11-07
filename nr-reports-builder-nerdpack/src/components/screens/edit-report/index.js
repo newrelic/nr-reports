@@ -37,6 +37,7 @@ function reportToFormState(report) {
     accountIds: report.accountIds,
     lastModifiedDate: report.lastModifiedDate,
     publishConfigs: report.publishConfigs ? clone(report.publishConfigs) : {},
+    metadata: report.metadata || {},
     loadedDashboards: report.dashboards ? false : true,
     dirty: false,
   }
@@ -48,6 +49,7 @@ function reportFromFormState(formState) {
     lastModifiedDate: new Date().getTime(),
     schedule: formState.schedule,
     publishConfigs: formState.publishConfigs,
+    metadata: formState.metadata,
   }
 
   if (formState.type === 'query') {

@@ -10,3 +10,13 @@
       border-right: 1px solid $unknown;
     }
 }
+
+.nr1-form-field {
+  &[class*="split"] {
+    margin-bottom: 4px;
+  }
+
+  & > div {
+    margin-bottom: 4px;
+  }
+}
