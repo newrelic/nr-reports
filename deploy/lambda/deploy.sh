@@ -2,18 +2,15 @@
 
 source $(dirname "$0")/init.sh
 
-NOBUILD=0
-BUILD_TYPE=test
 PREFIX=
+BUILD_TYPE=deploy
+NOBUILD=0
 IMAGE_NAME=
 STACK_NAME=${STACK_NAME:-"$APP_DIR_NAME"}
 AWS_CF_DEPLOY_OPTS=${AWS_CF_DEPLOY_OPTS:-""}
 
 while [ $# -ne 0 ]; do
     case "$1" in
-        --prod)
-            BUILD_TYPE=prod; shift;
-            ;;
         --no-build)
             NOBUILD=1; shift;
             ;;
@@ -50,15 +47,12 @@ if [ $NOBUILD -eq 0 ]; then
     PREFIX_ARG=""
     if [ -n "$ORIG_PREFIX" ]; then PREFIX_ARG="-p $ORIG_PREFIX"; fi
 
-    PROD_ARG=""
-    if [[ "$BUILD_TYPE" == "prod" ]]; then PROD_ARG="--prod"; fi
-
     if [ -z "$IMAGE_NAME" ]; then
         P_IMAGE_NAME=${PREFIX}IMAGE_NAME
         IMAGE_NAME=${!P_IMAGE_NAME:-$APP_DIR_NAME}
     fi
 
-    $SCRIPT_DIR/build.sh -t "$IMAGE_NAME" --full --push $PROD_ARG $PREFIX_ARG
+    $SCRIPT_DIR/build.sh -t "$IMAGE_NAME" --full --push --build-type $BUILD_TYPE $PREFIX_ARG
 else
     source $(dirname "$0")/vars.sh
 fi

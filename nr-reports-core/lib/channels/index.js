@@ -4,7 +4,13 @@ const email = require('./email'),
   file = require('./file'),
   s3 = require('./s3'),
   slack = require('./slack'),
-  { createLogger, logTrace } = require('../logger')
+  { createLogger, logTrace } = require('../logger'),
+  { getOption, splitStringAndTrim } = require('../util'),
+  {
+    PUBLISH_CONFIG_IDS_OPTION,
+    PUBLISH_CONFIG_IDS_VAR,
+    DEFAULT_PUBLISH_CONFIG_ID,
+  } = require('../constants')
 
 const publishers = {
     email,
@@ -14,20 +20,76 @@ const publishers = {
   },
   logger = createLogger('publisher')
 
+function getPublishConfigIds(options) {
+  const publishConfigIdsOpt = getOption(
+    options,
+    PUBLISH_CONFIG_IDS_OPTION,
+    PUBLISH_CONFIG_IDS_VAR,
+    DEFAULT_PUBLISH_CONFIG_ID,
+  )
+
+  logger.trace(`Found publish config ids ${publishConfigIdsOpt}.`)
+
+  const publishConfigIds = splitStringAndTrim(publishConfigIdsOpt),
+    defaultIndex = publishConfigIds.findIndex(
+      id => id === DEFAULT_PUBLISH_CONFIG_ID,
+    )
+
+  if (defaultIndex === -1) {
+    publishConfigIds.push(DEFAULT_PUBLISH_CONFIG_ID)
+  }
+
+  return publishConfigIds
+}
+
+function getPublishConfig(context, report) {
+  const { publishConfigIds } = context,
+    { publishConfigs } = report
+
+  if (publishConfigs) {
+    for (let index = 0; index < publishConfigIds.length; index += 1) {
+      const publishConfigId = publishConfigIds[index],
+        publishConfig = publishConfigs.find(
+          p => p.id === publishConfigId,
+        )
+
+      if (publishConfig) {
+        return publishConfig
+      }
+    }
+  }
+
+  return null
+}
+
+
 async function publish(
   context,
   manifest,
   report,
   output,
-  publishConfig,
   tempDir,
 ) {
-  const { channels } = publishConfig
+  const reportName = report.name || report.id,
+    publishConfig = getPublishConfig(context, report)
+
+  if (!publishConfig) {
+    logger.warn(
+      {
+        publishConfigIds: context.publishConfigIds,
+      },
+      `Not publishing output for report ${reportName} because no publish configuration found matching specified configuration IDs.`,
+    )
+    return
+  }
+
+  const { channels } = publishConfig,
+    publishConfigName = publishConfig.name || publishConfig.id
 
   logTrace(logger, log => {
     log(
       { channels },
-      `Publishing output for report ${report.name} using publish config to the following channels:`,
+      `Publishing output for report ${reportName} using publish config ${publishConfigName} to the following channels:`,
     )
   })
 
@@ -48,15 +110,15 @@ async function publish(
     logTrace(logger, log => {
       log(
         { ...publishContext, ...channel },
-        `Publishing output for report ${report.name} to channel ${channel.type}...`,
+        `Publishing output for report ${reportName} to channel ${channel.type}...`,
       )
     })
 
     try {
       await publisher.publish(publishContext, manifest, report, channel, output, tempDir)
-      logger.trace(`Output for report ${report.name} published to channel ${channel.type}.`)
+      logger.trace(`Output for report ${reportName} published to channel ${channel.type}.`)
     } catch (err) {
-      logger.error(`Publishing output for report ${report.name} to channel ${channel.type} failed with the following error. Publishing will continue with remaining channels.`)
+      logger.error(`Publishing output for report ${reportName} to channel ${channel.type} failed with the following error. Publishing will continue with remaining channels.`)
       logger.error(err)
     }
   }
@@ -75,4 +137,5 @@ function getChannelDefaults(type, options) {
 module.exports = {
   publish,
   getChannelDefaults,
+  getPublishConfigIds,
 }

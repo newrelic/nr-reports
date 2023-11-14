@@ -16,7 +16,7 @@ function getExtension(context, defaultExtension = null) {
 }
 
 function getDefaultOutputFileName(report, extension) {
-  return `${report.name}.${extension}`
+  return `${report.id}.${extension}`
 }
 
 function getOutputFileName(context, report, defaultExtension = null) {

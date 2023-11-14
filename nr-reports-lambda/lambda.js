@@ -85,7 +85,10 @@ async function getSecretData(options) {
   const secretName = getEnv(SECRET_NAME_VAR)
 
   if (!secretName) {
-    return makeSecretData(await getApiKey())
+    return makeSecretData(
+      await getApiKey(),
+      options.accountId,
+    )
   }
 
   const secret = await getSecretAsJson(secretName),

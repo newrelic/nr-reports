@@ -16,24 +16,28 @@ const logger = createLogger('eventbridge'),
   REPORTS_LAMBDA_ARN_VAR = 'REPORTS_LAMBDA_ARN',
   REPORTS_LAMBDA_ROLE_ARN_VAR = 'REPORTS_LAMBDA_ROLE_ARN'
 
+function scheduleExpressionFromCronExpression(report, publishConfigId) {
+  const { publishConfigs } = report,
+    publishConfig = publishConfigs.find(
+      p => p.id === publishConfigId,
+    )
 
-function scheduleExpressionFromCronExpression(report, publishConfigName) {
-  const schedule = report.publishConfigs[publishConfigName].schedule,
+  if (!publishConfig) {
+    throw new Error(`Publish configuration with ID "${publishConfigId}" for report "${report.name}" could not be found.`)
+  }
+
+  const schedule = publishConfig.schedule,
     parts = schedule.trim().split(/[\s]+/u)
 
-  if (parts.length !== 5) {
+  if (parts.length === 5) {
+
+    // Push a year field if it's only a 5 field expression
+    parts.push('*')
+  } else if (parts.length !== 6) {
+    throw new Error(`Invalid cron expression "${schedule}" for report "${report.name}".`)
+  } else if (parts[2] !== '?' && parts[4] !== '?') {
     throw new Error(`Invalid cron expression "${schedule}" for report "${report.name}".`)
   }
-
-  if (parts[2] !== '*') {
-    parts[4] = '?'
-  } else if (parts[4] !== '*') {
-    parts[2] = '?'
-  } else {
-    parts[4] = '?'
-  }
-
-  parts.push('*')
 
   return `cron(${parts.join(' ')})`
 }
@@ -69,18 +73,18 @@ class EventBridgeBackend {
       .map(s => s.Name)
   }
 
-  async createSchedule(scheduleName, report, manifestFile, publishConfigName) {
+  async createSchedule(scheduleName, report, manifestFile, publishConfigId) {
     await createSchedule(
       this.scheduleGroupName,
       scheduleName,
-      scheduleExpressionFromCronExpression(report, publishConfigName),
+      scheduleExpressionFromCronExpression(report, publishConfigId),
       this.reportsLamdbaArn,
       this.reportsLamdbaRoleArn,
       JSON.stringify({
         options: {
           manifestFilePath: manifestFile,
-          reportNames: report.name,
-          publishConfigName,
+          reportIds: report.id,
+          publishConfigIds: publishConfigId,
         },
       }),
     )

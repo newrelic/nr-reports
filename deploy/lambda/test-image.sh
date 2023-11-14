@@ -4,9 +4,10 @@ source $(dirname "$0")/init.sh
 
 FULL=0
 BUILD=0
-BUILD_TYPE=test
+BUILD_TYPE=local
 PREFIX=
 IMAGE_NAME=
+LAMBDA_HANDLER=
 
 while [ $# -ne 0 ]; do
     case "$1" in
@@ -19,6 +20,10 @@ while [ $# -ne 0 ]; do
         --build-type)
             shift
             if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then BUILD_TYPE=$1; shift; else err "missing build type with --build-type"; fi
+            ;;
+        --lambda-handler)
+            shift
+            if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then LAMBDA_HANDLER=$1; shift; else err "missing handler with --lambda-handler"; fi
             ;;
         -t)
             shift
@@ -82,7 +87,7 @@ docker run -a stdout -t --name lambda --rm \
     -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
     -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
     -e NEW_RELIC_LOG_SERVER_HOST=localhost \
-    -e NEW_RELIC_LAMBDA_HANDLER=nr-reports-scheduler/lambda.handler \
+    -e NEW_RELIC_LAMBDA_HANDLER=$LAMBDA_HANDLER \
     -e LOG_LEVEL=debug \
     "${DOCKER_RUN_ARGS[@]}" \
     "${CFENV_ARGS[@]}" \

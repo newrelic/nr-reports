@@ -56,14 +56,6 @@ Parameters:
     MaxValue: 10240
     Default: 256
   #
-  # The schedule group name of the schedule group the scheduler will use to
-  # create report schedules.
-  #
-  EventBridgeSchedulerScheduleGroupName:
-    Type: String
-    Description: The schedule group name of the schedule group the scheduler will use to create report schedules.
-    Default: ScheduleGroup
-  #
   # New Relic account ID.
   #
   # Used at runtime by the New Relic AWS lambda extension.
@@ -132,10 +124,18 @@ Parameters:
     AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]+'
     Default: NewRelicReportsSecret
   #
+  # The schedule group name of the schedule group the scheduler will use to
+  # create report schedules.
+  #
+  ScheduleGroupName:
+    Type: String
+    Description: The schedule group name of the schedule group the scheduler will use to create report schedules.
+    Default: ScheduleGroup
+  #
   # Name of the EventBridge schedule that runs the actual scheduler. This is
   # needed so that it can be filtered out when returning schedule names.
   #
-  EventBridgeSchedulerRunSchedulerScheduleName:
+  RunSchedulerScheduleName:
     Type: String
     Description: Name of the EventBridge schedule that runs the scheduler lambda.
     AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]+'
@@ -144,15 +144,15 @@ Parameters:
   # ARN of the runner lambda. This is used by the eventbridge backend when
   # creating schedules.
   #
-  RunnerLambdaArn:
+  ReportsLambdaArn:
     Type: String
     Description: ARN of the runner lambda. This is used by the eventbridge backend when creating schedules.
-    AllowedPattern: 'arn:(aws[a-zA-Z-]*)?:iam::\d{12}:role/?[a-zA-Z_0-9+=,.@\-_/]+'
+    AllowedPattern: 'arn:(aws[a-zA-Z-]*)?:lambda:.+:\d{12}:function:?[a-zA-Z_0-9+=,.@\-_/]+'
   #
   # ARN of the execution role the event bridge scheduler will assume in order to
   # invoke the runner lambda.
   #
-  EventBridgeSchedulerRunnerExecRoleArn:
+  ReportsLambdaRoleArn:
     Type: String
     Description: ARN of the execution role the event bridge scheduler will assume in order to invoke the runner lambda.
     AllowedPattern: 'arn:(aws[a-zA-Z-]*)?:iam::\d{12}:role/?[a-zA-Z_0-9+=,.@\-_/]+'
@@ -212,8 +212,8 @@ Resources:
           # Lambda environment variables
           #AWS_REGION: !Ref AwsRegion
           SECRET_NAME: !Ref SecretName
-          RUN_SCHEDULER_SCHEDULE_NAME: !Ref EventBridgeSchedulerRunSchedulerScheduleName
-          SCHEDULE_GROUP_NAME: !Ref EventBridgeSchedulerScheduleGroupName
-          REPORTS_LAMBDA_ARN: !Ref RunnerLambdaArn
-          REPORTS_LAMBDA_ROLE_ARN: !Ref EventBridgeSchedulerRunnerExecRoleArn
+          SCHEDULE_GROUP_NAME: !Ref ScheduleGroupName
+          RUN_SCHEDULER_SCHEDULE_NAME: !Ref RunSchedulerScheduleName
+          REPORTS_LAMBDA_ARN: !Ref ReportsLambdaArn
+          REPORTS_LAMBDA_ROLE_ARN: !Ref ReportsLambdaRoleArn
           LOG_LEVEL: !Ref LogLevel

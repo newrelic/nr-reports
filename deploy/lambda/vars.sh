@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_TYPE=${BUILD_TYPE:-'test'}
+BUILD_TYPE=${BUILD_TYPE:-'deploy'}
 
 node $SCRIPT_DIR/init.js $APP_DIR/deploy $BUILD_TYPE > $APP_DIR/deploy/.cfenv.$BUILD_TYPE && source $APP_DIR/deploy/.cfenv.$BUILD_TYPE
 

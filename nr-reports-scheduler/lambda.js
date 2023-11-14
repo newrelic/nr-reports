@@ -16,7 +16,7 @@ const {
   } = require('nr-reports-core'),
   { NerdstorageRepository } = require('./lib/repositories/nerdstorage'),
   { EventBridgeBackend } = require('./lib/backends/eventbridge'),
-  { Scheduler } = require('./lib/scheduler')
+  { poll } = require('./lib/scheduler')
 
 const logger = rootLogger,
   { SECRET_NAME_VAR } = CORE_CONSTANTS
@@ -112,13 +112,9 @@ async function handler(event) {
         secretData.accountId,
       ),
       nerdstorageRepo = new NerdstorageRepository(nerdstorage),
-      eventBridgeBackend = new EventBridgeBackend(),
-      scheduler = new Scheduler(
-        nerdstorageRepo,
-        eventBridgeBackend,
-      )
+      eventBridgeBackend = new EventBridgeBackend()
 
-    await scheduler.poll()
+    await poll(nerdstorageRepo, eventBridgeBackend)
 
     logger.trace('Recording job status...')
 

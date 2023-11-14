@@ -2,9 +2,9 @@
 
 source $(dirname "$0")/init.sh
 
-BUILD=0
-BUILD_TYPE=test
 PREFIX=
+BUILD_TYPE=test
+BUILD=0
 IMAGE_NAME=
 FUNCTION_NAME=
 ECR_IMAGE_REPO=
@@ -13,9 +13,6 @@ AWS_LAMBDA_UPDATE_OPTS=${AWS_LAMBDA_UPDATE_OPTS:-""}
 
 while [ $# -ne 0 ]; do
     case "$1" in
-        --prod)
-            BUILD_TYPE=prod; shift;
-            ;;
         --build)
             BUILD=1; shift;
             ;;
@@ -76,11 +73,8 @@ fi
 PREFIX_ARG=""
 if [ -n "$ORIG_PREFIX" ]; then PREFIX_ARG="-p $ORIG_PREFIX"; fi
 
-PROD_ARG=""
-if [[ "$BUILD_TYPE" == "prod" ]]; then PROD_ARG="--prod"; fi
-
 if [ $BUILD -eq 1 ]; then
-    $SCRIPT_DIR/build.sh -t "$IMAGE_NAME" --full --push $PROD_ARG $PREFIX_ARG
+    $SCRIPT_DIR/build.sh -t "$IMAGE_NAME" --full --push --build-type $BUILD_TYPE $PREFIX_ARG
 fi
 
 println "\n%s" "-- UPDATE ----------------------------------------------------------------------"

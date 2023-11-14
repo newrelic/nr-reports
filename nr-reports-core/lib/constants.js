@@ -24,11 +24,14 @@ const MANIFEST_FILE_PATH_OPTION = 'manifestFilePath',
   CHANNEL_IDS_OPTION = 'channelIds',
   CHANNEL_IDS_VAR = 'CHANNEL_IDS',
   SOURCE_NERDLET_ID_OPTION = 'sourceNerdletId',
-  SOURCE_NERDLET_ID_VAR = 'SOURCE_NERDLET_ID'
+  SOURCE_NERDLET_ID_VAR = 'SOURCE_NERDLET_ID',
+  PUBLISH_CONFIG_IDS_OPTION = 'publishConfigIds',
+  PUBLISH_CONFIG_IDS_VAR = 'PUBLISH_CONFIG_IDS',
+  DEFAULT_PUBLISH_CONFIG_ID = 'default'
 
 // Manifest file constants
-const REPORT_NAMES_OPTION = 'reportNames',
-  REPORT_NAMES_VAR = 'REPORT_NAMES',
+const REPORT_IDS_OPTION = 'reportIds',
+  REPORT_IDS_VAR = 'REPORT_IDS',
   DEFAULT_MANIFEST_FILE_NAME = 'manifest.json',
   DEFAULT_MANIFEST_FILE_PATH = `${INCLUDE_DIR_NAME}/${DEFAULT_MANIFEST_FILE_NAME}`
 
@@ -36,10 +39,11 @@ const REPORT_NAMES_OPTION = 'reportNames',
 const NO_RENDER_OPTION = 'noRender'
 
 // Dashboard generator constants
-const COMBINE_PDFS_KEY = 'combinePdfs'
+const DEFAULT_DASHBOARD_REPORT_ID = 'dashboard-report',
+  COMBINE_PDFS_KEY = 'combinePdfs'
 
 // Query generator constants
-const DEFAULT_QUERY_REPORT_NAME = 'query-report'
+const DEFAULT_QUERY_REPORT_ID = 'query-report'
 
 // Nerdstorage constants
 const MANIFESTS_COLLECTION_NAME = 'manifests'
@@ -109,10 +113,13 @@ module.exports = {
   CHANNEL_IDS_VAR,
   SOURCE_NERDLET_ID_OPTION,
   SOURCE_NERDLET_ID_VAR,
+  PUBLISH_CONFIG_IDS_OPTION,
+  PUBLISH_CONFIG_IDS_VAR,
+  DEFAULT_PUBLISH_CONFIG_ID,
 
   // Manifest file constants
-  REPORT_NAMES_OPTION,
-  REPORT_NAMES_VAR,
+  REPORT_IDS_OPTION,
+  REPORT_IDS_VAR,
   DEFAULT_MANIFEST_FILE_NAME,
   DEFAULT_MANIFEST_FILE_PATH,
 
@@ -120,10 +127,11 @@ module.exports = {
   NO_RENDER_OPTION,
 
   // Dashboard generator constants
+  DEFAULT_DASHBOARD_REPORT_ID,
   COMBINE_PDFS_KEY,
 
   // Query generator constants
-  DEFAULT_QUERY_REPORT_NAME,
+  DEFAULT_QUERY_REPORT_ID,
 
   // Nerdstorage constants
   MANIFESTS_COLLECTION_NAME,

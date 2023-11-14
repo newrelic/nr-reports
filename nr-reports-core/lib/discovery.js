@@ -20,8 +20,8 @@ const path = require('path'),
     CHANNEL_IDS_VAR,
     MANIFEST_FILE_PATH_OPTION,
     MANIFEST_FILE_PATH_VAR,
-    REPORT_NAMES_OPTION,
-    REPORT_NAMES_VAR,
+    REPORT_IDS_OPTION,
+    REPORT_IDS_VAR,
     DEFAULT_MANIFEST_FILE_NAME,
     TEMPLATE_NAME_OPTION,
     TEMPLATE_NAME_VAR,
@@ -31,16 +31,18 @@ const path = require('path'),
     NO_RENDER_OPTION,
     DASHBOARD_IDS_OPTION,
     DASHBOARD_IDS_VAR,
+    DEFAULT_DASHBOARD_REPORT_ID,
     COMBINE_PDFS_KEY,
     NRQL_QUERY_OPTION,
     NRQL_QUERY_VAR,
-    DEFAULT_QUERY_REPORT_NAME,
+    DEFAULT_QUERY_REPORT_ID,
     DEFAULT_MANIFEST_FILE_PATH,
     S3_SOURCE_BUCKET_KEY,
     S3_SOURCE_BUCKET_VAR,
     SOURCE_NERDLET_ID_OPTION,
     SOURCE_NERDLET_ID_VAR,
     MANIFESTS_COLLECTION_NAME,
+    DEFAULT_PUBLISH_CONFIG_ID,
   } = require('./constants')
 
 const { NerdstorageClient } = require('./nerdstorage')
@@ -93,26 +95,26 @@ function prepareManifest(
   extras,
 ) {
   const manifest = normalizeManifest(data, defaultChannel),
-    reportNamesOpt = getOption(options, REPORT_NAMES_OPTION, REPORT_NAMES_VAR)
+    reportIdsOpt = getOption(options, REPORT_IDS_OPTION, REPORT_IDS_VAR)
 
-  if (reportNamesOpt) {
-    logger.trace(`Found report names ${reportNamesOpt}.`)
+  if (reportIdsOpt) {
+    logger.trace(`Found report ids ${reportIdsOpt}.`)
 
-    const reportNames = splitStringAndTrim(reportNamesOpt)
+    const reportIds = splitStringAndTrim(reportIdsOpt)
 
     manifest.reports = manifest.reports.filter(
-      r => reportNames.includes(r.name),
+      r => reportIds.includes(r.id),
     )
   }
 
   manifest.reports = manifest.reports.map(report => {
     if (report.templateName) {
-      if (params && params[report.name]) {
+      if (params && params[report.id]) {
         return {
           ...report,
           parameters: {
             ...report.parameters,
-            ...params[report.name],
+            ...params[report.id],
           },
           ...extras,
         }
@@ -229,7 +231,7 @@ async function discoverReportsHelper(
         VALUES_FILE_PATH_VAR,
       ),
       channels = getChannels(defaultChannelType, options),
-      reportName = path.parse(templateName).name,
+      reportId = path.parse(templateName).name,
       outputFileName = getOption(options, OUTPUT_FILE_NAME_OPTION),
       noRender = getOption(options, NO_RENDER_OPTION, null, false)
 
@@ -244,14 +246,17 @@ async function discoverReportsHelper(
         config: {},
         variables: {},
         reports: [{
-          name: reportName,
+          id: reportId,
           templateName,
           render: !noRender,
           outputFileName,
           parameters: { ...valuesFileParams, ...params },
-          publishConfigs: {
-            default: { channels },
-          },
+          publishConfigs: [
+            {
+              id: DEFAULT_PUBLISH_CONFIG_ID,
+              channels,
+            },
+          ],
           ...extras,
         }],
       }
@@ -261,14 +266,17 @@ async function discoverReportsHelper(
       config: {},
       variables: {},
       reports: [{
-        name: reportName,
+        id: reportId,
         templateName,
         render: !noRender,
         outputFileName,
         parameters: params || {},
-        publishConfigs: {
-          default: { channels },
-        },
+        publishConfigs: [
+          {
+            id: DEFAULT_PUBLISH_CONFIG_ID,
+            channels,
+          },
+        ],
         ...extras,
       }],
     }
@@ -294,12 +302,15 @@ async function discoverReportsHelper(
       config: {},
       variables: {},
       reports: [{
-        name: 'dashboard-report',
+        id: DEFAULT_DASHBOARD_REPORT_ID,
         dashboards: dashboardGuids,
         combinePdfs,
-        publishConfigs: {
-          default: { channels },
-        },
+        publishConfigs: [
+          {
+            id: DEFAULT_PUBLISH_CONFIG_ID,
+            channels,
+          },
+        ],
         ...extras,
       }],
     }
@@ -318,12 +329,15 @@ async function discoverReportsHelper(
       config: {},
       variables: {},
       reports: [{
-        name: DEFAULT_QUERY_REPORT_NAME,
+        id: DEFAULT_QUERY_REPORT_ID,
         query,
         outputFileName,
-        publishConfigs: {
-          default: { channels },
-        },
+        publishConfigs: [
+          {
+            id: DEFAULT_PUBLISH_CONFIG_ID,
+            channels,
+          },
+        ],
         ...extras,
       }],
     }

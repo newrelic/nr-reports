@@ -23,5 +23,5 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
 fi
 
 if [ -z "$AWS_REGION" ]; then
-    AWS_REGION=$(aws configure get region)
+  AWS_REGION=$(aws configure get region)
 fi

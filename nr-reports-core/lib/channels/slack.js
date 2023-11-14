@@ -85,6 +85,7 @@ async function buildMessage(context, report, channelConfig, output) {
 }
 
 async function postToSlack(context, manifest, report, channelConfig, output) {
+  const reportName = report.name || report.id
 
   /*
    * This channel only supports Slack webhooks, not the API. Files can not be
@@ -92,7 +93,7 @@ async function postToSlack(context, manifest, report, channelConfig, output) {
    */
   if (output.isFile()) {
     logger.warn(
-      `Skipping output for report ${report.name} because Slack webhook does not support file attachments.`,
+      `Skipping output for report ${reportName} because Slack webhook does not support file attachments.`,
     )
     return
   }
@@ -104,7 +105,7 @@ async function postToSlack(context, manifest, report, channelConfig, output) {
   const webhookUrl = getEnv(SLACK_WEBHOOK_URL)
 
   if (!webhookUrl) {
-    throw new Error('Missing Slack webhook URL')
+    throw new Error(`Missing Slack webhook URL for report ${reportName}.`)
   }
 
   /*

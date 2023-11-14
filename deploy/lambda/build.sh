@@ -2,11 +2,10 @@
 
 source $(dirname "$0")/init.sh
 
-FULL=0
-BUILD_TYPE=test
 PREFIX=
-IMAGE_NAME=
+FULL=0
 PUSH=0
+IMAGE_NAME=
 ECR_IMAGE_REPO=
 ECR_IMAGE_TAG=
 
@@ -14,9 +13,6 @@ while [ $# -ne 0 ]; do
     case "$1" in
         --full)
             FULL=1; shift;
-            ;;
-        --prod)
-            BUILD_TYPE=prod; shift;
             ;;
         --push)
             PUSH=1; shift;

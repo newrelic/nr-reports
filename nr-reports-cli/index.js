@@ -38,7 +38,7 @@ function configureOptions() {
   y.wrap(y.terminalWidth())
     .usage(`Usage:
 
-$0 -f <manifest-file> -r <report-names>
+$0 -f <manifest-file> [-r <report-ids>] [-u <publish-config-ids>]
 $0 -n <name> [-v <values-file>] [-p <template-path>] [-c <channel-ids>] [-o <output-file>] [--skip-render] [--full-chrome]
 $0 -d <dashboard-ids> [-c <channel-ids>]
 $0 -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
@@ -61,6 +61,7 @@ Refer to the "Options" section or documentation for additional options and
 details.`)
     .example('$0 -f manifest-file.json', 'run reports defined in manifest-file.json')
     .example('$0 -f manifest-file.json -r hello-world,dashboards', 'run the reports named hello-world and dashboards defined in manifest-file.json')
+    .example('$0 -f manifest-file.json -p send-email,upload-s3', 'run the reports defined in manifest-file.json and use the first publish configuration that matches the IDs send-email, upload-s3, or default')
     .example('$0 -n template.html', 'run a template report using the template named template.html')
     .example('$0 -n template.html -v values.json', 'run a template report using the template named template.html with template parameters from the file values.json')
     .example('$0 -n template.html --skip-render -c email,s3', 'run a template report using the template named template.html but do not render it as a PDF and publish output to email and s3 channels')
@@ -78,6 +79,13 @@ details.`)
       describe: `Run only the reports with report names listed in <report-names>. Takes precedence over \`-n\`, \`-d\`, and \`-q\` and their corresponding environment variables. Ignored if a manifest file is not specified.
 
     The \`REPORT_NAMES\` environment variable may also be used to specify report names. If both are specified, the \`-r\` option takes precedence.
+    `,
+    }).option('u', {
+      alias: 'publish-config-ids',
+      type: 'string',
+      describe: `Publish report outputs using the first publish configuration with an ID that matches an ID in the list <publish-config-ids> for each report. If no match is found the publish configuration with the ID \`default\` is used. Ignored if a manifest file is not specified.
+
+    The \`PUBLISH_CONFIG_IDS\` environment variable may also be used to specify publish configuration ids. If both are specified, the \`-u\` option takes precedence.
     `,
     })
     .option('n', {
@@ -203,7 +211,8 @@ async function main() {
 
   const options = {
       manifestFilePath: argv.f,
-      reportNames: argv.r,
+      reportIds: argv.r,
+      publishConfigIds: argv.u,
       templateName: argv.n,
       templatePath: argv.p,
       valuesFilePath: argv.v,

@@ -1,6 +1,9 @@
 'use strict'
 
-const { publish } = require('./channels'),
+const {
+    publish,
+    getPublishConfigIds,
+  } = require('./channels'),
   {
     LOG_LEVEL_DEBUG,
     createLogger,
@@ -23,26 +26,6 @@ const { publish } = require('./channels'),
   } = require('./generators')
 
 const logger = createLogger('engine')
-
-function getPublishConfig(options, report) {
-  const publishConfigName = getOption(
-    options,
-    'publishConfigName',
-    'PUBLISH_CONFIG_NAME',
-    'default',
-  )
-
-  const { publishConfigs } = report
-
-  if (publishConfigs && publishConfigs[publishConfigName]) {
-    return publishConfigs[publishConfigName]
-  }
-
-  throw new Error(
-    `No publish configuration found with publish configuration name ${publishConfigName}`,
-  )
-}
-
 
 class Engine {
   constructor(secrets, defaultChannelType, callbacks) {
@@ -82,9 +65,11 @@ class Engine {
 
       const reportIndex = manifest.reports.findIndex(shouldRender),
         templatePath = getOption(options, 'templatePath', 'TEMPLATE_PATH'),
+        publishConfigIds = getPublishConfigIds(options),
         context = this.context.context({
           browser: null,
           templatePath,
+          publishConfigIds,
           ...manifest.variables,
         })
 
@@ -106,11 +91,12 @@ class Engine {
 
       await withTempDir(async tempDir => {
         for (let index = 0; index < manifest.reports.length; index += 1) {
-          const report = manifest.reports[index]
+          const report = manifest.reports[index],
+            reportName = report.name || report.id || index
 
           let generator
 
-          logger.debug(`Running report ${report.name || index}...`)
+          logger.debug(`Running report ${reportName}...`)
 
           if (report.templateName) {
             generator = templateGenerator
@@ -121,7 +107,7 @@ class Engine {
           }
 
           if (!generator) {
-            logger.warn(`Unrecognized report schema or missing required properties for report ${report.name || index}. Ignoring.`)
+            logger.warn(`Unrecognized report schema or missing required properties for report ${reportName}. Ignoring.`)
             continue
           }
 
@@ -142,27 +128,18 @@ class Engine {
           )
 
           if (output) {
-
-            // @TODO This needs some work. If there is more than report, should
-            // we allow specifying a publish config name per report? Or is it
-            // convenient to just specify one config as a common config across
-            // many reports?
-
-            const publishConfig = getPublishConfig(options, report)
-
             await publish(
               context,
               manifest,
               report,
               output,
-              publishConfig,
               tempDir,
             )
           } else {
-            logger.warn(`No output generated for report ${report.name || index}.`)
+            logger.warn(`No output generated for report ${reportName}.`)
           }
 
-          logger.debug(`Completed report ${report.name || index}.`)
+          logger.debug(`Completed report ${reportName}.`)
         }
       })
     } finally {

@@ -6,7 +6,8 @@ const fs = require('fs'),
   YAML = require('yaml'),
   { stringify } = require('csv-stringify'),
   showdown = require('showdown'),
-  { createLogger, logTrace } = require('./logger')
+  { createLogger, logTrace } = require('./logger'),
+  { DEFAULT_PUBLISH_CONFIG_ID } = require('./constants')
 
 const logger = createLogger('util'),
   ENDPOINTS = {
@@ -221,9 +222,11 @@ function isYaml(fileName) {
 
 function normalizeManifestHelper(manifest, defaultChannel) {
   manifest.reports.forEach((report, index) => {
-    if (!report.name) {
-      throw new Error(`Report ${index} must include a 'name' property`)
+    if (!report.id) {
+      throw new Error(`Report ${index} must include an 'id' property`)
     }
+
+    const reportName = report.name || report.id
 
     if (report.templateName) {
       if (!report.parameters) {
@@ -236,14 +239,21 @@ function normalizeManifestHelper(manifest, defaultChannel) {
     }
 
     if (
-      !report.publishConfigs ||
-      Object.keys(report.publishConfigs).length === 0
+      !Array.isArray(report.publishConfigs) ||
+      report.publishConfigs.length === 0
     ) {
-      report.publishConfigs = {
-        default: {
+      report.publishConfigs = [
+        {
+          id: DEFAULT_PUBLISH_CONFIG_ID,
           channels: [getDefaultChannel(report, defaultChannel)],
         },
-      }
+      ]
+    } else {
+      report.publishConfigs.forEach((publishConfig, jindex) => {
+        if (!publishConfig.id) {
+          throw new Error(`Publish configuration with index ${jindex} for report ${reportName} must include an 'id' property`)
+        }
+      })
     }
   })
 
