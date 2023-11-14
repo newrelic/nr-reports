@@ -38,7 +38,7 @@ function getPublishConfigurationItems(reports) {
 
       return true
     }).forEach(publishConfig => acc.push({
-      scheduleName: `${id}_${publishConfig.id}`,
+      scheduleName: `${id}.${publishConfig.id}`,
       report: r,
       publishConfigId: publishConfig.id,
     }))

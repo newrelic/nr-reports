@@ -20,6 +20,7 @@ import {
   StorageContext,
 } from '../../../contexts'
 import { useManifestWriter } from '../../../hooks'
+import { newReport } from '../../../model'
 import { clone } from '../../../utils'
 import {
   SYMBOLS,
@@ -29,6 +30,7 @@ import {
 function reportToFormState(report) {
   return {
     error: null,
+    id: report.id,
     name: report.name,
     type: report.query ? (
       SYMBOLS.REPORT_TYPES.QUERY
@@ -45,6 +47,7 @@ function reportToFormState(report) {
 
 function reportFromFormState(formState) {
   const report = {
+    id: formState.id,
     name: formState.name,
     lastModifiedDate: new Date().getTime(),
     schedule: formState.schedule,
@@ -76,13 +79,7 @@ export default function EditReportScreen() {
     { update } = useManifestWriter(),
     report = selectedReportIndex >= 0 ? (
       manifest.reports[selectedReportIndex]
-    ) : ({
-      name: '',
-      lastModifiedDate: 0,
-      schedule: '',
-      dashboards: [],
-      channels: [],
-    }),
+    ) : newReport(),
     prevState = useMemo(() => {
       return subFormState || reportToFormState(report)
     }, [subFormState, report]),

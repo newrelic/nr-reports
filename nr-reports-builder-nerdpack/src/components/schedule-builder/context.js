@@ -167,18 +167,19 @@ function getInitialState(initialState, schedule, settings) {
     } = settings,
     initState = {
       ...initialState,
-      expr: schedule,
-      model: cron.parse(schedule),
       mode: mode || 'basic',
     }
+
+  if (schedule) {
+    initState.expr = schedule,
+    initState.model = cron.parse(schedule)
+  }
 
   if (mode === 'basic') {
     initState.basicFormState = formState
   } else if (mode === 'advanced') {
     initState.advancedFormState = formState
   }
-
-  console.log(initState)
 
   return initState
 }

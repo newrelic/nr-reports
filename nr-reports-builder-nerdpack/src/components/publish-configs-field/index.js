@@ -21,7 +21,7 @@ import { generateShortScheduleDetails } from '../../utils'
 
 function PublishConfigsTable({
   metadata,
-  configs,
+  publishConfigs,
   onEditConfig,
   onDeleteConfig,
 }) {
@@ -29,29 +29,30 @@ function PublishConfigsTable({
       return [
         {
           label: UI_CONTENT.GLOBAL.ACTION_LABEL_EDIT,
-          onClick: (e, { item, index }) => onEditConfig(item)
+          onClick: (e, { item, index }) => onEditConfig(index)
         },
         {
           label: UI_CONTENT.GLOBAL.ACTION_LABEL_DELETE,
           type: TableRow.ACTION_TYPE.DESTRUCTIVE,
-          onClick: (evt, { item, index }) => onDeleteConfig(item),
+          onClick: (evt, { item, index }) => onDeleteConfig(index),
         },
       ];
     }, [onEditConfig, onDeleteConfig]),
     renderRow = useCallback(({ item }) => {
-      const config = configs[item]
-
       return (
         <TableRow actions={getActions}>
-          <TableRowCell>{ item }</TableRowCell>
-          <TableRowCell>{ generateShortScheduleDetails(config.schedule, metadata[item]['schedule-builder']) }</TableRowCell>
-          <TableRowCell>{ config.channels.length }</TableRowCell>
+          <TableRowCell>{ item.name }</TableRowCell>
+          <TableRowCell>{ generateShortScheduleDetails(
+            item.schedule,
+            metadata[`publishConfig-${item.id}`]['schedule-builder'])
+          }</TableRowCell>
+          <TableRowCell>{ item.channels.length }</TableRowCell>
         </TableRow>
       )
-    }, [configs, getActions])
+    }, [publishConfigs, getActions])
 
   return (
-    <Table items={Object.keys(configs)}>
+    <Table items={publishConfigs}>
       <TableHeader>
         <TableHeaderCell>
           Name
@@ -74,21 +75,18 @@ export default function PublishConfigurationsField({
 }) {
   const { navigate } = useContext(RouteDispatchContext),
     handleAddConfig = useCallback(() => {
-      navigate(ROUTES.EDIT_PUBLISH_CONFIGS, { formState, selectedConfig: null })
+      navigate(ROUTES.EDIT_PUBLISH_CONFIGS, { formState, selectedConfig: -1 })
     }, [navigate, formState]),
-    handleEditConfig = useCallback(name => {
+    handleEditConfig = useCallback(selectedConfig => {
       navigate(ROUTES.EDIT_PUBLISH_CONFIGS, {
         formState,
-        selectedConfig: name,
+        selectedConfig,
       })
     }, [navigate, formState]),
-    handleDeleteConfig = useCallback(name => {
-      const newConfigs = Object.keys(formState.publishConfigs).filter(
-        k => k !== name,
-      ).reduce((acc, k) => {
-        acc[k] = formState.publishConfigs[k]
-        return acc
-      }, {})
+    handleDeleteConfig = useCallback(selectedConfig => {
+      const newConfigs = [ ...formState.publishConfigs ]
+
+      newConfigs.splice(selectedConfig, 1)
 
       updateFormState({ publishConfigs: newConfigs })
     }, [formState, updateFormState])
@@ -106,11 +104,11 @@ export default function PublishConfigurationsField({
           <StackItem grow>
           {
             formState.publishConfigs && (
-              Object.keys(formState.publishConfigs).length > 0
+              formState.publishConfigs.length > 0
             ) ? (
               <PublishConfigsTable
                 metadata={formState.metadata}
-                configs={formState.publishConfigs}
+                publishConfigs={formState.publishConfigs}
                 onEditConfig={handleEditConfig}
                 onDeleteConfig={handleDeleteConfig}
               />

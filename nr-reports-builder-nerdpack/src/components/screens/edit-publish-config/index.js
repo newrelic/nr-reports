@@ -17,59 +17,53 @@ import {
   ROUTES,
   UI_CONTENT,
 } from '../../../constants'
+import { newPublishConfig, newPublishConfigMetadata } from '../../../model'
 import { clone } from '../../../utils'
 import ScheduleField from '../../schedule-field'
 
 function formStateFromPublishConfig(parentFormState, selectedConfig) {
   const publishConfig = (
-    parentFormState.publishConfigs[selectedConfig] || {
-      schedule: '* * * * ? *',
-      channels: [],
-    }
+    selectedConfig >= 0 ? (
+      parentFormState.publishConfigs[selectedConfig]
+    ) : newPublishConfig()
   )
 
   return {
     parentFormState: clone(parentFormState),
-    name: selectedConfig || '',
-    metadata: parentFormState.metadata[selectedConfig] || {},
+    metadata: (
+      parentFormState.metadata[`publishConfig-${publishConfig.id}`] || (
+        newPublishConfigMetadata()
+      )
+    ),
     ...publishConfig,
   }
 }
 
 function publishConfigFromFormState(formState, selectedConfig) {
-  const prevConfigs = formState.parentFormState.publishConfigs
-  let publishConfigs
-
-  if (selectedConfig && selectedConfig !== formState.name) {
-    publishConfigs = (
-      Object.keys(prevConfigs).filter(k => k !== selectedConfig).reduce(
-        (acc, k) => {
-          acc[k] = prevConfigs[k]
-          return acc
-        },
-        {}
-      )
-    )
-
-    publishConfigs[formState.name] = {
+  const prevConfigs = formState.parentFormState.publishConfigs,
+    publishConfig = {
+      id: formState.id,
+      name: formState.name,
       schedule: formState.schedule,
       channels: formState.channels,
     }
+  let publishConfigs
+
+  if (selectedConfig >= 0) {
+    publishConfigs = [ ...prevConfigs ]
+    publishConfigs[selectedConfig] = publishConfig
   } else {
-    publishConfigs = {
+    publishConfigs = [
       ...prevConfigs,
-      [formState.name]: {
-        schedule: formState.schedule,
-        channels: formState.channels,
-      }
-    }
+      publishConfig
+    ]
   }
 
   return {
     ...formState.parentFormState,
     metadata: {
       ...formState.parentFormState.metadata,
-      [formState.name]: formState.metadata,
+      [`publishConfig-${publishConfig.id}`]: formState.metadata,
     },
     publishConfigs,
     dirty: formState.dirty,

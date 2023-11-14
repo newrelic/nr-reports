@@ -1,5 +1,7 @@
 import { SYMBOLS, UI_CONTENT } from "./constants"
 
+const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.'
+
 export function clone(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
@@ -192,29 +194,40 @@ function generateShortBasicScheduleDetails(settings) {
 }
 
 export function generateFullScheduleDetails(schedule, settings) {
-  const { mode, formState } = settings
+  if (!schedule) {
+    return 'No schedule defined'
+  }
 
-  if (mode === 'manual') {
+  if (!settings || settings.mode === 'manual') {
     return `This report will run as specified by the custom CRON expression "${schedule}".`
   }
 
-  if (mode === 'basic') {
-    return generateBasicScheduleDetails(formState)
-  }
+  const { mode, formState } = settings
 
-  return 'No schedule defined'
+  return generateBasicScheduleDetails(formState)
 }
 
 export function generateShortScheduleDetails(schedule, settings) {
-  const { mode, formState } = settings
+  if (!schedule) {
+    return 'No schedule defined'
+  }
 
-  if (mode === 'manual') {
+  if (!settings || settings.mode === 'manual') {
     return `Custom: ${schedule}`
   }
 
-  if (mode === 'basic') {
-    return generateShortBasicScheduleDetails(formState)
+  const { mode, formState } = settings
+
+  return generateShortBasicScheduleDetails(formState)
+}
+
+export function generateRandomString(len) {
+  const charsLength = CHARS.length
+  let chars = ''
+
+  for (let index = 0; index < len; index += 1) {
+    chars += CHARS.charAt(Math.floor(Math.random() * charsLength))
   }
 
-  return 'No schedule defined'
+  return chars
 }
