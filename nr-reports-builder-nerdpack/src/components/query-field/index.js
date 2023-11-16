@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import {
   useAccountsQuery,
@@ -12,13 +12,16 @@ import {
 import MultiSelect2 from '../multi-select-2'
 import CustomField from '../custom-field'
 import NrqlEditor2 from '../nrql-editor-2'
+import {
+  accountIdsNotEmptyValidNumbers,
+  queryNotEmpty,
+} from '../../validations'
+import { FormContext, Validation } from '../../contexts/form'
 import { UI_CONTENT } from '../../constants'
 
-export default function QueryField({
-  formState,
-  updateFormState,
-}) {
-  const { accountIds, accounts } = formState,
+export default function QueryField() {
+  const { formState, updateFormState } = useContext(FormContext),
+    { accountIds, accounts } = formState,
     skip = formState.accounts ? true : false,
     {
       loading,
@@ -67,49 +70,62 @@ export default function QueryField({
       <CustomField
         label={UI_CONTENT.QUERY_FORM.FIELD_LABEL_ACCOUNTS}
       >
-        {
-          loading ? (
-            <Spinner />
-          ) : (
-            <Stack
-              directionType={Stack.DIRECTION_TYPE.VERTICAL}
-              className="accounts"
-            >
-            {
-              accounts && (
-                <StackItem className="accounts-multiselect">
-                  <MultiSelect2
-                    items={accounts}
-                    value={accountIds}
-                    icon={Icon.TYPE.INTERFACE__CHEVRON__CHEVRON_BOTTOM__V_ALTERNATE}
-                    placeholderText={UI_CONTENT.QUERY_FORM.ACCOUNTS_FIELD_PLACEHOLDER}
-                    onChange={handleChangeAccounts}
-                  />
-                </StackItem>
-              )
-            }
-            </Stack>
-          )
-        }
+        <Validation
+          name="accountIds"
+          validation={accountIdsNotEmptyValidNumbers}
+        >
+          {
+            loading ? (
+              <Spinner />
+            ) : (
+              <Stack
+                directionType={Stack.DIRECTION_TYPE.VERTICAL}
+                className="accounts"
+              >
+              {
+                accounts && (
+                  <StackItem className="accounts-multiselect">
+                    <MultiSelect2
+                      items={accounts}
+                      value={accountIds}
+                      showChips={false}
+                      icon={Icon.TYPE.INTERFACE__CHEVRON__CHEVRON_BOTTOM}
+                      placeholderText={UI_CONTENT.QUERY_FORM.ACCOUNTS_FIELD_PLACEHOLDER}
+                      onChange={handleChangeAccounts}
+                      invalid={formState.validations?.accountIds}
+                    />
+                  </StackItem>
+                )
+              }
+              </Stack>
+            )
+          }
+        </Validation>
       </CustomField>
       <CustomField
         label={UI_CONTENT.QUERY_FORM.FIELD_LABEL_QUERY}
       >
-        {
-          loading ? (
-            <Spinner />
-          ) : (
-            <Grid
-            >
-              <GridItem columnSpan={12}>
-                <NrqlEditor2
-                  nrql={formState.query || ''}
-                  onChange={handleChangeQuery}
-                />
-              </GridItem>
-            </Grid>
-          )
-        }
+        <Validation
+          name="query"
+          validation={queryNotEmpty}
+        >
+          {
+            loading ? (
+              <Spinner />
+            ) : (
+              <Grid
+              >
+                <GridItem columnSpan={12}>
+                  <NrqlEditor2
+                    nrql={formState.query || ''}
+                    invalid={formState.validations?.query}
+                    onChange={handleChangeQuery}
+                  />
+                </GridItem>
+              </Grid>
+            )
+          }
+        </Validation>
       </CustomField>
     </div>
   )

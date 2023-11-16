@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState} from 'react'
+import React, { useCallback, useContext, useEffect, useState} from 'react'
 import PropTypes from 'prop-types'
 import {
   BlockText,
@@ -15,6 +15,7 @@ import {
 } from 'nr1'
 import CustomField from '../custom-field'
 import DashboardPicker from '../dashboard-picker'
+import { FormContext } from '../../contexts/form'
 import {
   UI_CONTENT,
 } from '../../constants'
@@ -71,10 +72,9 @@ function DashboardsTable({ dashboards, onRemove }) {
 
 export default function DashboardsField({
   report,
-  formState,
-  updateFormState,
 }) {
-  const [showPicker, setShowPicker] = useState(false),
+  const { formState, updateFormState } = useContext(FormContext),
+    [showPicker, setShowPicker] = useState(false),
     reportDashboards = !formState.loadedDashboards && report.dashboards,
     skip = !reportDashboards,
     {

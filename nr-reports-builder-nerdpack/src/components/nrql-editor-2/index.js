@@ -24,6 +24,7 @@ const lexer = (nrql) =>
 export default function NrqlEditor2({
   nrql,
   onChange,
+  invalid,
 }) {
   const [displayNode, setDisplayNode] = useState(),
     scrollHandler = useCallback(
@@ -35,24 +36,34 @@ export default function NrqlEditor2({
     displayNodeHandler = useCallback((node) => setDisplayNode(node), [])
 
   return (
-    <div className="nrql-editor">
-      <div className="color-coded-nrql">
-        <div className="editor">
-          <textarea
-            className="u-unstyledInput entry"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck="false"
-            value={nrql}
-            onChange={onChange}
-            onScroll={scrollHandler}
-            placeholder={UI_CONTENT.NRQL_EDITOR.QUERY_FIELD_PLACEHOLDER}
-          />
-          <pre ref={displayNodeHandler} className="display">
-            <code dangerouslySetInnerHTML={{ __html: lexer(nrql) }} />
-          </pre>
+    <>
+      <div className="nrql-editor">
+        <div className="color-coded-nrql">
+          <div className="editor">
+            <textarea
+              className="u-unstyledInput entry"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck="false"
+              value={nrql}
+              onChange={onChange}
+              onScroll={scrollHandler}
+              placeholder={UI_CONTENT.NRQL_EDITOR.QUERY_FIELD_PLACEHOLDER}
+            />
+            <pre ref={displayNodeHandler} className="display">
+              <code dangerouslySetInnerHTML={{ __html: lexer(nrql) }} />
+            </pre>
+          </div>
         </div>
       </div>
-    </div>
+
+      {
+        invalid && (
+          <div className="errorMessage">
+            {invalid}
+          </div>
+        )
+      }
+    </>
   )
 }

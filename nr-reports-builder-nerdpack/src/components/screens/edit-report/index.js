@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   Button,
@@ -21,11 +21,18 @@ import {
 } from '../../../contexts'
 import { useManifestWriter } from '../../../hooks'
 import { newReport } from '../../../model'
-import { clone } from '../../../utils'
+import {
+  nameNotEmpty,
+  typeIsValid,
+} from '../../../validations'
+import {
+  clone,
+} from '../../../utils'
 import {
   SYMBOLS,
   UI_CONTENT,
 } from '../../../constants'
+import { FormContext, Validation, withFormContext } from '../../../contexts/form'
 
 function reportToFormState(report) {
   return {
@@ -42,6 +49,7 @@ function reportToFormState(report) {
     metadata: report.metadata || {},
     loadedDashboards: report.dashboards ? false : true,
     dirty: false,
+    valid: true,
   }
 }
 
@@ -65,33 +73,23 @@ function reportFromFormState(formState) {
   return report
 }
 
-export default function EditReportScreen() {
+function EditReportScreen({ report, selectedReportIndex }) {
   const {
-      params: { accountId, selectedReportIndex, formState: subFormState }
-    } = useContext(RouteContext),
+      formState,
+      updateFormState,
+      validateFormState,
+    } = useContext(FormContext),
     { home } = useContext(RouteDispatchContext),
     {
-      manifest,
       writing,
       writeError,
       writeFinished,
     } = useContext(StorageContext),
     { update } = useManifestWriter(),
-    report = selectedReportIndex >= 0 ? (
-      manifest.reports[selectedReportIndex]
-    ) : newReport(),
-    prevState = useMemo(() => {
-      return subFormState || reportToFormState(report)
-    }, [subFormState, report]),
-    [formState, setFormState] = useState(prevState),
+    writeFormState = useCallback(formState => {
+      update(reportFromFormState(formState), selectedReportIndex)
+    }, [update, selectedReportIndex]),
     [closeOnSave, setCloseOnSave] = useState(false),
-    updateFormState = useCallback((updates, dirty) => {
-      setFormState({
-        ...formState,
-        ...updates,
-        dirty: typeof dirty === 'undefined' ? true : dirty
-      })
-    }, [formState, setFormState] ),
     handleChangeName = useCallback(e => {
       updateFormState({ name: e.target.value })
     }, [updateFormState]),
@@ -99,8 +97,8 @@ export default function EditReportScreen() {
       updateFormState({ type: v })
     }, [updateFormState]),
     handleSave = useCallback(() => {
-      update(reportFromFormState(formState), selectedReportIndex)
-    }, [update, selectedReportIndex, formState]),
+      validateFormState(writeFormState)
+    }, [validateFormState, writeFormState]),
     handleClose = useCallback(() => {
       if (formState.dirty) {
         if (!confirm(UI_CONTENT.EDIT_REPORT_SCREEN.CANCEL_PROMPT)) {
@@ -161,30 +159,31 @@ export default function EditReportScreen() {
   }, [error, writeError, writeFinished, formState.name, updateFormState, handleSave, handleClose, home])
 
   return (
-      <Form
-        className="edit-report-form"
-        spacingType={[Form.SPACING_TYPE.LARGE]}
+    <Form
+      className="edit-report-form"
+      spacingType={[Form.SPACING_TYPE.LARGE]}
+    >
+      <HeadingText
+        type={HeadingText.TYPE.HEADING_2}
+        spacingType={[
+          HeadingText.SPACING_TYPE.OMIT,
+          HeadingText.SPACING_TYPE.OMIT,
+          HeadingText.SPACING_TYPE.LARGE,
+          HeadingText.SPACING_TYPE.OMIT,
+        ]}
       >
-        <HeadingText
-          type={HeadingText.TYPE.HEADING_2}
-          spacingType={[
-            HeadingText.SPACING_TYPE.OMIT,
-            HeadingText.SPACING_TYPE.OMIT,
-            HeadingText.SPACING_TYPE.LARGE,
-            HeadingText.SPACING_TYPE.OMIT,
-          ]}
-        >
-          {UI_CONTENT.EDIT_REPORT_FORM.HEADING}
-        </HeadingText>
+        {UI_CONTENT.EDIT_REPORT_FORM.HEADING}
+      </HeadingText>
 
-        <Stack
-          spacingType={[
-            Stack.SPACING_TYPE.NONE,
-          ]}
-          directionType={Stack.DIRECTION_TYPE.VERTICAL}
-          fullWidth
-        >
-          <StackItem>
+      <Stack
+        spacingType={[
+          Stack.SPACING_TYPE.NONE,
+        ]}
+        directionType={Stack.DIRECTION_TYPE.VERTICAL}
+        fullWidth
+      >
+        <StackItem>
+          <Validation name="name" validation={nameNotEmpty}>
             <TextField
               placeholder={
                 UI_CONTENT.EDIT_REPORT_FORM.REPORT_NAME_FIELD_PLACEHOLDER
@@ -192,14 +191,18 @@ export default function EditReportScreen() {
               label={UI_CONTENT.EDIT_REPORT_FORM.FIELD_LABEL_NAME}
               value={formState.name}
               onChange={handleChangeName}
+              invalid={formState.validations?.name}
             />
-          </StackItem>
+          </Validation>
+        </StackItem>
 
-          <StackItem>
+        <StackItem>
+          <Validation name="type" validation={typeIsValid}>
             <Select
               label={UI_CONTENT.EDIT_REPORT_FORM.FIELD_LABEL_TYPE}
               onChange={handleChangeType}
               value={formState.type}
+              invalid={formState.validations?.type}
             >
               <SelectItem value={SYMBOLS.REPORT_TYPES.DASHBOARD}>
                 {UI_CONTENT.EDIT_REPORT_FORM.REPORT_TYPE_LABEL_DASHBOARD}
@@ -208,85 +211,110 @@ export default function EditReportScreen() {
                 {UI_CONTENT.EDIT_REPORT_FORM.REPORT_TYPE_LABEL_QUERY}
               </SelectItem>
             </Select>
-          </StackItem>
+          </Validation>
+        </StackItem>
 
-          <StackItem className="form-wrapper">
-            {
-              formState.type === SYMBOLS.REPORT_TYPES.DASHBOARD ? (
-                <DashboardsField
-                  report={report}
-                  formState={formState}
-                  updateFormState={updateFormState}
-                />
-              ) : (
-                <QueryField
-                  report={report}
-                  formState={formState}
-                  updateFormState={updateFormState}
-                />
-              )
-            }
-          </StackItem>
+        <StackItem className="form-wrapper">
+          {
+            formState.type === SYMBOLS.REPORT_TYPES.DASHBOARD ? (
+              <DashboardsField
+                report={report}
+                formState={formState}
+                updateFormState={updateFormState}
+              />
+            ) : (
+              <QueryField
+                report={report}
+                formState={formState}
+                updateFormState={updateFormState}
+              />
+            )
+          }
+        </StackItem>
 
-          <StackItem className="form-wrapper">
-            <PublishConfigurationsField
-              accountId={accountId}
-              formState={formState}
-              updateFormState={updateFormState}
-            />
-          </StackItem>
+        <StackItem className="form-wrapper">
+          <PublishConfigurationsField
+            //accountId={accountId}
+            formState={formState}
+            updateFormState={updateFormState}
+          />
+        </StackItem>
 
-          <StackItem>
-            <Stack
-              spacingType={[
-                Stack.SPACING_TYPE.LARGE,
-                Stack.SPACING_TYPE.NONE,
-              ]}
-            >
-              <StackItem>
-                <Button
-                  onClick={handleSave}
-                  type={Button.TYPE.PRIMARY}
-                  loading={writing}
-                  spacingType={[
-                    Button.SPACING_TYPE.NONE,
-                    Button.SPACING_TYPE.SMALL,
-                    Button.SPACING_TYPE.NONE,
-                    Button.SPACING_TYPE.NONE,
-                  ]}
-                >
-                  {UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE}
-                </Button>
-                <Button
-                  onClick={handleSaveAndClose}
-                  type={Button.TYPE.SECONDARY}
-                  loading={writing}
-                  spacingType={[
-                    Button.SPACING_TYPE.NONE,
-                    Button.SPACING_TYPE.SMALL,
-                    Button.SPACING_TYPE.NONE,
-                    Button.SPACING_TYPE.NONE,
-                  ]}
-                >
-                  {UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE_AND_CLOSE}
-                </Button>
-                <Button
-                  onClick={handleClose}
-                  type={Button.TYPE.TERTIARY}
-                  spacingType={[
-                    Button.SPACING_TYPE.NONE,
-                    Button.SPACING_TYPE.SMALL,
-                    Button.SPACING_TYPE.NONE,
-                    Button.SPACING_TYPE.NONE,
-                  ]}
-                >
-                  {UI_CONTENT.GLOBAL.ACTION_LABEL_CLOSE}
-                </Button>
-              </StackItem>
-            </Stack>
-          </StackItem>
+        <StackItem>
+          <Stack
+            spacingType={[
+              Stack.SPACING_TYPE.LARGE,
+              Stack.SPACING_TYPE.NONE,
+            ]}
+          >
+            <StackItem>
+              <Button
+                onClick={handleSave}
+                type={Button.TYPE.PRIMARY}
+                loading={writing}
+                spacingType={[
+                  Button.SPACING_TYPE.NONE,
+                  Button.SPACING_TYPE.SMALL,
+                  Button.SPACING_TYPE.NONE,
+                  Button.SPACING_TYPE.NONE,
+                ]}
+              >
+                {UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE}
+              </Button>
+              <Button
+                onClick={handleSaveAndClose}
+                type={Button.TYPE.SECONDARY}
+                loading={writing}
+                spacingType={[
+                  Button.SPACING_TYPE.NONE,
+                  Button.SPACING_TYPE.SMALL,
+                  Button.SPACING_TYPE.NONE,
+                  Button.SPACING_TYPE.NONE,
+                ]}
+              >
+                {UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE_AND_CLOSE}
+              </Button>
+              <Button
+                onClick={handleClose}
+                type={Button.TYPE.TERTIARY}
+                spacingType={[
+                  Button.SPACING_TYPE.NONE,
+                  Button.SPACING_TYPE.SMALL,
+                  Button.SPACING_TYPE.NONE,
+                  Button.SPACING_TYPE.NONE,
+                ]}
+              >
+                {UI_CONTENT.GLOBAL.ACTION_LABEL_CLOSE}
+              </Button>
+            </StackItem>
+          </Stack>
+        </StackItem>
 
-        </Stack>
-      </Form>
+      </Stack>
+    </Form>
+  )
+}
+
+export default function EditReportScreenWrapper(props) {
+  const {
+      params: { selectedReportIndex }
+    } = useContext(RouteContext),
+    {
+      manifest,
+    } = useContext(StorageContext),
+    report = selectedReportIndex >= 0 ? (
+      manifest.reports[selectedReportIndex]
+    ) : newReport(),
+    initFormState = useCallback(() => {
+      return reportToFormState(report)
+    }, [report])
+
+  return withFormContext(
+    <EditReportScreen
+      {...props}
+      report={report}
+      selectedReportIndex={selectedReportIndex}
+    />,
+    initFormState,
   )
 }

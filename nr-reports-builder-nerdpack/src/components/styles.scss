@@ -23,3 +23,8 @@
 @import './screens/edit-publish-config/styles.scss';
 @import './screens/edit-report/styles.scss';
 @import './screens/home/styles.scss';
+
+.errorMessage {
+    color: #DF2D24;
+    margin: 4px 0;
+}

@@ -31,6 +31,7 @@ export default function MultiSelect2({
   icon = NO_ICON,
   showChips = true,
   placeholderText = '',
+  invalid = '',
   onChange,
 }) {
   const thisComponentRef = useRef(),
@@ -104,8 +105,9 @@ export default function MultiSelect2({
           className={`input ${!value.length ? 'placeholder' : ''}`}
           onClick={showItemsListHandler}
         >
+          { (value.length === 0) && <div>{placeholderText}</div> }
           {
-            showChips && value.map((item, i) => (
+            value.length > 0 && showChips && value.map((item, i) => (
               <Label
                 key={i}
                 value={item.label}
@@ -113,7 +115,13 @@ export default function MultiSelect2({
               />
             ))
           }
-          {placeholderText}
+          {
+            value.length > 0 && !showChips && (
+              <div className="values">
+                { value.map((item, i) => <span key={i}>{item.label}</span>) }
+              </div>
+            )
+          }
         </div>
         {
           icon && icon !== NO_ICON && (
@@ -130,6 +138,13 @@ export default function MultiSelect2({
           )
         }
       </div>
+      {
+        invalid && (
+          <div className="errorMessage">
+            {invalid}
+          </div>
+        )
+      }
       {showItemsList ? (
         <div className="list" style={{ width: itemsListWidth }}>
           {items.map((item, i) => (
