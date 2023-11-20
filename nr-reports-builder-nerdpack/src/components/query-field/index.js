@@ -15,12 +15,16 @@ import NrqlEditor2 from '../nrql-editor-2'
 import {
   accountIdsNotEmptyValidNumbers,
   queryNotEmpty,
-} from '../../validations'
+} from '../validations'
 import { FormContext, Validation } from '../../contexts/form'
 import { UI_CONTENT } from '../../constants'
 
 export default function QueryField() {
-  const { formState, updateFormState } = useContext(FormContext),
+  const {
+      formState,
+      dangerouslyUpdateFormState,
+      updateFormState,
+    } = useContext(FormContext),
     { accountIds, accounts } = formState,
     skip = formState.accounts ? true : false,
     {
@@ -39,7 +43,7 @@ export default function QueryField() {
 
   useEffect(() => {
     if (error) {
-      updateFormState({ error }, false)
+      dangerouslyUpdateFormState({ error })
       return
     }
 
@@ -58,10 +62,10 @@ export default function QueryField() {
           return account
         })
 
-      updateFormState({
+      dangerouslyUpdateFormState({
         accountIds: selectedAccounts,
         accounts,
-      }, false)
+      })
     }
   }, [skip, loading, data, error])
 

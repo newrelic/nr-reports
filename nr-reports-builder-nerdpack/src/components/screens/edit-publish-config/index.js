@@ -20,6 +20,8 @@ import {
 import { newPublishConfig, newPublishConfigMetadata } from '../../../model'
 import { clone } from '../../../utils'
 import ScheduleField from '../../schedule-field'
+import { FormContext, Validation, withFormContext } from '../../../contexts/form'
+import { nameNotEmpty } from '../../validations'
 
 function formStateFromPublishConfig(parentFormState, selectedConfig) {
   const publishConfig = (
@@ -36,6 +38,8 @@ function formStateFromPublishConfig(parentFormState, selectedConfig) {
       )
     ),
     ...publishConfig,
+    dirty: false,
+    valid: true,
   }
 }
 
@@ -70,52 +74,36 @@ function publishConfigFromFormState(formState, selectedConfig) {
   }
 }
 
-export default function EditPublishConfigScreen() {
+function EditPublishConfigScreen({ selectedConfig }) {
   const {
-      params: {
-        accountId,
-        formState: savedState,
-        selectedConfig,
-      },
-    } = useContext(RouteContext),
+      formState,
+      updateFormState,
+      validateFormState,
+    } = useContext(FormContext),
     { navigate } = useContext(RouteDispatchContext),
-    prevState = useMemo(() => {
-      if (savedState.parentFormState) {
-        return {
-          ...savedState,
-        }
-      }
-
-      return formStateFromPublishConfig(savedState, selectedConfig)
-    }, [savedState, selectedConfig]),
-    [formState, setFormState] = useState(prevState),
-    updateFormState = useCallback((updates, dirty) => {
-      setFormState({
-        ...formState,
-        ...updates,
-        dirty: typeof dirty === 'undefined' ? true : dirty,
-      })
-    }, [formState, setFormState] ),
-    handleSubmit = useCallback(() => {
+    navigateToEditReport = useCallback(() => {
       navigate(
         ROUTES.EDIT_REPORT,
         { formState: publishConfigFromFormState(formState, selectedConfig) }
       )
     }, [navigate, formState, selectedConfig]),
+    handleChangeName = useCallback(e => {
+      updateFormState({ name: e.target.value })
+    }, [updateFormState]),
+    handleSubmit = useCallback(() => {
+      validateFormState(navigateToEditReport)
+    }, [validateFormState, navigateToEditReport]),
     handleCancel = useCallback(() => {
       if (formState.dirty) {
-        if (!confirm(UI_CONTENT.EDIT_PUBLISH_CONFIGS_SCREEN.CANCEL_PROMPT)) {
+        if (!confirm(UI_CONTENT.EDIT_PUBLISH_CONFIG_SCREEN.CANCEL_PROMPT)) {
           return
         }
       }
 
       navigate(ROUTES.EDIT_REPORT, {
-        formState: savedState.parentFormState || savedState
+        formState: formState.parentFormState || formState
       })
-    }, [navigate, formState, savedState]),
-    handleChangeName = useCallback(e => {
-      updateFormState({ name: e.target.value })
-    }, [updateFormState])
+    }, [navigate, formState])
 
   return (
       <Form
@@ -131,7 +119,7 @@ export default function EditPublishConfigScreen() {
             HeadingText.SPACING_TYPE.OMIT,
           ]}
         >
-          {UI_CONTENT.EDIT_PUBLISH_CONFIGS_FORM.HEADING}
+          {UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.HEADING}
         </HeadingText>
 
         <Stack
@@ -143,29 +131,25 @@ export default function EditPublishConfigScreen() {
           fullWidth
         >
           <StackItem>
-            <TextField
-              placeholder={
-                UI_CONTENT.EDIT_PUBLISH_CONFIGS_FORM.CONFIG_NAME_FIELD_PLACEHOLDER
-              }
-              label={UI_CONTENT.EDIT_PUBLISH_CONFIGS_FORM.FIELD_LABEL_NAME}
-              value={formState.name}
-              onChange={handleChangeName}
-            />
+            <Validation name="name" validation={nameNotEmpty}>
+              <TextField
+                placeholder={
+                  UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.CONFIG_NAME_FIELD_PLACEHOLDER
+                }
+                label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_NAME}
+                value={formState.name}
+                onChange={handleChangeName}
+                invalid={formState.validations?.name}
+              />
+            </Validation>
           </StackItem>
 
           <StackItem>
-            <ScheduleField
-              formState={formState}
-              updateFormState={updateFormState}
-            />
+            <ScheduleField />
           </StackItem>
 
           <StackItem className="form-wrapper">
-            <ChannelsField
-              accountId={accountId}
-              formState={formState}
-              updateFormState={updateFormState}
-            />
+            <ChannelsField />
           </StackItem>
 
           <StackItem>
@@ -206,5 +190,29 @@ export default function EditPublishConfigScreen() {
 
         </Stack>
       </Form>
+  )
+}
+
+export default function EditPublishConfigScreenWrapper(props) {
+  const {
+      params: {
+        formState,
+        selectedConfig,
+      }
+    } = useContext(RouteContext),
+    initFormState = useCallback(() => formState.parentFormState ? (
+        { ...formState }
+      ) : (
+        formStateFromPublishConfig(formState, selectedConfig)
+      ),
+      [formState, selectedConfig]
+    )
+
+  return withFormContext(
+    <EditPublishConfigScreen
+      {...props}
+      selectedConfig={selectedConfig}
+    />,
+    initFormState,
   )
 }

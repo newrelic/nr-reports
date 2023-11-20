@@ -22,10 +22,13 @@ export class Validator {
     delete this.validations[name]
   }
 
-  validate(formState) {
-    const keys = Object.keys(formState),
-      results = {
-        valid: true,
+  validate(formState, updatedKeys = null) {
+    const keys = updatedKeys || Object.keys(formState),
+      results = updatedKeys ? {
+        valid: typeof formState.valid !== 'undefined' ? formState.valid : true,
+        validations: formState.validations || {},
+      } : {
+        valid : true,
         validations: {},
       }
 
@@ -56,31 +59,23 @@ export function Validation({ name, validation, children }) {
 
 function FormProvider({ initFormState, children }) {
   const validator = useMemo(() => new Validator(), []),
-    {
-      params: { formState: subFormState }
-    } = useContext(RouteContext),
-    prevState = useMemo(() => {
-      return subFormState || initFormState()
-    }, [subFormState, initFormState]),
-    [formState, setFormState] = useState(prevState),
-    updateFormState = useCallback((updates, dirty) => {
+    [formState, setFormState] = useState(initFormState()),
+    updateFormState = useCallback((updates, onSuccess) => {
       const newFormState = {
-        ...formState,
-        ...updates,
-        dirty: formState.dirty || (
-          typeof dirty === 'undefined' ? true : dirty
-        )
+          ...formState,
+          ...updates,
+          dirty: true
+        },
+        result = validator.validate(newFormState, Object.keys(updates))
+
+      if (result.valid && onSuccess) {
+        onSuccess(newFormState)
       }
 
-      if (newFormState.dirty) {
-        const result = validator.validate(newFormState)
-
-        for (const prop in result) {
-          newFormState[prop] = result[prop]
-        }
-      }
-
-      setFormState(newFormState)
+      setFormState(Object.assign(newFormState, result))
+    }, [formState, setFormState, validator]),
+    dangerouslyUpdateFormState = useCallback(updates => {
+      setFormState({ ...formState, ...updates })
     }, [formState, setFormState, validator]),
     validateFormState = useCallback(onSuccess => {
       const result = validator.validate(formState)
@@ -97,6 +92,7 @@ function FormProvider({ initFormState, children }) {
     <FormContext.Provider value={{
       formState,
       updateFormState,
+      dangerouslyUpdateFormState,
       validateFormState,
       validator,
     }}>

@@ -24,7 +24,7 @@ import { newReport } from '../../../model'
 import {
   nameNotEmpty,
   typeIsValid,
-} from '../../../validations'
+} from '../../validations'
 import {
   clone,
 } from '../../../utils'
@@ -67,7 +67,9 @@ function reportFromFormState(formState) {
     report.query = formState.query
     report.accountIds = formState.accountIds.map(a => a.value)
   } else {
-    report.dashboards = formState.dashboards.map(d => d[0])
+    report.dashboards = formState.dashboards ? (
+      formState.dashboards.map(d => d[0])
+    ) : []
   }
 
   return report
@@ -76,6 +78,7 @@ function reportFromFormState(formState) {
 function EditReportScreen({ report, selectedReportIndex }) {
   const {
       formState,
+      dangerouslyUpdateFormState,
       updateFormState,
       validateFormState,
     } = useContext(FormContext),
@@ -150,7 +153,7 @@ function EditReportScreen({ report, selectedReportIndex }) {
         type: Toast.TYPE.NORMAL,
       })
 
-      updateFormState({}, false)
+      dangerouslyUpdateFormState({})
 
       if (closeOnSave) {
         home()
@@ -234,7 +237,6 @@ function EditReportScreen({ report, selectedReportIndex }) {
 
         <StackItem className="form-wrapper">
           <PublishConfigurationsField
-            //accountId={accountId}
             formState={formState}
             updateFormState={updateFormState}
           />
@@ -276,7 +278,7 @@ function EditReportScreen({ report, selectedReportIndex }) {
               </Button>
               <Button
                 onClick={handleClose}
-                type={Button.TYPE.TERTIARY}
+                type={Button.TYPE.PLAIN}
                 spacingType={[
                   Button.SPACING_TYPE.NONE,
                   Button.SPACING_TYPE.SMALL,
@@ -284,7 +286,7 @@ function EditReportScreen({ report, selectedReportIndex }) {
                   Button.SPACING_TYPE.NONE,
                 ]}
               >
-                {UI_CONTENT.GLOBAL.ACTION_LABEL_CLOSE}
+                {UI_CONTENT.GLOBAL.ACTION_LABEL_CANCEL}
               </Button>
             </StackItem>
           </Stack>
@@ -297,7 +299,10 @@ function EditReportScreen({ report, selectedReportIndex }) {
 
 export default function EditReportScreenWrapper(props) {
   const {
-      params: { selectedReportIndex }
+      params: {
+        formState,
+        selectedReportIndex,
+      },
     } = useContext(RouteContext),
     {
       manifest,
@@ -305,9 +310,11 @@ export default function EditReportScreenWrapper(props) {
     report = selectedReportIndex >= 0 ? (
       manifest.reports[selectedReportIndex]
     ) : newReport(),
-    initFormState = useCallback(() => {
-      return reportToFormState(report)
-    }, [report])
+    initFormState = useCallback(() => formState ? (
+        formState
+      ) : reportToFormState(report),
+      [formState, report]
+    )
 
   return withFormContext(
     <EditReportScreen

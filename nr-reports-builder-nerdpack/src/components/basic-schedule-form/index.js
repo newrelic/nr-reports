@@ -10,12 +10,19 @@ import {
 import { useTimezoneSelect, allTimezones } from 'react-timezone-select'
 import CustomField from '../custom-field'
 import MultiSelect2 from '../multi-select-2'
-import {
-  ScheduleBuilderContext,
-  ScheduleBuilderDispatchContext,
-} from '../schedule-builder/context'
 import { pad } from '../../utils'
 import { UI_CONTENT } from '../../constants'
+import { FormContext } from '../../contexts/form'
+import {
+  ALL_WILDCARD_SYM,
+  ANY_WILDCARD_SYM,
+  DAYS_OF_MONTH_FIELD,
+  DAYS_OF_WEEK_FIELD,
+  HOURS_FIELD,
+  INCREMENT_WILDCARD_SYM,
+  INSTANCE_WILDCARD_SYM,
+  MINUTES_FIELD,
+} from '../../cron'
 
 const HOURS = [-1],
   MINUTES = [-1],
@@ -36,11 +43,74 @@ const HOURS = [-1],
   ],
   TIMEZONES = { ...allTimezones }
 
-for (let i = 0; i <= 11; i += 1) { HOURS.push(i) }
+for (let i = 1; i <= 12; i += 1) { HOURS.push(i) }
 for (let i = 0; i < 59; i += 1) { if (i % 5 === 0) { MINUTES.push(i) } }
 
+function updateModelFromBasic(formState) {
+  const {
+    amPm,
+    dayOfWeek,
+    daysOfWeek,
+    frequency,
+    hour,
+    minute,
+    period,
+    timeZone,
+    weekOfMonth,
+    model,
+  } = formState
+
+  model[MINUTES_FIELD] = minute === -1 ? ALL_WILDCARD_SYM : minute
+  model[HOURS_FIELD] = hour === -1 ? ALL_WILDCARD_SYM : (
+    amPm === 'am' ? hour % 12 : 12 + (hour % 12)
+  )
+
+  switch (frequency) {
+    case 'daily':
+      if (period === 'day') {
+        model[DAYS_OF_MONTH_FIELD] = {
+          x: ALL_WILDCARD_SYM,
+          y: 1,
+          w: INCREMENT_WILDCARD_SYM,
+        }
+        model[DAYS_OF_WEEK_FIELD] = ANY_WILDCARD_SYM
+      } else if (period === 'weekdays') {
+        model[DAYS_OF_MONTH_FIELD] = ANY_WILDCARD_SYM
+        model[DAYS_OF_WEEK_FIELD] = [2, 3, 4, 5, 6]
+      } else if (period === 'weekends') {
+        model[DAYS_OF_MONTH_FIELD] = ANY_WILDCARD_SYM
+        model[DAYS_OF_WEEK_FIELD] = [1, 7]
+      }
+      break
+
+    case 'weekly':
+      if (daysOfWeek && daysOfWeek.length > 0) {
+        model[DAYS_OF_MONTH_FIELD] = ANY_WILDCARD_SYM
+        model[DAYS_OF_WEEK_FIELD] = daysOfWeek.map(({ value }) => value)
+      } else {
+        model[DAYS_OF_MONTH_FIELD] = ANY_WILDCARD_SYM
+        model[DAYS_OF_WEEK_FIELD] = ALL_WILDCARD_SYM
+      }
+      break
+
+    case 'monthly':
+      model[DAYS_OF_MONTH_FIELD] = ANY_WILDCARD_SYM
+      model[DAYS_OF_WEEK_FIELD] = {
+        x: dayOfWeek,
+        y: weekOfMonth,
+        w: INSTANCE_WILDCARD_SYM,
+      }
+      break
+  }
+
+  return model
+}
+
 export default function BasicScheduleForm() {
-  const { basicFormState } = useContext(ScheduleBuilderContext),
+  const {
+      formState,
+      updateFormState,
+    } = useContext(FormContext),
     {
       amPm,
       dayOfWeek,
@@ -51,52 +121,38 @@ export default function BasicScheduleForm() {
       period,
       //timeZone,
       weekOfMonth,
-    } = basicFormState,
-    dispatch = useContext(ScheduleBuilderDispatchContext),
+    } = formState,
     //{ options, parseTimezone } = useTimezoneSelect({ labelStyle: 'original', timezones: TIMEZONES }),
+    updateModel = useCallback(newFormState => {
+      newFormState.model = updateModelFromBasic(newFormState)
+    }, []),
+    update = useCallback(updates => {
+      updateFormState(updates, updateModel)
+    }, [updateFormState, updateModel]),
     handleChangeFrequency = useCallback((_, v) => {
-      dispatch({
-        type: 'basicFormStateUpdated',
+      update({
         frequency: v,
         period: v === 'daily' ? 'day' : (v === 'weekly' ? 1 : 1)
       })
-    }, [dispatch]),
+    }, [update]),
     handleChangePeriod = useCallback((_, v) => {
-      dispatch({
-        type: 'basicFormStateUpdated',
-        period: v,
-      })
-    }, [dispatch]),
+      update({ period: v })
+    }, [update]),
     handleChangeDaysOfWeek = useCallback(items => {
-      dispatch({
-        type: 'basicFormStateUpdated',
-        daysOfWeek: items,
-      })
-    }, [dispatch]),
+      update({ daysOfWeek: items })
+    }, [update]),
     handleChangeDayOfWeek = useCallback((_, v) => {
-      dispatch({
-        type: 'basicFormStateUpdated',
-        dayOfWeek: v,
-      })
-    }, [dispatch]),
+      update({ dayOfWeek: v })
+    }, [update]),
     handleChangeHour = useCallback((_, v) => {
-      dispatch({
-        type: 'basicFormStateUpdated',
-        hour: v,
-      })
-    }, [dispatch]),
+      update({ hour: v })
+    }, [update]),
     handleChangeMinute = useCallback((_, v) => {
-      dispatch({
-        type: 'basicFormStateUpdated',
-        minute: v,
-      })
-    }, [dispatch]),
+      update({ minute: v })
+    }, [update]),
     handleChangeAmPm = useCallback((_, v) => {
-      dispatch({
-        type: 'basicFormStateUpdated',
-        amPm: v,
-      })
-    }, [dispatch]),
+      update({ amPm: v })
+    }, [update]),
     /*
     handleChangeTimezone = useCallback((_, v) => {
       dispatch({
@@ -106,11 +162,8 @@ export default function BasicScheduleForm() {
     }, [dispatch]),
     */
     handleChangeWeekOfMonth = useCallback((_, v) => {
-      dispatch({
-        type: 'basicFormStateUpdated',
-        weekOfMonth: v,
-      })
-    }, [dispatch])
+      update({ weekOfMonth: v })
+    }, [update])
 
   return (
     <Form

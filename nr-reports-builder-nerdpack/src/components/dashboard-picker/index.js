@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import {
   Button,
+  Form,
   HeadingText,
   Modal,
   Stack,
@@ -33,7 +34,7 @@ export default function DashboardPicker({ dashboards, open, onSubmit, onClose })
 
   return (
     <Modal hidden={!open} onClose={handleClose}>
-      <div className='dashboard-picker'>
+      <Form className='dashboard-picker'>
         <HeadingText type={HeadingText.TYPE.HEADING_3}>
           {UI_CONTENT.DASHBOARD_PICKER.HEADING}
         </HeadingText>
@@ -56,7 +57,7 @@ export default function DashboardPicker({ dashboards, open, onSubmit, onClose })
         >
           <StackItem>
             <Button
-              onClick={() => handleSubmit()}
+              onClick={handleSubmit}
               type={Button.TYPE.PRIMARY}
               spacingType={[
                 Button.SPACING_TYPE.NONE,
@@ -65,11 +66,24 @@ export default function DashboardPicker({ dashboards, open, onSubmit, onClose })
                 Button.SPACING_TYPE.NONE,
               ]}
             >
-              OK
+              {UI_CONTENT.GLOBAL.ACTION_LABEL_OK}
+            </Button>
+
+            <Button
+                onClick={handleClose}
+                type={Button.TYPE.PLAIN}
+                spacingType={[
+                  Button.SPACING_TYPE.NONE,
+                  Button.SPACING_TYPE.SMALL,
+                  Button.SPACING_TYPE.NONE,
+                  Button.SPACING_TYPE.NONE,
+                ]}
+              >
+              {UI_CONTENT.GLOBAL.ACTION_LABEL_CANCEL}
             </Button>
           </StackItem>
         </Stack>
-      </div>
+      </Form>
     </Modal>
   )
 }

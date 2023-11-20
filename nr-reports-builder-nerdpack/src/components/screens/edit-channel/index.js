@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useState } from 'react'
+import React, { useCallback, useContext } from 'react'
 import PropTypes from 'prop-types'
 import {
   Button,
@@ -8,7 +8,6 @@ import {
   SelectItem,
   Stack,
   StackItem,
-  TextField,
 } from 'nr1'
 import EmailChannelForm from "../../email-channel-form"
 import SlackChannelForm from "../../slack-channel-form"
@@ -22,6 +21,8 @@ import {
   UI_CONTENT,
 } from '../../../constants'
 import { clone } from '../../../utils'
+import { FormContext, Validation, withFormContext } from '../../../contexts/form'
+import { channelTypeIsValid } from '../../validations'
 
 function formStateFromChannel(parentFormState, selectedChannel) {
   let channel
@@ -56,6 +57,8 @@ function formStateFromChannel(parentFormState, selectedChannel) {
   return {
     parentFormState: clone(parentFormState),
     ...channel,
+    dirty: false,
+    valid: true,
   }
 }
 
@@ -88,54 +91,53 @@ function channelFromFormState(formState, selectedChannel) {
   }
 }
 
-export default function EditChannelScreen() {
+function EditChannelScreen({ selectedChannel }) {
   const {
-      params: { accountId, formState: parentFormState, selectedChannel }
-    } = useContext(RouteContext),
+      formState,
+      updateFormState,
+      validateFormState,
+    } = useContext(FormContext),
+    { validations } = formState,
     { navigate } = useContext(RouteDispatchContext),
-    [formState, setFormState] = useState(
-      formStateFromChannel(parentFormState, selectedChannel)
-    ),
-    updateFormState = useCallback((updates, dirty) => {
-      setFormState({
-        ...formState,
-        ...updates,
-        dirty: typeof dirty === 'undefined' ? true : dirty,
-      })
-    }, [formState, setFormState] ),
-    handleSubmit = useCallback(() => {
+    navigateToEditPublishConfig = useCallback(() => {
       navigate(
-        ROUTES.EDIT_PUBLISH_CONFIGS,
+        ROUTES.EDIT_PUBLISH_CONFIG,
         { formState: channelFromFormState(formState, selectedChannel) }
       )
+    }, [navigate, formState, selectedChannel]),
+    handleChangeType = useCallback((_, v) => {
+      updateFormState({ type: v })
+    }, [updateFormState]),
+    handleChangeEmailSubject = useCallback(e => {
+      updateFormState({ emailSubject: e.target.value })
+    }, [formState] ),
+    handleChangeEmailTo = useCallback(e => {
+      updateFormState({ emailTo: e.target.value })
+    }, [formState] ),
+    handleChangeEmailCc = useCallback(e => {
+      updateFormState({ emailCc: e.target.value })
+    }, [formState]),
+    handleChangeEmailTemplate = useCallback(e => {
+      updateFormState({ emailTemplate: e.target.value })
+    }, [formState]),
+    handleChangeSlackWebhookUrl = useCallback(e => {
+      updateFormState({ slackWebhookUrl: e.target.value })
+    }, [formState]),
+    handleSubmit = useCallback(() => {
+      validateFormState(navigateToEditPublishConfig)
     }),
     handleCancel = useCallback(() => {
       if (formState.dirty) {
-        if (!confirm(UI_CONTENT.EDIT_PUBLISH_CONFIGS_SCREEN.CANCEL_PROMPT)) {
+        if (!confirm(UI_CONTENT.EDIT_CHANNEL_SCREEN.CANCEL_PROMPT)) {
           return
         }
       }
 
-      navigate(ROUTES.EDIT_PUBLISH_CONFIGS, {
+      navigate(ROUTES.EDIT_PUBLISH_CONFIG, {
         parentFormState: formState.parentFormState.parentFormState,
         ...formState.parentFormState,
       })
-    }, [navigate, formState, parentFormState]),
-    handleOnChangeEmailSubject = useCallback(e => {
-      updateFormState({ emailSubject: e.target.value })
-    }, [formState] ),
-    handleOnChangeEmailTo = useCallback(e => {
-      updateFormState({ emailTo: e.target.value })
-    }, [formState] ),
-    handleOnChangeEmailCc = useCallback(e => {
-      updateFormState({ emailCc: e.target.value })
-    }, [formState]),
-    handleOnChangeEmailTemplate = useCallback(e => {
-      updateFormState({ emailTemplate: e.target.value })
-    }, [formState]),
-    handleOnChangeSlackWebhookUrl = useCallback(e => {
-      updateFormState({ slackWebhookUrl: e.target.value })
-    }, [formState])
+    }, [navigate, formState])
 
   return (
     <Form
@@ -151,31 +153,32 @@ export default function EditChannelScreen() {
           HeadingText.SPACING_TYPE.OMIT,
         ]}
       >
-        {UI_CONTENT.EDIT_CHANNELS_FORM.HEADING}
+        {UI_CONTENT.EDIT_CHANNEL_FORM.HEADING}
       </HeadingText>
 
-      <Select
-        label={UI_CONTENT.EDIT_CHANNELS_FORM.FIELD_LABEL_CHANNEL_TYPE}
-        onChange={(_, v) => setFormState({ ...formState, type: v })}
-        value={formState.type}
-      >
-        <SelectItem value={SYMBOLS.CHANNEL_TYPES.EMAIL}>
-          {UI_CONTENT.EDIT_CHANNELS_FORM.CHANNEL_TYPE_LABEL_EMAIL}
-        </SelectItem>
-        <SelectItem value={SYMBOLS.CHANNEL_TYPES.SLACK}>
-          {UI_CONTENT.EDIT_CHANNELS_FORM.CHANNEL_TYPE_LABEL_SLACK}
-        </SelectItem>
-      </Select>
+      <Validation name="type" validation={channelTypeIsValid}>
+        <Select
+          label={UI_CONTENT.EDIT_CHANNEL_FORM.FIELD_LABEL_CHANNEL_TYPE}
+          onChange={handleChangeType}
+          value={formState.type}
+          invalid={validations?.type}
+        >
+          <SelectItem value={SYMBOLS.CHANNEL_TYPES.EMAIL}>
+            {UI_CONTENT.EDIT_CHANNEL_FORM.CHANNEL_TYPE_LABEL_EMAIL}
+          </SelectItem>
+          <SelectItem value={SYMBOLS.CHANNEL_TYPES.SLACK}>
+            {UI_CONTENT.EDIT_CHANNEL_FORM.CHANNEL_TYPE_LABEL_SLACK}
+          </SelectItem>
+        </Select>
+      </Validation>
 
       {
         formState.type === SYMBOLS.CHANNEL_TYPES.EMAIL && (
           <EmailChannelForm
-            accountId={accountId}
-            formState={formState}
-            onChangeSubject={handleOnChangeEmailSubject}
-            onChangeTo={handleOnChangeEmailTo}
-            onChangeCc={handleOnChangeEmailCc}
-            onChangeTemplate={handleOnChangeEmailTemplate}
+            onChangeSubject={handleChangeEmailSubject}
+            onChangeTo={handleChangeEmailTo}
+            onChangeCc={handleChangeEmailCc}
+            onChangeTemplate={handleChangeEmailTemplate}
           />
         )
       }
@@ -183,9 +186,7 @@ export default function EditChannelScreen() {
       {
         formState.type === SYMBOLS.CHANNEL_TYPES.SLACK && (
           <SlackChannelForm
-            accountId={accountId}
-            formState={formState}
-            onChangeWebhookUrl={handleOnChangeSlackWebhookUrl}
+            onChangeWebhookUrl={handleChangeSlackWebhookUrl}
           />
         )
       }
@@ -224,5 +225,27 @@ export default function EditChannelScreen() {
         </StackItem>
       </Stack>
     </Form>
+  )
+}
+
+export default function EditChannelScreenWrapper(props) {
+  const {
+      params: {
+        formState,
+        selectedChannel,
+      }
+    } = useContext(RouteContext),
+    initFormState = useCallback(() => (
+        formStateFromChannel(formState, selectedChannel)
+      ),
+      [formState, selectedChannel]
+    )
+
+  return withFormContext(
+    <EditChannelScreen
+      {...props}
+      selectedChannel={selectedChannel}
+    />,
+    initFormState,
   )
 }

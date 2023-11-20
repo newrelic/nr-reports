@@ -85,13 +85,13 @@ export const UI_CONTENT = {
   DASHBOARD_PICKER: {
     HEADING: 'Select dashboards',
   },
-  EDIT_CHANNELS_FORM: {
+  EDIT_CHANNEL_FORM: {
     CHANNEL_TYPE_LABEL_EMAIL: 'Email',
     CHANNEL_TYPE_LABEL_SLACK: 'Slack',
     HEADING: 'Edit channel',
     FIELD_LABEL_CHANNEL_TYPE: 'Type',
   },
-  EDIT_CHANNELS_SCREEN: {
+  EDIT_CHANNEL_SCREEN: {
     CANCEL_PROMPT: 'You have made changes to this channel. Are you sure you want to cancel?',
   },
   EDIT_REPORT_FORM: {
@@ -111,10 +111,10 @@ export const UI_CONTENT = {
   EDIT_REPORT_SCREEN: {
     CANCEL_PROMPT: 'You have made changes to this report. Are you sure you want to cancel?',
   },
-  EDIT_PUBLISH_CONFIGS_SCREEN: {
+  EDIT_PUBLISH_CONFIG_SCREEN: {
     CANCEL_PROMPT: 'You have made changes to this publish configuration. Are you sure you want to cancel?',
   },
-  EDIT_PUBLISH_CONFIGS_FORM: {
+  EDIT_PUBLISH_CONFIG_FORM: {
     CONFIG_NAME_FIELD_PLACEHOLDER: 'email-team',
     FIELD_LABEL_NAME: 'Name',
     HEADING: 'Edit publish configuration',

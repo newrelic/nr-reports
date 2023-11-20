@@ -97,12 +97,12 @@ function generateBasicScheduleDetails(settings) {
           periodLabel = 'every day'
           break
 
-        case 'weekday':
+        case 'weekdays':
           periodLabel = 'every weekday'
           break
 
         case 'weekends':
-          periodLabel = 'every saturday and sunday'
+          periodLabel = 'every Saturday and Sunday'
           break
       }
       break;
@@ -126,7 +126,7 @@ function generateBasicScheduleDetails(settings) {
   }
 
   const amPmLabel = amPm === 'am' ? 'AM' : 'PM',
-    hourLabel = hour === -1 ? 'every hour' : `hour ${hour}${amPmLabel}`,
+    hourLabel = hour === -1 ? 'every hour' : `the hour ${hour} ${amPmLabel}`,
     minuteLabel = minute === -1 ? 'every minute' : `minute ${minute}`
 
 
@@ -157,7 +157,7 @@ function generateShortBasicScheduleDetails(settings) {
           periodLabel = 'Every day'
           break
 
-        case 'weekday':
+        case 'weekdays':
           periodLabel = 'Every weekday'
           break
 
@@ -185,7 +185,7 @@ function generateShortBasicScheduleDetails(settings) {
       break
   }
 
-  const amPmLabel = amPm === 'am' ? 'AM' : 'PM',
+  const amPmLabel = amPm === 'am' ? ' AM' : ' PM',
     hourLabel = hour === -1 ? '*' : pad(hour, 2),
     minuteLabel = minute === -1 ? '*' : `${pad(minute, 2)}${hour !== -1 ? amPmLabel : ''}`
 
@@ -202,9 +202,7 @@ export function generateFullScheduleDetails(schedule, settings) {
     return `This report will run as specified by the custom CRON expression "${schedule}".`
   }
 
-  const { mode, formState } = settings
-
-  return generateBasicScheduleDetails(formState)
+  return generateBasicScheduleDetails(settings)
 }
 
 export function generateShortScheduleDetails(schedule, settings) {
@@ -216,9 +214,7 @@ export function generateShortScheduleDetails(schedule, settings) {
     return `Custom: ${schedule}`
   }
 
-  const { mode, formState } = settings
-
-  return generateShortBasicScheduleDetails(formState)
+  return generateShortBasicScheduleDetails(settings)
 }
 
 export function generateRandomString(len) {

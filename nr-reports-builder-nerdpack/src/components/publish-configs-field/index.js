@@ -18,6 +18,7 @@ import {
 } from '../../constants'
 import { RouteDispatchContext } from '../../contexts'
 import { generateShortScheduleDetails } from '../../utils'
+import { FormContext } from '../../contexts/form'
 
 function PublishConfigsTable({
   metadata,
@@ -69,16 +70,14 @@ function PublishConfigsTable({
   )
 }
 
-export default function PublishConfigurationsField({
-  formState,
-  updateFormState,
-}) {
-  const { navigate } = useContext(RouteDispatchContext),
+export default function PublishConfigurationsField() {
+  const { formState, updateFormState } = useContext(FormContext),
+    { navigate } = useContext(RouteDispatchContext),
     handleAddConfig = useCallback(() => {
-      navigate(ROUTES.EDIT_PUBLISH_CONFIGS, { formState, selectedConfig: -1 })
+      navigate(ROUTES.EDIT_PUBLISH_CONFIG, { formState, selectedConfig: -1 })
     }, [navigate, formState]),
     handleEditConfig = useCallback(selectedConfig => {
-      navigate(ROUTES.EDIT_PUBLISH_CONFIGS, {
+      navigate(ROUTES.EDIT_PUBLISH_CONFIG, {
         formState,
         selectedConfig,
       })

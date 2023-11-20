@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useMemo, useState } from 'react'
+import React, { useCallback, useContext, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import {
   BlockText,
@@ -18,6 +18,7 @@ import {
   UI_CONTENT,
 } from '../../constants'
 import { RouteDispatchContext } from '../../contexts'
+import { FormContext } from '../../contexts/form'
 
 function EmailChannelInfo({ channel }) {
   const {
@@ -108,16 +109,14 @@ function ChannelsTable({ channels, onEditChannel, onDeleteChannel }) {
   )
 }
 
-export default function ChannelsField({
-  formState,
-  updateFormState,
-}) {
-  const { navigate } = useContext(RouteDispatchContext),
+export default function ChannelsField() {
+  const { formState, updateFormState } = useContext(FormContext),
+    { navigate } = useContext(RouteDispatchContext),
     handleAddChannel = useCallback(() => {
-      navigate(ROUTES.EDIT_CHANNELS, { formState, selectedChannel: -1 })
+      navigate(ROUTES.EDIT_CHANNEL, { formState, selectedChannel: -1 })
     }, [formState, navigate]),
     handleEditChannel = useCallback(index => {
-      navigate(ROUTES.EDIT_CHANNELS, { formState, selectedChannel: index })
+      navigate(ROUTES.EDIT_CHANNEL, { formState, selectedChannel: index })
     }, [formState, navigate]),
     handleDeleteChannel = useCallback(index => {
       const channels = [ ...formState.channels ]

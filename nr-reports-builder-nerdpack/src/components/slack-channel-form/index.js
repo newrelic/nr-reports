@@ -1,3 +1,4 @@
+import { useContext } from 'react'
 import {
   Stack,
   StackItem,
@@ -7,14 +8,15 @@ import {
   SYMBOLS,
   UI_CONTENT,
 } from "../../constants"
+import { FormContext, Validation } from '../../contexts/form'
+import { slackWebhookUrlNotEmptyIsUrl } from '../validations'
 
-export default function SlackChannelForm({
-  formState,
-  onChangeWebhookUrl,
-}) {
-  const {
-    slackWebhookUrl,
-  } = formState
+export default function SlackChannelForm({ onChangeWebhookUrl }) {
+  const { formState } = useContext(FormContext),
+    {
+      slackWebhookUrl,
+      validations,
+    } = formState
 
   return (
     <Stack
@@ -29,13 +31,19 @@ export default function SlackChannelForm({
       horizontalType={Stack.HORIZONTAL_TYPE.FILL}
     >
       <StackItem>
-        <TextField
-          label={UI_CONTENT.SLACK_CHANNEL_FORM.FIELD_LABEL_WEBHOOK_URL}
-          name={SYMBOLS.SLACK_CHANNEL_FIELDS.WEBHOOK_URL}
-          placeholder={UI_CONTENT.SLACK_CHANNEL_FORM.WEBHOOK_URL_FIELD_PLACEHOLDER}
-          value={slackWebhookUrl}
-          onChange={onChangeWebhookUrl}
-        />
+        <Validation
+          name="slackWebhookUrl"
+          validation={slackWebhookUrlNotEmptyIsUrl}
+        >
+          <TextField
+            label={UI_CONTENT.SLACK_CHANNEL_FORM.FIELD_LABEL_WEBHOOK_URL}
+            name={SYMBOLS.SLACK_CHANNEL_FIELDS.WEBHOOK_URL}
+            placeholder={UI_CONTENT.SLACK_CHANNEL_FORM.WEBHOOK_URL_FIELD_PLACEHOLDER}
+            value={slackWebhookUrl}
+            onChange={onChangeWebhookUrl}
+            invalid={validations?.slackWebhookUrl}
+          />
+        </Validation>
       </StackItem>
     </Stack>
   )

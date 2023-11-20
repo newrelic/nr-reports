@@ -73,7 +73,11 @@ function DashboardsTable({ dashboards, onRemove }) {
 export default function DashboardsField({
   report,
 }) {
-  const { formState, updateFormState } = useContext(FormContext),
+  const {
+      formState,
+      dangerouslyUpdateFormState,
+      updateFormState,
+    } = useContext(FormContext),
     [showPicker, setShowPicker] = useState(false),
     reportDashboards = !formState.loadedDashboards && report.dashboards,
     skip = !reportDashboards,
@@ -98,15 +102,15 @@ export default function DashboardsField({
 
   useEffect(() => {
     if (error) {
-      updateFormState({ error }, false)
+      dangerouslyUpdateFormState({ error })
       return
     }
 
     if (!loading && entities) {
-      updateFormState({
+      dangerouslyUpdateFormState({
         dashboards: entitiesToDashboards(entities, reportDashboards),
         loadedDashboards: true,
-      }, false)
+      })
     }
   }, [loading, error, entities, updateFormState])
 

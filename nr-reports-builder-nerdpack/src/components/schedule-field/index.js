@@ -1,18 +1,16 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import {
   Button,
 } from 'nr1'
 import CustomField from '../custom-field'
 import ScheduleBuilder from '../schedule-builder'
-import ScheduleBuilderProvider from '../schedule-builder/context'
 import { UI_CONTENT } from '../../constants'
 import { generateFullScheduleDetails } from '../../utils'
+import { FormContext } from '../../contexts/form'
 
-export default function ScheduleField({
-  formState,
-  updateFormState,
-}) {
-  const [showModal, setShowModal] = useState(false),
+export default function ScheduleField() {
+  const { formState, updateFormState } = useContext(FormContext),
+    [showModal, setShowModal] = useState(false),
     {
       schedule,
       metadata,
@@ -37,6 +35,7 @@ export default function ScheduleField({
     ScheduleDetails = useMemo(() => {
       return generateFullScheduleDetails(schedule, settings)
     }, [schedule, settings])
+
   return (
     <div className="schedule-field">
       <CustomField
@@ -63,16 +62,13 @@ export default function ScheduleField({
 
       {
         showModal && (
-          <ScheduleBuilderProvider
+          <ScheduleBuilder
             schedule={schedule}
             settings={settings}
-          >
-            <ScheduleBuilder
-              open={showModal}
-              onClose={handleHideModal}
-              onSubmit={handleChangeSchedule}
-            />
-          </ScheduleBuilderProvider>
+            open={showModal}
+            onClose={handleHideModal}
+            onSubmit={handleChangeSchedule}
+          />
         )
       }
     </div>
