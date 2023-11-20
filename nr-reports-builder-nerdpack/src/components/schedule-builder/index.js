@@ -64,7 +64,7 @@ function ScheduleBuilder({
 
       onSubmit({
         schedule: mode === 'manual' ? expr : modelToExpression(model),
-        settings: { ...rest },
+        settings: { mode, ...rest },
       })
     }, [onSubmit]),
     handleChangeMode = useCallback((_, v) => {
