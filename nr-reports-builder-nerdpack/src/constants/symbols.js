@@ -5,9 +5,14 @@ export const SYMBOLS = {
   },
   EMAIL_CHANNEL_FIELDS: {
     SUBJECT: 'subject',
+    FORMAT: 'format',
     TO: 'to',
     CC: 'cc',
     TEMPLATE: 'emailTemplate',
+  },
+  EMAIL_FORMATS: {
+    HTML: 'html',
+    TEXT: 'text',
   },
   SLACK_CHANNEL_FIELDS: {
     WEBHOOK_URL: 'webhookUrl',

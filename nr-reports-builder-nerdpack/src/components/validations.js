@@ -17,7 +17,7 @@ export const reportTypeIsValid = (() => {
 
   return formState => {
     const result = schema.safeParse(formState.type)
-    return result.success ? null : `${update.type} is not a valid report type`
+    return result.success ? null : `${formState.type} is not a valid report type`
   }
 })()
 
@@ -54,7 +54,7 @@ export const channelTypeIsValid = (() => {
 
   return formState => {
     const result = schema.safeParse(formState.type)
-    return result.success ? null : `${update.type} is not a valid report type`
+    return result.success ? null : `${formState.type} is not a valid channel type`
   }
 })()
 
@@ -64,6 +64,15 @@ export const emailSubjectNotEmpty = (() => {
   return formState => {
     const result = schema.safeParse(formState.emailSubject)
     return result.success ? null : 'A subject is required'
+  }
+})()
+
+export const emailFormatIsValid = (() => {
+  const schema = z.enum(["html", "text"])
+
+  return formState => {
+    const result = schema.safeParse(formState.emailFormat)
+    return result.success ? null : `${formState.emailFormat} is not a valid email format`
   }
 })()
 

@@ -122,9 +122,12 @@ export const UI_CONTENT = {
   EMAIL_CHANNEL_FORM: {
     CC_FIELD_PLACEHOLDER: `robin@newrelic.com\npat@newrelic.com`,
     FIELD_LABEL_CC: 'Cc',
+    FIELD_LABEL_FORMAT: 'Format',
     FIELD_LABEL_SUBJECT: 'Subject',
     FIELD_LABEL_TEMPLATE: 'Message template',
     FIELD_LABEL_TO: 'To',
+    FORMAT_LABEL_HTML: 'HTML',
+    FORMAT_LABEL_TEXT: 'Text',
     SUBJECT_FIELD_PLACEHOLDER: 'This week\'s performance report',
     TEMPLATE_FIELD_PLACEHOLDER: `Please find attached the performance dashboards for report {{name}}.`,
     TO_FIELD_PLACEHOLDER: `jan@newrelic.com\nsam@newrelic.com`,

@@ -33,6 +33,7 @@ function formStateFromChannel(parentFormState, selectedChannel) {
     if (selected.type === SYMBOLS.CHANNEL_TYPES.EMAIL) {
       channel = {
         type: SYMBOLS.CHANNEL_TYPES.EMAIL,
+        emailFormat: selected.format || SYMBOLS.EMAIL_FORMATS.HTML,
         emailSubject: selected.subject,
         emailTo: selected.to ? selected.to.replaceAll(/\s*,\s*/ug,"\n") : '',
         emailCc: selected.cc ? selected.cc.replaceAll(/\s*,\s*/ug,',') : '',
@@ -47,6 +48,7 @@ function formStateFromChannel(parentFormState, selectedChannel) {
   } else {
     channel = {
       type: SYMBOLS.CHANNEL_TYPES.EMAIL,
+      emailFormat: SYMBOLS.EMAIL_FORMATS.HTML,
       emailSubject: '',
       emailTo: '',
       emailCc: '',
@@ -67,7 +69,8 @@ function channelFromFormState(formState, selectedChannel) {
     channel = channels[selectedChannel] || { type: SYMBOLS.CHANNEL_TYPES.EMAIL }
 
   if (formState.type === SYMBOLS.CHANNEL_TYPES.EMAIL) {
-    channel.type = SYMBOLS.CHANNEL_TYPES.EMAIL
+    channel.type = SYMBOLS.CHANNEL_TYPES.EMAIL,
+    channel.format = formState.emailFormat,
     channel.subject = formState.emailSubject
     channel.to = formState.emailTo ? formState.emailTo.replaceAll(/\s*\n+\s*/ug,',') : ''
     channel.cc = formState.emailCc ? formState.emailCc.replaceAll(/\s*\n+\s*/ug,',') : ''
@@ -110,6 +113,9 @@ function EditChannelScreen({ selectedChannel }) {
     }, [updateFormState]),
     handleChangeEmailSubject = useCallback(e => {
       updateFormState({ emailSubject: e.target.value })
+    }, [formState] ),
+    handleChangeEmailFormat = useCallback((_, v) => {
+      updateFormState({ emailFormat: v })
     }, [formState] ),
     handleChangeEmailTo = useCallback(e => {
       updateFormState({ emailTo: e.target.value })
@@ -176,6 +182,7 @@ function EditChannelScreen({ selectedChannel }) {
         formState.type === SYMBOLS.CHANNEL_TYPES.EMAIL && (
           <EmailChannelForm
             onChangeSubject={handleChangeEmailSubject}
+            onChangeFormat={handleChangeEmailFormat}
             onChangeTo={handleChangeEmailTo}
             onChangeCc={handleChangeEmailCc}
             onChangeTemplate={handleChangeEmailTemplate}

@@ -1,6 +1,8 @@
 import { useContext } from 'react'
 import {
   MultilineTextField,
+  Radio,
+  RadioGroup,
   Stack,
   StackItem,
   TextField,
@@ -14,10 +16,12 @@ import {
   emailSubjectNotEmpty,
   emailToNotEmptyValidEmails,
   emailCcValidEmails,
+  emailFormatIsValid,
 } from '../validations'
 
 export default function EmailChannelForm({
   onChangeSubject,
+  onChangeFormat,
   onChangeTo,
   onChangeCc,
   onChangeTemplate,
@@ -25,6 +29,7 @@ export default function EmailChannelForm({
   const { formState } = useContext(FormContext),
     {
       emailSubject,
+      emailFormat,
       emailTo,
       emailCc,
       emailTemplate,
@@ -43,6 +48,29 @@ export default function EmailChannelForm({
       fullHeight
       horizontalType={Stack.HORIZONTAL_TYPE.FILL}
     >
+      <StackItem>
+        <Validation
+          name="emailFormat"
+          validation={emailFormatIsValid}
+        >
+          <RadioGroup
+            label={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_LABEL_FORMAT}
+            name={SYMBOLS.EMAIL_CHANNEL_FIELDS.FORMAT}
+            value={emailFormat}
+            defaultValue={SYMBOLS.EMAIL_FORMATS.HTML}
+            onChange={onChangeFormat}
+          >
+            <Radio
+              label={UI_CONTENT.EMAIL_CHANNEL_FORM.FORMAT_LABEL_HTML}
+              value={SYMBOLS.EMAIL_FORMATS.HTML}
+            />
+            <Radio
+              label={UI_CONTENT.EMAIL_CHANNEL_FORM.FORMAT_LABEL_TEXT}
+              value={SYMBOLS.EMAIL_FORMATS.TEXT}
+            />
+          </RadioGroup>
+        </Validation>
+      </StackItem>
       <StackItem>
         <Validation
           name="emailSubject"
