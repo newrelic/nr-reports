@@ -34,6 +34,15 @@ function formStateFromChannel(parentFormState, selectedChannel) {
       channel = {
         type: SYMBOLS.CHANNEL_TYPES.EMAIL,
         emailFormat: selected.format || SYMBOLS.EMAIL_FORMATS.HTML,
+        emailQueryDeliveryMethod: selected.attachOutput ? (
+          SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT
+        ) : (
+          selected.passThrough ? (
+            SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH
+          ) : (
+            SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT
+          )
+        ),
         emailSubject: selected.subject,
         emailTo: selected.to ? selected.to.replaceAll(/\s*,\s*/ug,"\n") : '',
         emailCc: selected.cc ? selected.cc.replaceAll(/\s*,\s*/ug,',') : '',
@@ -49,6 +58,7 @@ function formStateFromChannel(parentFormState, selectedChannel) {
     channel = {
       type: SYMBOLS.CHANNEL_TYPES.EMAIL,
       emailFormat: SYMBOLS.EMAIL_FORMATS.HTML,
+      emailQueryDeliveryMethod: SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT,
       emailSubject: '',
       emailTo: '',
       emailCc: '',
@@ -71,6 +81,12 @@ function channelFromFormState(formState, selectedChannel) {
   if (formState.type === SYMBOLS.CHANNEL_TYPES.EMAIL) {
     channel.type = SYMBOLS.CHANNEL_TYPES.EMAIL,
     channel.format = formState.emailFormat,
+    channel.attachOutput = (
+      formState.emailQueryDeliveryMethod === SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT
+    ),
+    channel.passThrough = (
+      formState.emailQueryDeliveryMethod === SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH
+    ),
     channel.subject = formState.emailSubject
     channel.to = formState.emailTo ? formState.emailTo.replaceAll(/\s*\n+\s*/ug,',') : ''
     channel.cc = formState.emailCc ? formState.emailCc.replaceAll(/\s*\n+\s*/ug,',') : ''
@@ -116,6 +132,9 @@ function EditChannelScreen({ selectedChannel }) {
     }, [formState] ),
     handleChangeEmailFormat = useCallback((_, v) => {
       updateFormState({ emailFormat: v })
+    }, [formState] ),
+    handleChangeEmailQueryDeliveryMethod = useCallback((_, v) => {
+      updateFormState({ emailQueryDeliveryMethod: v })
     }, [formState] ),
     handleChangeEmailTo = useCallback(e => {
       updateFormState({ emailTo: e.target.value })
@@ -183,6 +202,7 @@ function EditChannelScreen({ selectedChannel }) {
           <EmailChannelForm
             onChangeSubject={handleChangeEmailSubject}
             onChangeFormat={handleChangeEmailFormat}
+            onChangeQueryDeliveryMethod={handleChangeEmailQueryDeliveryMethod}
             onChangeTo={handleChangeEmailTo}
             onChangeCc={handleChangeEmailCc}
             onChangeTemplate={handleChangeEmailTemplate}

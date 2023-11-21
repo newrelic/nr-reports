@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { parse } from '../cron'
+import { SYMBOLS } from '../constants'
 
 const emailListRe = /^(?:[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+)(?:\n[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+)*$/ui
 
@@ -73,6 +74,18 @@ export const emailFormatIsValid = (() => {
   return formState => {
     const result = schema.safeParse(formState.emailFormat)
     return result.success ? null : `${formState.emailFormat} is not a valid email format`
+  }
+})()
+
+export const emailQueryDeliveryMethodIsValid = (() => {
+  const schema = z.enum([
+    SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT,
+    SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH,
+  ])
+
+  return formState => {
+    const result = schema.safeParse(formState.emailQueryDeliveryMethod)
+    return result.success ? null : `${formState.emailQueryDeliveryMethod} is not a valid query delivery method`
   }
 })()
 

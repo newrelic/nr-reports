@@ -6,6 +6,8 @@ export const SYMBOLS = {
   EMAIL_CHANNEL_FIELDS: {
     SUBJECT: 'subject',
     FORMAT: 'format',
+    ATTACH_OUTPUT: 'attachOutput',
+    PASS_THROUGH: 'passThrough',
     TO: 'to',
     CC: 'cc',
     TEMPLATE: 'emailTemplate',
