@@ -7,7 +7,7 @@ const fs = require('fs'),
   { stringify } = require('csv-stringify'),
   showdown = require('showdown'),
   { createLogger, logTrace } = require('./logger'),
-  { DEFAULT_PUBLISH_CONFIG_ID } = require('./constants')
+  { DEFAULT_PUBLISH_CONFIG_ID, DEFAULT_MANIFEST_ID } = require('./constants')
 
 const logger = createLogger('util'),
   ENDPOINTS = {
@@ -251,7 +251,16 @@ function normalizeManifestHelper(manifest, defaultChannel) {
     } else {
       report.publishConfigs.forEach((publishConfig, jindex) => {
         if (!publishConfig.id) {
-          throw new Error(`Publish configuration with index ${jindex} for report ${reportName} must include an 'id' property`)
+          throw new Error(`Publish configuration with index ${jindex} for report "${reportName}" must include an 'id' property`)
+        }
+
+        if (
+          !Array.isArray(publishConfig.channels) ||
+          publishConfig.channels.length === 0
+        ) {
+          report.publishConfigs[jindex].channels = [
+            getDefaultChannel(report, defaultChannel),
+          ]
         }
       })
     }
@@ -273,6 +282,7 @@ function normalizeManifest(manifest, defaultChannel) {
     logger.trace('Manifest starts with array')
     return normalizeManifestHelper(
       {
+        id: DEFAULT_MANIFEST_ID,
         reports: manifest,
       },
       defaultChannel,

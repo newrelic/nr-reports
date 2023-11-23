@@ -8,6 +8,7 @@ const {
   updateSchedule,
   deleteSchedule,
   getEnv,
+  isUndefined,
 } = require('nr-reports-core')
 
 const logger = createLogger('eventbridge'),
@@ -16,17 +17,30 @@ const logger = createLogger('eventbridge'),
   REPORTS_LAMBDA_ARN_VAR = 'REPORTS_LAMBDA_ARN',
   REPORTS_LAMBDA_ROLE_ARN_VAR = 'REPORTS_LAMBDA_ROLE_ARN'
 
-function scheduleExpressionFromCronExpression(report, publishConfigId) {
-  const { publishConfigs } = report,
+function isPublishConfigEnabled(report, publishConfig) {
+  return (
+    (isUndefined(report.enabled) || report.enabled) &&
+    (isUndefined(publishConfig.enabled) || publishConfig.enabled)
+  )
+}
+
+function getPublishConfig(report, publishConfigId) {
+  const reportName = report.name || report.id,
+    { publishConfigs } = report,
     publishConfig = publishConfigs.find(
       p => p.id === publishConfigId,
     )
 
   if (!publishConfig) {
-    throw new Error(`Publish configuration with ID "${publishConfigId}" for report "${report.name}" could not be found.`)
+    throw new Error(`Publish configuration with ID "${publishConfigId}" for report "${reportName}" could not be found.`)
   }
 
-  const schedule = publishConfig.schedule,
+  return publishConfig
+}
+
+function scheduleExpressionFromCronExpression(report, publishConfig) {
+  const reportName = report.name || report.id,
+    schedule = publishConfig.schedule,
     parts = schedule.trim().split(/[\s]+/u)
 
   if (parts.length === 5) {
@@ -34,9 +48,9 @@ function scheduleExpressionFromCronExpression(report, publishConfigId) {
     // Push a year field if it's only a 5 field expression
     parts.push('*')
   } else if (parts.length !== 6) {
-    throw new Error(`Invalid cron expression "${schedule}" for report "${report.name}".`)
+    throw new Error(`Invalid cron expression "${schedule}" for report "${reportName}": Expected 6 parts in CRON expression but found ${parts.length}.`)
   } else if (parts[2] !== '?' && parts[4] !== '?') {
-    throw new Error(`Invalid cron expression "${schedule}" for report "${report.name}: Day of month and day of week cannot both be specified.`)
+    throw new Error(`Invalid cron expression "${schedule}" for report "${reportName}": Day of month and day of week cannot both be specified.`)
   }
 
   return `cron(${parts.join(' ')})`
@@ -74,10 +88,15 @@ class EventBridgeBackend {
   }
 
   async createSchedule(scheduleName, report, manifestFile, publishConfigId) {
+    const publishConfig = getPublishConfig(report, publishConfigId),
+      reportName = report.name || report.id,
+      publishConfigName = publishConfig.name || publishConfig.id,
+      enabled = isPublishConfigEnabled(report, publishConfig)
+
     await createSchedule(
       this.scheduleGroupName,
       scheduleName,
-      scheduleExpressionFromCronExpression(report, publishConfigId),
+      scheduleExpressionFromCronExpression(report, publishConfig),
       this.reportsLamdbaArn,
       this.reportsLamdbaRoleArn,
       JSON.stringify({
@@ -87,10 +106,12 @@ class EventBridgeBackend {
           publishConfigIds: publishConfigId,
         },
       }),
+      `Schedule for report ${reportName} and publish configuration ${publishConfigName}`,
+      enabled,
     )
   }
 
-  async updateSchedule(scheduleName, report, publishConfigName) {
+  async updateSchedule(scheduleName, report, publishConfigId) {
     const schedule = await getSchedule(this.scheduleGroupName, scheduleName)
 
     if (!schedule) {
@@ -99,10 +120,14 @@ class EventBridgeBackend {
       )
     }
 
+    const publishConfig = getPublishConfig(report, publishConfigId),
+      enabled = isPublishConfigEnabled(report, publishConfig)
+
     schedule.ScheduleExpression = scheduleExpressionFromCronExpression(
       report,
-      publishConfigName,
+      publishConfig,
     )
+    schedule.State = enabled ? 'ENABLED' : 'DISABLED'
 
     await updateSchedule(schedule)
   }

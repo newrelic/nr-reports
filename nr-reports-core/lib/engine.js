@@ -96,7 +96,7 @@ class Engine {
 
           let generator
 
-          logger.debug(`Running report ${reportName}...`)
+          logger.debug(`Running report "${reportName}"...`)
 
           if (report.templateName) {
             generator = templateGenerator
@@ -107,7 +107,7 @@ class Engine {
           }
 
           if (!generator) {
-            logger.warn(`Unrecognized report schema or missing required properties for report ${reportName}. Ignoring.`)
+            logger.warn(`Unrecognized report schema or missing required properties for report "${reportName}". Ignoring.`)
             continue
           }
 
@@ -136,10 +136,10 @@ class Engine {
               tempDir,
             )
           } else {
-            logger.warn(`No output generated for report ${reportName}.`)
+            logger.warn(`No output generated for report "${reportName}".`)
           }
 
-          logger.debug(`Completed report ${reportName}.`)
+          logger.debug(`Completed report "${reportName}".`)
         }
       })
     } finally {

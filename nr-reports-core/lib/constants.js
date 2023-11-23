@@ -33,7 +33,8 @@ const MANIFEST_FILE_PATH_OPTION = 'manifestFilePath',
 const REPORT_IDS_OPTION = 'reportIds',
   REPORT_IDS_VAR = 'REPORT_IDS',
   DEFAULT_MANIFEST_FILE_NAME = 'manifest.json',
-  DEFAULT_MANIFEST_FILE_PATH = `${INCLUDE_DIR_NAME}/${DEFAULT_MANIFEST_FILE_NAME}`
+  DEFAULT_MANIFEST_FILE_PATH = `${INCLUDE_DIR_NAME}/${DEFAULT_MANIFEST_FILE_NAME}`,
+  DEFAULT_MANIFEST_ID = 'default-manifest'
 
 // Template generator constants
 const NO_RENDER_OPTION = 'noRender'
@@ -122,6 +123,7 @@ module.exports = {
   REPORT_IDS_VAR,
   DEFAULT_MANIFEST_FILE_NAME,
   DEFAULT_MANIFEST_FILE_PATH,
+  DEFAULT_MANIFEST_ID,
 
   // Template generator constants
   NO_RENDER_OPTION,

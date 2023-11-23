@@ -231,7 +231,9 @@ function getSchedule(groupName, name) {
   })
 }
 
-function updateSchedule(schedule) {
+function updateSchedule(
+  schedule,
+) {
   logger.trace(`Updating schedule with name ${schedule.Name} in group name ${schedule.GroupName}...`)
 
   const updateScheduleParams = { ...schedule }

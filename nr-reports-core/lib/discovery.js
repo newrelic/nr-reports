@@ -11,6 +11,7 @@ const path = require('path'),
     getOption,
     requireAccountId,
     splitStringAndTrim,
+    isUndefined,
   } = require('./util'),
   {
     getS3ObjectAsString,
@@ -107,7 +108,17 @@ function prepareManifest(
     )
   }
 
-  manifest.reports = manifest.reports.map(report => {
+  manifest.reports = manifest.reports.filter((report, index) => {
+    const enabled = isUndefined(report.enabled) || report.enabled
+
+    if (!enabled) {
+      const reportName = report.name || report.id || index
+
+      logger.trace(`Excluding ${reportName} because it is not enabled.`)
+    }
+
+    return enabled
+  }).map(report => {
     if (report.templateName) {
       if (params && params[report.id]) {
         return {
@@ -359,7 +370,13 @@ async function discoverReportsHelper(
 async function discoverReports(context, options, params) {
   if (Array.isArray(options)) {
     logger.trace('Options object is an array of reports.')
-    return options
+
+    return prepareManifest(
+      {},
+      options,
+      () => makeChannel(context.defaultChannelType, {}),
+      params,
+    )
   }
 
   const sourceBucket = getOption(

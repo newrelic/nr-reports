@@ -5,7 +5,7 @@ const email = require('./email'),
   s3 = require('./s3'),
   slack = require('./slack'),
   { createLogger, logTrace } = require('../logger'),
-  { getOption, splitStringAndTrim } = require('../util'),
+  { getOption, splitStringAndTrim, isUndefined } = require('../util'),
   {
     PUBLISH_CONFIG_IDS_OPTION,
     PUBLISH_CONFIG_IDS_VAR,
@@ -50,7 +50,9 @@ function getPublishConfig(context, report) {
     for (let index = 0; index < publishConfigIds.length; index += 1) {
       const publishConfigId = publishConfigIds[index],
         publishConfig = publishConfigs.find(
-          p => p.id === publishConfigId,
+          p => p.id === publishConfigId && (
+            isUndefined(p.enabled) || p.enabled
+          ),
         )
 
       if (publishConfig) {
@@ -78,7 +80,7 @@ async function publish(
       {
         publishConfigIds: context.publishConfigIds,
       },
-      `Not publishing output for report ${reportName} because no publish configuration found matching specified configuration IDs.`,
+      `Not publishing output for report "${reportName}" because no publish configuration found that is enabled and matches the specified configuration IDs.`,
     )
     return
   }

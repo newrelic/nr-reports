@@ -40,12 +40,16 @@ function PublishConfigsTable({
       ];
     }, [onEditConfig, onDeleteConfig]),
     renderRow = useCallback(({ item }) => {
+      const settings = metadata[`publishConfig-${item.id}`] && (
+        metadata[`publishConfig-${item.id}`]['schedule-builder']
+      )
       return (
         <TableRow actions={getActions}>
           <TableRowCell>{ item.name }</TableRowCell>
           <TableRowCell>{ generateShortScheduleDetails(
-            item.schedule,
-            metadata[`publishConfig-${item.id}`]['schedule-builder'])
+              item.schedule,
+              settings,
+            )
           }</TableRowCell>
           <TableRowCell>{ item.channels.length }</TableRowCell>
         </TableRow>

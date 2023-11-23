@@ -25,7 +25,8 @@ function entitiesToDashboards(entities, dashboards) {
     const entity = entities.find(e => e.guid === dash)
 
     if (!entity) {
-      throw new Error(`invalid state: dashboard ${dash} not found in entities`)
+      console.warn(`dashboard ${dash} not found in returned dashboard entities`)
+      return [dash, '[dashboard not found]']
     }
 
     return [entity.guid, entity.name]
