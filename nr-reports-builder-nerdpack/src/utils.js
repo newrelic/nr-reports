@@ -198,7 +198,7 @@ export function generateFullScheduleDetails(schedule, settings) {
     return 'No schedule defined'
   }
 
-  if (!settings || settings.mode === 'manual') {
+  if (!settings || !settings.mode || settings.mode === 'manual') {
     return `This report will run as specified by the custom CRON expression "${schedule}".`
   }
 

@@ -95,6 +95,7 @@ export const UI_CONTENT = {
     CANCEL_PROMPT: 'You have made changes to this channel. Are you sure you want to cancel?',
   },
   EDIT_REPORT_FORM: {
+    FIELD_LABEL_ENABLED: 'Enabled',
     FIELD_LABEL_NAME: 'Name',
     FIELD_LABEL_TYPE: 'Type',
     HEADING: 'Edit report',
@@ -116,6 +117,7 @@ export const UI_CONTENT = {
   },
   EDIT_PUBLISH_CONFIG_FORM: {
     CONFIG_NAME_FIELD_PLACEHOLDER: 'email-team',
+    FIELD_LABEL_ENABLED: 'Enabled',
     FIELD_LABEL_NAME: 'Name',
     HEADING: 'Edit publish configuration',
   },

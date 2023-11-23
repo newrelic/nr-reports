@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   Button,
+  Checkbox,
   Form,
   HeadingText,
   Stack,
@@ -37,7 +38,13 @@ function formStateFromPublishConfig(parentFormState, selectedConfig) {
         newPublishConfigMetadata()
       )
     ),
-    ...publishConfig,
+    id: publishConfig.id,
+    name: publishConfig.name,
+    enabled: typeof publishConfig.enabled !== 'undefined' ? (
+      publishConfig.enabled
+    ) : true,
+    schedule: publishConfig.schedule,
+    channels: publishConfig.channels ? clone(publishConfig.channels) : [],
     dirty: false,
     valid: true,
   }
@@ -48,6 +55,7 @@ function publishConfigFromFormState(formState, selectedConfig) {
     publishConfig = {
       id: formState.id,
       name: formState.name,
+      enabled: formState.enabled,
       schedule: formState.schedule,
       channels: formState.channels,
     }
@@ -89,6 +97,9 @@ function EditPublishConfigScreen({ selectedConfig }) {
     }, [navigate, formState, selectedConfig]),
     handleChangeName = useCallback(e => {
       updateFormState({ name: e.target.value })
+    }, [updateFormState]),
+    handleChangeEnabled = useCallback(e => {
+      updateFormState({ enabled: e.target.checked })
     }, [updateFormState]),
     handleSubmit = useCallback(() => {
       validateFormState(navigateToEditReport)
@@ -142,6 +153,14 @@ function EditPublishConfigScreen({ selectedConfig }) {
                 invalid={formState.validations?.name}
               />
             </Validation>
+          </StackItem>
+
+          <StackItem>
+            <Checkbox
+              label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_ENABLED}
+              checked={formState.enabled}
+              onChange={handleChangeEnabled}
+            />
           </StackItem>
 
           <StackItem>

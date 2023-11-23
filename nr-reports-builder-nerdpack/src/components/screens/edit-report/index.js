@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   Button,
+  Checkbox,
   Form,
   HeadingText,
   Select,
@@ -39,13 +40,14 @@ function reportToFormState(report) {
     error: null,
     id: report.id,
     name: report.name,
+    enabled: typeof report.enabled !== 'undefined' ? report.enabled : true,
     type: report.query ? (
       SYMBOLS.REPORT_TYPES.QUERY
     ) : SYMBOLS.REPORT_TYPES.DASHBOARD,
     query: report.query,
     accountIds: report.accountIds,
     lastModifiedDate: report.lastModifiedDate,
-    publishConfigs: report.publishConfigs ? clone(report.publishConfigs) : {},
+    publishConfigs: report.publishConfigs ? clone(report.publishConfigs) : [],
     metadata: report.metadata || {},
     loadedDashboards: report.dashboards ? false : true,
     dirty: false,
@@ -57,6 +59,7 @@ function reportFromFormState(formState) {
   const report = {
     id: formState.id,
     name: formState.name,
+    enabled: formState.enabled,
     lastModifiedDate: new Date().getTime(),
     schedule: formState.schedule,
     publishConfigs: formState.publishConfigs,
@@ -95,6 +98,9 @@ function EditReportScreen({ report, selectedReportIndex }) {
     [closeOnSave, setCloseOnSave] = useState(false),
     handleChangeName = useCallback(e => {
       updateFormState({ name: e.target.value })
+    }, [updateFormState]),
+    handleChangeEnabled = useCallback(e => {
+      updateFormState({ enabled: e.target.checked })
     }, [updateFormState]),
     handleChangeType = useCallback((_, v) => {
       updateFormState({ type: v })
@@ -197,6 +203,14 @@ function EditReportScreen({ report, selectedReportIndex }) {
               invalid={formState.validations?.name}
             />
           </Validation>
+        </StackItem>
+
+        <StackItem>
+          <Checkbox
+            label={UI_CONTENT.EDIT_REPORT_FORM.FIELD_LABEL_ENABLED}
+            checked={formState.enabled}
+            onChange={handleChangeEnabled}
+          />
         </StackItem>
 
         <StackItem>
