@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import {
   BlockText,
   Button,
+  Link,
   Stack,
   StackItem,
   Table,
@@ -29,23 +30,25 @@ function PublishConfigsTable({
   const getActions = useMemo(() => {
       return [
         {
-          label: UI_CONTENT.GLOBAL.ACTION_LABEL_EDIT,
-          onClick: (e, { item, index }) => onEditConfig(index)
-        },
-        {
           label: UI_CONTENT.GLOBAL.ACTION_LABEL_DELETE,
           type: TableRow.ACTION_TYPE.DESTRUCTIVE,
           onClick: (evt, { item, index }) => onDeleteConfig(index),
         },
       ];
-    }, [onEditConfig, onDeleteConfig]),
-    renderRow = useCallback(({ item }) => {
+    }, [onDeleteConfig]),
+    renderRow = useCallback(({ item, index }) => {
       const settings = metadata[`publishConfig-${item.id}`] && (
         metadata[`publishConfig-${item.id}`]['schedule-builder']
       )
       return (
-        <TableRow actions={getActions}>
-          <TableRowCell>{ item.name }</TableRowCell>
+        <TableRow key={item.id} actions={getActions}>
+          <TableRowCell>
+            <Link
+              onClick={() => onEditConfig(index) }
+            >
+              {item.name}
+            </Link>
+          </TableRowCell>
           <TableRowCell>{ generateShortScheduleDetails(
               item.schedule,
               settings,
@@ -59,7 +62,7 @@ function PublishConfigsTable({
           <TableRowCell>{ item.channels.length }</TableRowCell>
         </TableRow>
       )
-    }, [publishConfigs, getActions])
+    }, [onEditConfig, getActions])
 
   return (
     <Table items={publishConfigs}>
@@ -95,6 +98,10 @@ export default function PublishConfigurationsField() {
       })
     }, [navigate, formState]),
     handleDeleteConfig = useCallback(selectedConfig => {
+      if (!confirm(UI_CONTENT.PUBLISH_CONFIGS_FIELD.DELETE_PROMPT)) {
+        return
+      }
+
       const newConfigs = [ ...formState.publishConfigs ]
 
       newConfigs.splice(selectedConfig, 1)

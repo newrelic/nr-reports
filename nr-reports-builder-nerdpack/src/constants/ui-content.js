@@ -80,7 +80,9 @@ export const UI_CONTENT = {
   },
   CHANNELS_FIELD: {
     BUTTON_LABEL_ADD_CHANNEL: 'Add channel',
+    DELETE_PROMPT: 'Are you sure you want to delete this channel?',
     FIELD_LABEL_CHANNELS_CUSTOM: 'Channels',
+    HEADER_LABEL_DETAILS: 'Details',
     NO_CHANNELS_MESSAGE: 'No channels are defined.',
   },
   DASHBOARDS_FORM: {
@@ -149,6 +151,7 @@ export const UI_CONTENT = {
   },
   PUBLISH_CONFIGS_FIELD: {
     BUTTON_LABEL_ADD_CONFIG: 'Add configuration',
+    DELETE_PROMPT: 'Are you sure you want to delete this publish configuration?',
     FIELD_LABEL_PUBLISH_CONFIGS_CUSTOM: 'Publish configurations',
     HEADER_LABEL_SCHEDULE: 'Schedule',
     HEADER_LABEL_CHANNELS: 'Channels',

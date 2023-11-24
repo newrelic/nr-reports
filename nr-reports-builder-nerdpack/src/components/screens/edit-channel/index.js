@@ -191,9 +191,11 @@ function EditChannelScreen({ selectedChannel }) {
           <SelectItem value={SYMBOLS.CHANNEL_TYPES.EMAIL}>
             {UI_CONTENT.EDIT_CHANNEL_FORM.CHANNEL_TYPE_LABEL_EMAIL}
           </SelectItem>
+          {/*
           <SelectItem value={SYMBOLS.CHANNEL_TYPES.SLACK}>
             {UI_CONTENT.EDIT_CHANNEL_FORM.CHANNEL_TYPE_LABEL_SLACK}
           </SelectItem>
+          */}
         </Select>
       </Validation>
 

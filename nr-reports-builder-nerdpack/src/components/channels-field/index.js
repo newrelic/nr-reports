@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import {
   BlockText,
   Button,
+  Link,
   Stack,
   StackItem,
   Table,
@@ -68,40 +69,42 @@ function ChannelsTable({ channels, onEditChannel, onDeleteChannel }) {
   const getActions = useMemo(() => {
       return [
         {
-          label: UI_CONTENT.GLOBAL.ACTION_LABEL_EDIT,
-          onClick: (e, { item, index }) => onEditChannel(index)
-        },
-        {
           label: UI_CONTENT.GLOBAL.ACTION_LABEL_DELETE,
           type: TableRow.ACTION_TYPE.DESTRUCTIVE,
           onClick: (evt, { item, index }) => onDeleteChannel(index),
         },
       ];
-    }, [onEditChannel, onDeleteChannel]),
-    renderRow = useCallback(({ item }) => (
-      <TableRow actions={getActions}>
-        <TableRowCell>{item.type}</TableRowCell>
+    }, [onDeleteChannel]),
+    renderRow = useCallback(({ item, index }) => (
+      <TableRow key={`${item.type}-${index}`} actions={getActions}>
+        <TableRowCell>
+          <Link
+            onClick={() => onEditChannel(index) }
+          >
+            {item.type}
+          </Link>
+        </TableRowCell>
         {
           item.type === SYMBOLS.CHANNEL_TYPES.EMAIL && (
             <TableRowCell><EmailChannelInfo channel={item} /></TableRowCell>
           )
         }
-        {
+        {/*
           item.type === SYMBOLS.CHANNEL_TYPES.SLACK && (
             <TableRowCell><SlackChannelInfo channel={item} /></TableRowCell>
           )
-        }
+        */}
       </TableRow>
-    ), [getActions])
+    ), [onEditChannel, getActions])
 
   return (
     <Table items={channels}>
       <TableHeader>
         <TableHeaderCell>
-          Type
+          {UI_CONTENT.GLOBAL.HEADER_LABEL_NAME}
         </TableHeaderCell>
         <TableHeaderCell>
-          Details
+          {UI_CONTENT.CHANNELS_FIELD.HEADER_LABEL_DETAILS}
         </TableHeaderCell>
       </TableHeader>
       {renderRow}
@@ -119,6 +122,10 @@ export default function ChannelsField() {
       navigate(ROUTES.EDIT_CHANNEL, { formState, selectedChannel: index })
     }, [formState, navigate]),
     handleDeleteChannel = useCallback(index => {
+      if (!confirm(UI_CONTENT.CHANNELS_FIELD.DELETE_PROMPT)) {
+        return
+      }
+
       const channels = [ ...formState.channels ]
 
       channels.splice(index, 1)
