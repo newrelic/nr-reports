@@ -1,5 +1,8 @@
 export const UI_CONTENT = {
   GLOBAL: {
+    HEADER_LABEL_NAME: 'Name',
+    HEADER_LABEL_TYPE: 'Type',
+    HEADER_LABEL_ENABLED: 'Enabled',
     HEADER_TITLE: 'New Relic Reports Builder',
     ACTION_LABEL_CANCEL: 'Cancel',
     ACTION_LABEL_DELETE: 'Delete',
@@ -23,6 +26,8 @@ export const UI_CONTENT = {
       HEADING: 'No report selected.',
       DESCRIPTION: 'Please select a report.',
     },
+    STATUS_LABEL_ENABLED: 'Enabled',
+    STATUS_LABEL_DISABLED: 'Disabled',
   },
 
   ERRORS: {
@@ -37,8 +42,9 @@ export const UI_CONTENT = {
   },
 
   HOME: {
-    HEADING: 'Reports',
     BUTTON_LABEL_CREATE_REPORT: 'Create new report',
+    HEADER_LABEL_PUBLISH_CONFIGS: 'Publish configurations',
+    HEADING: 'Reports',
   },
 
   BASIC_SCHEDULE_FORM: {
@@ -144,6 +150,8 @@ export const UI_CONTENT = {
   PUBLISH_CONFIGS_FIELD: {
     BUTTON_LABEL_ADD_CONFIG: 'Add configuration',
     FIELD_LABEL_PUBLISH_CONFIGS_CUSTOM: 'Publish configurations',
+    HEADER_LABEL_SCHEDULE: 'Schedule',
+    HEADER_LABEL_CHANNELS: 'Channels',
     NO_CONFIGS_MESSAGE: 'No publish configurations are defined.',
   },
   QUERY_FORM: {

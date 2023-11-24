@@ -39,6 +39,11 @@ export default function ReportTable(props) {
           </Link>
         </TableRowCell>
         <TableRowCell>{getReportType(item)}</TableRowCell>
+        <TableRowCell>{
+          typeof item.enabled === 'undefined' || item.enabled ? (
+            UI_CONTENT.GLOBAL.STATUS_LABEL_ENABLED
+          ) : UI_CONTENT.GLOBAL.STATUS_LABEL_DISABLED
+        }</TableRowCell>
         <TableRowCell>{item.publishConfigs ? (
           Object.keys(item.publishConfigs).length
         ) : 0}
@@ -72,13 +77,16 @@ export default function ReportTable(props) {
     >
       <TableHeader actions={getActions()}>
         <TableHeaderCell>
-          Name
+          {UI_CONTENT.GLOBAL.HEADER_LABEL_NAME}
         </TableHeaderCell>
         <TableHeaderCell>
-          Type
+          {UI_CONTENT.GLOBAL.HEADER_LABEL_TYPE}
         </TableHeaderCell>
         <TableHeaderCell>
-          Publish configurations
+          {UI_CONTENT.GLOBAL.HEADER_LABEL_ENABLED}
+        </TableHeaderCell>
+        <TableHeaderCell>
+          {UI_CONTENT.HOME.HEADER_LABEL_PUBLISH_CONFIGS}
         </TableHeaderCell>
       </TableHeader>
       {renderRow}

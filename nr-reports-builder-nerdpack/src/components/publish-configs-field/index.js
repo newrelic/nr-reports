@@ -51,6 +51,11 @@ function PublishConfigsTable({
               settings,
             )
           }</TableRowCell>
+          <TableRowCell>{
+            typeof item.enabled === 'undefined' || item.enabled ? (
+              UI_CONTENT.GLOBAL.STATUS_LABEL_ENABLED
+            ) : UI_CONTENT.GLOBAL.STATUS_LABEL_DISABLED
+          }</TableRowCell>
           <TableRowCell>{ item.channels.length }</TableRowCell>
         </TableRow>
       )
@@ -60,13 +65,16 @@ function PublishConfigsTable({
     <Table items={publishConfigs}>
       <TableHeader>
         <TableHeaderCell>
-          Name
+          {UI_CONTENT.GLOBAL.HEADER_LABEL_NAME}
         </TableHeaderCell>
         <TableHeaderCell>
-          Schedule
+          {UI_CONTENT.PUBLISH_CONFIGS_FIELD.HEADER_LABEL_SCHEDULE}
         </TableHeaderCell>
         <TableHeaderCell>
-          Channels
+          {UI_CONTENT.GLOBAL.HEADER_LABEL_ENABLED}
+        </TableHeaderCell>
+        <TableHeaderCell>
+          {UI_CONTENT.PUBLISH_CONFIGS_FIELD.HEADER_LABEL_CHANNELS}
         </TableHeaderCell>
       </TableHeader>
       {renderRow}
