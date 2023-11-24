@@ -73,7 +73,7 @@ function ChannelsTable({ channels, onEditChannel, onDeleteChannel }) {
           type: TableRow.ACTION_TYPE.DESTRUCTIVE,
           onClick: (evt, { item, index }) => onDeleteChannel(index),
         },
-      ];
+      ]
     }, [onDeleteChannel]),
     renderRow = useCallback(({ item, index }) => (
       <TableRow key={`${item.type}-${index}`} actions={getActions}>

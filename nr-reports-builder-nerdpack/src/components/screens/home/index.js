@@ -18,15 +18,18 @@ import { useManifestWriter } from '../../../hooks'
 export default function HomeScreen() {
   const { navigate } = useContext(RouteDispatchContext),
     {
-      writing,
       manifest,
     } = useContext(StorageContext),
     { del } = useManifestWriter(),
     handleCreateReport = useCallback(() => {
       navigate(ROUTES.EDIT_REPORT, { selectedReportIndex: -1 })
     }, [navigate]),
-    handleDeleteReports = useCallback(reportIndices => {
-      del(reportIndices)
+    handleDeleteReport = useCallback(index => {
+      if (!confirm(UI_CONTENT.HOME.DELETE_REPORT_PROMPT)) {
+        return
+      }
+
+      del([index])
     }, [del])
 
   if (
@@ -69,7 +72,7 @@ export default function HomeScreen() {
             ROUTES.EDIT_REPORT,
             { selectedReportIndex: index }
           )}
-          onDeleteReports={handleDeleteReports}
+          onDeleteReport={handleDeleteReport}
         />
       </CardBody>
     </Card>

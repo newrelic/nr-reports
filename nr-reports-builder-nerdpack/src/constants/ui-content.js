@@ -43,6 +43,7 @@ export const UI_CONTENT = {
 
   HOME: {
     BUTTON_LABEL_CREATE_REPORT: 'Create new report',
+    DELETE_REPORT_PROMPT: 'Are you sure you want to delete this report? This action cannot be undone.',
     HEADER_LABEL_PUBLISH_CONFIGS: 'Publish configurations',
     HEADING: 'Reports',
   },
