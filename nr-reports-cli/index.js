@@ -18,7 +18,9 @@ const yargs = require('yargs/yargs'),
   } = require('nr-reports-core')
 
 const DEFAULT_DELAY_TIMEOUT_MS = 10000,
-  logger = rootLogger
+  logger = rootLogger,
+  runnerId = getEnv('APP_NAME', 'nr-reports-cli'),
+  runnerVersion = getEnv('APP_VERSION', '<unknown>')
 
 function configureLogger(argv) {
   const logLevel = trimStringAndLower(getEnv('LOG_LEVEL', DEFAULT_LOG_LEVEL)),
@@ -223,6 +225,9 @@ async function main() {
       noRender: argv.skipRender,
     },
     engine = new Engine(
+      newrelic,
+      runnerId,
+      runnerVersion,
       getSecretData(argv.a),
       DEFAULT_CHANNEL,
       {
@@ -250,6 +255,8 @@ async function main() {
     'NrReportsStatus',
     {
       error: false,
+      runnerId,
+      runnerVersion,
       ...options,
     },
   )
@@ -275,6 +282,8 @@ newrelic.startBackgroundTransaction(
           'NrReportsStatus',
           {
             error: true,
+            runnerId,
+            runnerVersion,
             message: err.message,
           },
         )

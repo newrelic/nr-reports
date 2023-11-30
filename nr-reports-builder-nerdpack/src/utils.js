@@ -227,3 +227,26 @@ export function generateRandomString(len) {
 
   return chars
 }
+
+export function formatDateTimeForMillis(millis) {
+  const date = new Date(millis)
+
+  if (
+    typeof Intl !== 'undefined' &&
+    typeof Intl.DateTimeFormat !== 'undefined'
+  ) {
+    return Intl.DateTimeFormat(undefined, {
+      timeZone: 'UTC',
+      timeZoneName: 'short',
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: true,
+    }).format(date)
+  }
+
+  return date.toLocaleString()
+}

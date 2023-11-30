@@ -167,6 +167,10 @@ export const UI_CONTENT = {
   REPORT_LIST: {
     HEADING: 'Reports',
   },
+  REPORT_TABLE: {
+    HEADER_LABEL_LAST_MODIFIED: 'Last modified',
+    HEADER_LABEL_LAST_RUN: 'Last run',
+  },
   SCHEDULE_FIELD: {
     BUTTON_LABEL_EDIT_SCHEDULE: 'Edit schedule',
     FIELD_LABEL_SCHEDULE_CUSTOM: 'Schedule',

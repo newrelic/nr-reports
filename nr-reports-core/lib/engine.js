@@ -28,8 +28,14 @@ const {
 const logger = createLogger('engine')
 
 class Engine {
-  constructor(secrets, defaultChannelType, callbacks) {
-    this.context = new Context({ secrets, defaultChannelType })
+  constructor(newrelic, runnerId, runnerVersion, secrets, defaultChannelType, callbacks) {
+    this.context = new Context({
+      newrelic,
+      runnerId,
+      runnerVersion,
+      secrets,
+      defaultChannelType,
+    })
     this.callbacks = callbacks
   }
 
@@ -38,6 +44,7 @@ class Engine {
       log({ ...this.context, ...options }, 'Engine started.')
     })
 
+    const { newrelic } = this.context
     let browser
 
     try {
@@ -94,52 +101,91 @@ class Engine {
           const report = manifest.reports[index],
             reportName = report.name || report.id || index
 
-          let generator
+          try {
+            let generator
 
-          logger.debug(`Running report "${reportName}"...`)
+            logger.debug(`Running report "${reportName}"...`)
 
-          if (report.templateName) {
-            generator = templateGenerator
-          } else if (report.dashboards) {
-            generator = dashboardGenerator
-          } else if (report.query) {
-            generator = queryGenerator
-          }
+            if (report.templateName) {
+              generator = templateGenerator
+            } else if (report.dashboards) {
+              generator = dashboardGenerator
+            } else if (report.query) {
+              generator = queryGenerator
+            }
 
-          if (!generator) {
-            logger.warn(`Unrecognized report schema or missing required properties for report "${reportName}". Ignoring.`)
-            continue
-          }
+            if (!generator) {
+              logger.warn(`Unrecognized report schema or missing required properties for report "${reportName}". Ignoring.`)
+              continue
+            }
 
-          const reportContext = context.context(report)
+            const reportContext = context.context(report)
 
-          logTrace(logger, log => {
-            log(
+            logTrace(logger, log => {
+              log(
+                reportContext,
+                'Invoking generator with the following report context:',
+              )
+            })
+
+            const output = await generator.generate(
               reportContext,
-              'Invoking generator with the following report context:',
-            )
-          })
-
-          const output = await generator.generate(
-            reportContext,
-            manifest,
-            report,
-            tempDir,
-          )
-
-          if (output) {
-            await publish(
-              context,
               manifest,
               report,
-              output,
               tempDir,
             )
-          } else {
-            logger.warn(`No output generated for report "${reportName}".`)
-          }
 
-          logger.debug(`Completed report "${reportName}".`)
+            if (output) {
+              await publish(
+                context,
+                manifest,
+                report,
+                output,
+                tempDir,
+              )
+            } else {
+              logger.warn(`No output generated for report "${reportName}".`)
+            }
+
+            logger.trace('Recording report status...')
+
+            newrelic.recordCustomEvent(
+              'NrReportStatus',
+              {
+                reportId: report.id || index,
+                reportName,
+                runnerId: context.runnerId,
+                runnerVersion: context.runnerVersion,
+                publishConfigIds: publishConfigIds.join(','),
+                error: false,
+              },
+            )
+
+            logger.debug(`Completed report "${reportName}".`)
+          } catch (err) {
+            logger.error('Uncaught exception:')
+            logger.error(err.message)
+
+            // eslint-disable-next-line no-console
+            console.error(err)
+
+            newrelic.noticeError(err)
+
+            logger.trace('Recording report status...')
+
+            newrelic.recordCustomEvent(
+              'NrReportStatus',
+              {
+                reportId: report.id || index,
+                reportName,
+                runnerId: context.runnerId,
+                runnerVersion: context.runnerVersion,
+                publishConfigIds: publishConfigIds.join(','),
+                error: true,
+                message: err.message,
+              },
+            )
+          }
         }
       })
     } finally {

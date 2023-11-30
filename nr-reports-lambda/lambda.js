@@ -134,10 +134,15 @@ async function handler(event) {
     {
       options,
       ...params
-    } = payload
+    } = payload,
+    runnerId = getEnv('APP_NAME', 'nr-reports-lambda'),
+    runnerVersion = getEnv('APP_VERSION', '<unknown>')
 
   try {
     const engine = new Engine(
+      newrelic,
+      runnerId,
+      runnerVersion,
       await getSecretData(options),
       's3',
       {
@@ -165,6 +170,8 @@ async function handler(event) {
       'NrReportsStatus',
       {
         error: false,
+        runnerId,
+        runnerVersion,
         ...options,
       },
     )
@@ -188,6 +195,8 @@ async function handler(event) {
       'NrReportsStatus',
       {
         error: true,
+        runnerId,
+        runnerVersion,
         message: err.message,
       },
     )
