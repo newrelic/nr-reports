@@ -3,6 +3,7 @@
 * [X] Add validation to all fields
 * [X] Escape characters for schedule names so that spaces and things can be used
 * [ ] Dashboard picker search
-* [ ] Enable/disable reports
+* [X] Enable/disable reports
+* [X] View last modified and last run
 * [ ] View history
 * [ ] Support timezone selection
