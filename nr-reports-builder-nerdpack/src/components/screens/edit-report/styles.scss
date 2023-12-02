@@ -1,7 +1,25 @@
-.edit-report-form {
-    display: block;
+.edit-report-screen {
+    width: 100%;
 
-    .form-wrapper {
-        width: 100%;
+    .edit-report-form {
+        background-color: #fff;
+        display: block;
+        margin: 0;
+
+        .form-wrapper {
+            width: 100%;
+        }
+    }
+
+    .right-gutter {
+        .report-history-list {
+            height: 400px;
+
+            header[class$="CardHeader"],
+            div[class$="CardBody"] {
+                margin-left: 0;
+                margin-right: 0;
+            }
+        }
     }
 }

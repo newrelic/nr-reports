@@ -80,10 +80,12 @@ export default function App() {
   }, [reading, readError, route ])
 
   return (
-    <Layout className='report-builder'>
-      <LayoutItem>
-        {View}
-      </LayoutItem>
-    </Layout>
+    <div className="report-builder">
+      <Layout className="report-builder-container">
+        <LayoutItem>
+          {View}
+        </LayoutItem>
+      </Layout>
+    </div>
   )
 }

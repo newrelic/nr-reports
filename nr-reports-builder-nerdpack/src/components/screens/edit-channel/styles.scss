@@ -1,7 +1,15 @@
-.edit-channel-form {
-    display: block;
+.edit-channel-screen {
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
 
-    .form-wrapper {
-        width: 100%;
+    .edit-channel-form {
+        background-color: #fff;
+        display: block;
+        margin: 0;
+
+        .form-wrapper {
+            width: 100%;
+        }
     }
 }

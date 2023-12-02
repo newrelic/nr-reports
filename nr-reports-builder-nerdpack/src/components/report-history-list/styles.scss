@@ -1,0 +1,10 @@
+.report-history-list {
+    height: 500px;
+    margin: 10px 0;
+    overflow-y: scroll;
+
+    ul {
+        margin: 10px 10px 0;
+        list-style-position: inside;
+    }
+}

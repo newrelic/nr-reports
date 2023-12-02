@@ -2,9 +2,13 @@ import React, { useCallback, useContext, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   Button,
+  Card,
+  CardHeader,
+  CardBody,
   Checkbox,
   Form,
-  HeadingText,
+  Layout,
+  LayoutItem,
   Stack,
   StackItem,
   TextField,
@@ -117,98 +121,98 @@ function EditPublishConfigScreen({ selectedConfig }) {
     }, [navigate, formState])
 
   return (
-      <Form
-        className="edit-publish-config-form"
-        spacingType={[Form.SPACING_TYPE.LARGE]}
-      >
-        <HeadingText
-          type={HeadingText.TYPE.HEADING_2}
-          spacingType={[
-            HeadingText.SPACING_TYPE.OMIT,
-            HeadingText.SPACING_TYPE.OMIT,
-            HeadingText.SPACING_TYPE.LARGE,
-            HeadingText.SPACING_TYPE.OMIT,
-          ]}
-        >
-          {UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.HEADING}
-        </HeadingText>
+    <div className="edit-publish-config-screen">
+      <Layout>
+        <LayoutItem>
+          <Card>
+            <CardHeader title={UI_CONTENT.EDIT_PUBLISH_CONFIG_SCREEN.HEADING} />
+            <CardBody>
+              <Form
+                className="edit-publish-config-form"
+                spacingType={[Form.SPACING_TYPE.LARGE]}
+              >
 
-        <Stack
-          spacingType={[
-            Stack.SPACING_TYPE.NONE,
-          ]}
-          gapType={Stack.GAP_TYPE.NONE}
-          directionType={Stack.DIRECTION_TYPE.VERTICAL}
-          fullWidth
-        >
-          <StackItem>
-            <Validation name="name" validation={nameNotEmpty}>
-              <TextField
-                placeholder={
-                  UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.CONFIG_NAME_FIELD_PLACEHOLDER
-                }
-                label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_NAME}
-                value={formState.name}
-                onChange={handleChangeName}
-                invalid={formState.validations?.name}
-              />
-            </Validation>
-          </StackItem>
-
-          <StackItem>
-            <Checkbox
-              label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_ENABLED}
-              checked={formState.enabled}
-              onChange={handleChangeEnabled}
-            />
-          </StackItem>
-
-          <StackItem>
-            <ScheduleField />
-          </StackItem>
-
-          <StackItem className="form-wrapper">
-            <ChannelsField />
-          </StackItem>
-
-          <StackItem>
-            <Stack
-              spacingType={[
-                Stack.SPACING_TYPE.LARGE,
-                Stack.SPACING_TYPE.NONE,
-              ]}
-            >
-              <StackItem>
-                <Button
-                  onClick={handleSubmit}
-                  type={Button.TYPE.PRIMARY}
+                <Stack
                   spacingType={[
-                    Button.SPACING_TYPE.NONE,
-                    Button.SPACING_TYPE.SMALL,
-                    Button.SPACING_TYPE.NONE,
-                    Button.SPACING_TYPE.NONE,
+                    Stack.SPACING_TYPE.NONE,
                   ]}
+                  gapType={Stack.GAP_TYPE.NONE}
+                  directionType={Stack.DIRECTION_TYPE.VERTICAL}
+                  fullWidth
                 >
-                  {UI_CONTENT.GLOBAL.ACTION_LABEL_OK}
-                </Button>
-                <Button
-                  onClick={handleCancel}
-                  type={Button.TYPE.PLAIN}
-                  spacingType={[
-                    Button.SPACING_TYPE.NONE,
-                    Button.SPACING_TYPE.SMALL,
-                    Button.SPACING_TYPE.NONE,
-                    Button.SPACING_TYPE.NONE,
-                  ]}
-                >
-                  {UI_CONTENT.GLOBAL.ACTION_LABEL_CANCEL}
-                </Button>
-              </StackItem>
-            </Stack>
-          </StackItem>
+                  <StackItem>
+                    <Validation name="name" validation={nameNotEmpty}>
+                      <TextField
+                        placeholder={
+                          UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.CONFIG_NAME_FIELD_PLACEHOLDER
+                        }
+                        label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_NAME}
+                        value={formState.name}
+                        onChange={handleChangeName}
+                        invalid={formState.validations?.name}
+                      />
+                    </Validation>
+                  </StackItem>
 
-        </Stack>
-      </Form>
+                  <StackItem>
+                    <Checkbox
+                      label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_ENABLED}
+                      checked={formState.enabled}
+                      onChange={handleChangeEnabled}
+                    />
+                  </StackItem>
+
+                  <StackItem>
+                    <ScheduleField />
+                  </StackItem>
+
+                  <StackItem className="form-wrapper">
+                    <ChannelsField />
+                  </StackItem>
+
+                  <StackItem>
+                    <Stack
+                      spacingType={[
+                        Stack.SPACING_TYPE.LARGE,
+                        Stack.SPACING_TYPE.NONE,
+                      ]}
+                    >
+                      <StackItem>
+                        <Button
+                          onClick={handleSubmit}
+                          type={Button.TYPE.PRIMARY}
+                          spacingType={[
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.SMALL,
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.NONE,
+                          ]}
+                        >
+                          {UI_CONTENT.GLOBAL.ACTION_LABEL_OK}
+                        </Button>
+                        <Button
+                          onClick={handleCancel}
+                          type={Button.TYPE.PLAIN}
+                          spacingType={[
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.SMALL,
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.NONE,
+                          ]}
+                        >
+                          {UI_CONTENT.GLOBAL.ACTION_LABEL_CANCEL}
+                        </Button>
+                      </StackItem>
+                    </Stack>
+                  </StackItem>
+
+                </Stack>
+              </Form>
+            </CardBody>
+          </Card>
+        </LayoutItem>
+      </Layout>
+    </div>
   )
 }
 

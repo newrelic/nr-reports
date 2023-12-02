@@ -67,16 +67,16 @@ function PublishConfigsTable({
   return (
     <Table items={publishConfigs}>
       <TableHeader>
-        <TableHeaderCell>
+        <TableHeaderCell width="40%">
           {UI_CONTENT.GLOBAL.HEADER_LABEL_NAME}
         </TableHeaderCell>
-        <TableHeaderCell>
+        <TableHeaderCell width="30%">
           {UI_CONTENT.PUBLISH_CONFIGS_FIELD.HEADER_LABEL_SCHEDULE}
         </TableHeaderCell>
-        <TableHeaderCell>
+        <TableHeaderCell width="15%">
           {UI_CONTENT.GLOBAL.HEADER_LABEL_ENABLED}
         </TableHeaderCell>
-        <TableHeaderCell>
+        <TableHeaderCell width="15%">
           {UI_CONTENT.PUBLISH_CONFIGS_FIELD.HEADER_LABEL_CHANNELS}
         </TableHeaderCell>
       </TableHeader>

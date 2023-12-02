@@ -13,14 +13,14 @@ import { RouteContext } from '../../contexts';
 import { useNrqlQuery } from '../../hooks';
 import { formatDateTimeForMillis, getReportType } from '../../utils';
 import { UI_CONTENT } from '../../constants';
+import ReportHistoryModal from '../report-history-modal';
 
 export default function ReportTable({
   reports,
   onSelectReport,
   onDeleteReport,
 }) {
-  const
-    { params: { accountId }} = useContext(RouteContext),
+  const { params: { accountId }} = useContext(RouteContext),
     {
       loading,
       data,
@@ -30,8 +30,21 @@ export default function ReportTable({
       query: 'SELECT timestamp FROM NrReportStatus LIMIT 1'
     }),
     [lastRunDate, setLastRunDate] = useState(),
+    [viewReportHistoryIndex, setViewReportHistoryIndex] = useState(-1),
+    handleViewHistory = useCallback(index => {
+      setViewReportHistoryIndex(index)
+    }, [setViewReportHistoryIndex]),
+    handleCloseHistoryModal = useCallback(() => {
+      setViewReportHistoryIndex(-1)
+    }, [setViewReportHistoryIndex]),
     getActions = useMemo(() => {
       return [
+        {
+          label: UI_CONTENT.REPORT_TABLE.ACTION_LABEL_VIEW_HISTORY,
+          onClick: (evt, { item, index }) => {
+            handleViewHistory(index)
+          }
+        },
         {
           label: UI_CONTENT.GLOBAL.ACTION_LABEL_DELETE,
           type: TableRow.ACTION_TYPE.DESTRUCTIVE,
@@ -40,7 +53,7 @@ export default function ReportTable({
           }
         },
       ]
-    }, [onDeleteReport]),
+    }, [handleViewHistory, onDeleteReport]),
     renderRow = useCallback(({ item, index }) => (
       <TableRow key={item.id} actions={getActions}>
         <TableRowCell>
@@ -81,28 +94,39 @@ export default function ReportTable({
   }, [loading, data, error])
 
   return (
-    <Table
-      className="report-table"
-      items={reports}
-    >
-      <TableHeader>
-        <TableHeaderCell>
-          {UI_CONTENT.GLOBAL.HEADER_LABEL_NAME}
-        </TableHeaderCell>
-        <TableHeaderCell>
-          {UI_CONTENT.GLOBAL.HEADER_LABEL_TYPE}
-        </TableHeaderCell>
-        <TableHeaderCell>
-          {UI_CONTENT.GLOBAL.HEADER_LABEL_ENABLED}
-        </TableHeaderCell>
-        <TableHeaderCell>
-          {UI_CONTENT.REPORT_TABLE.HEADER_LABEL_LAST_MODIFIED}
-        </TableHeaderCell>
-        <TableHeaderCell>
-          {UI_CONTENT.REPORT_TABLE.HEADER_LABEL_LAST_RUN}
-        </TableHeaderCell>
-      </TableHeader>
-      {renderRow}
-    </Table>
+    <>
+      <Table
+        className="report-table"
+        items={reports}
+      >
+        <TableHeader>
+          <TableHeaderCell width="33%">
+            {UI_CONTENT.GLOBAL.HEADER_LABEL_NAME}
+          </TableHeaderCell>
+          <TableHeaderCell width="10%">
+            {UI_CONTENT.GLOBAL.HEADER_LABEL_TYPE}
+          </TableHeaderCell>
+          <TableHeaderCell width="10%">
+            {UI_CONTENT.GLOBAL.HEADER_LABEL_ENABLED}
+          </TableHeaderCell>
+          <TableHeaderCell>
+            {UI_CONTENT.REPORT_TABLE.HEADER_LABEL_LAST_MODIFIED}
+          </TableHeaderCell>
+          <TableHeaderCell>
+            {UI_CONTENT.REPORT_TABLE.HEADER_LABEL_LAST_RUN}
+          </TableHeaderCell>
+        </TableHeader>
+        {renderRow}
+      </Table>
+      {
+        viewReportHistoryIndex >= 0 && (
+          <ReportHistoryModal
+            report={reports[viewReportHistoryIndex]}
+            open
+            onClose={handleCloseHistoryModal}
+          />
+        )
+      }
+    </>
   )
 }

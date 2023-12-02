@@ -5,5 +5,6 @@
 * [ ] Dashboard picker search
 * [X] Enable/disable reports
 * [X] View last modified and last run
-* [ ] View history
+* [X] View history
 * [ ] Support timezone selection
+* [ ] Fix multi-select label issue

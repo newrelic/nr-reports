@@ -97,17 +97,16 @@ export const UI_CONTENT = {
   EDIT_CHANNEL_FORM: {
     CHANNEL_TYPE_LABEL_EMAIL: 'Email',
     CHANNEL_TYPE_LABEL_SLACK: 'Slack',
-    HEADING: 'Edit channel',
     FIELD_LABEL_CHANNEL_TYPE: 'Type',
   },
   EDIT_CHANNEL_SCREEN: {
+    HEADING: 'Edit channel',
     CANCEL_PROMPT: 'You have made changes to this channel. Are you sure you want to cancel?',
   },
   EDIT_REPORT_FORM: {
     FIELD_LABEL_ENABLED: 'Enabled',
     FIELD_LABEL_NAME: 'Name',
     FIELD_LABEL_TYPE: 'Type',
-    HEADING: 'Edit report',
     REPORT_NAME_FIELD_PLACEHOLDER: 'Weekly Performance Dashboards Report',
     REPORT_TYPE_LABEL_DASHBOARD: 'Dashboard',
     REPORT_TYPE_LABEL_QUERY: 'Query',
@@ -120,15 +119,17 @@ export const UI_CONTENT = {
   },
   EDIT_REPORT_SCREEN: {
     CANCEL_PROMPT: 'You have made changes to this report. Are you sure you want to cancel?',
-  },
-  EDIT_PUBLISH_CONFIG_SCREEN: {
-    CANCEL_PROMPT: 'You have made changes to this publish configuration. Are you sure you want to cancel?',
+    HEADING: 'Edit report',
+    HEADING_HISTORY: 'History'
   },
   EDIT_PUBLISH_CONFIG_FORM: {
     CONFIG_NAME_FIELD_PLACEHOLDER: 'email-team',
     FIELD_LABEL_ENABLED: 'Enabled',
     FIELD_LABEL_NAME: 'Name',
+  },
+  EDIT_PUBLISH_CONFIG_SCREEN: {
     HEADING: 'Edit publish configuration',
+    CANCEL_PROMPT: 'You have made changes to this publish configuration. Are you sure you want to cancel?',
   },
   EMAIL_CHANNEL_FORM: {
     CC_FIELD_PLACEHOLDER: `robin@newrelic.com\npat@newrelic.com`,
@@ -164,10 +165,19 @@ export const UI_CONTENT = {
     FIELD_LABEL_QUERY: 'Query',
     QUERY_FIELD_PLACEHOLDER: 'SELECT count(*) FROM Transaction FACET appName',
   },
+  REPORT_HISTORY_LIST: {
+    STATUS_LABEL_FAILED: 'Failed',
+    STATUS_LABEL_SUCCESS: 'Success',
+    PUBLISH_MESSAGE: 'Report outputs published to the following configurations:'
+  },
+  REPORT_HISTORY_MODAL: {
+    HEADING: name => `History for "${name}"`,
+  },
   REPORT_LIST: {
     HEADING: 'Reports',
   },
   REPORT_TABLE: {
+    ACTION_LABEL_VIEW_HISTORY: 'View history',
     HEADER_LABEL_LAST_MODIFIED: 'Last modified',
     HEADER_LABEL_LAST_RUN: 'Last run',
   },

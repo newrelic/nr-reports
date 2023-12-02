@@ -2,8 +2,13 @@ import React, { useCallback, useContext } from 'react'
 import PropTypes from 'prop-types'
 import {
   Button,
+  Card,
+  CardHeader,
+  CardBody,
   Form,
   HeadingText,
+  Layout,
+  LayoutItem,
   Select,
   SelectItem,
   Stack,
@@ -165,95 +170,106 @@ function EditChannelScreen({ selectedChannel }) {
     }, [navigate, formState])
 
   return (
-    <Form
-      className="edit-channel-form"
-      spacingType={[Form.SPACING_TYPE.LARGE]}
-    >
-      <HeadingText
-        type={HeadingText.TYPE.HEADING_2}
-        spacingType={[
-          HeadingText.SPACING_TYPE.OMIT,
-          HeadingText.SPACING_TYPE.OMIT,
-          HeadingText.SPACING_TYPE.LARGE,
-          HeadingText.SPACING_TYPE.OMIT,
-        ]}
-      >
-        {UI_CONTENT.EDIT_CHANNEL_FORM.HEADING}
-      </HeadingText>
+    <div className="edit-channel-screen">
+      <Layout>
+        <LayoutItem>
+          <Card>
+            <CardHeader title={UI_CONTENT.EDIT_CHANNEL_SCREEN.HEADING} />
+            <CardBody>
+              <Form
+                className="edit-channel-form"
+                spacingType={[Form.SPACING_TYPE.LARGE]}
+              >
+                <HeadingText
+                  type={HeadingText.TYPE.HEADING_2}
+                  spacingType={[
+                    HeadingText.SPACING_TYPE.OMIT,
+                    HeadingText.SPACING_TYPE.OMIT,
+                    HeadingText.SPACING_TYPE.LARGE,
+                    HeadingText.SPACING_TYPE.OMIT,
+                  ]}
+                >
+                  {UI_CONTENT.EDIT_CHANNEL_FORM.HEADING}
+                </HeadingText>
 
-      <Validation name="type" validation={channelTypeIsValid}>
-        <Select
-          label={UI_CONTENT.EDIT_CHANNEL_FORM.FIELD_LABEL_CHANNEL_TYPE}
-          onChange={handleChangeType}
-          value={formState.type}
-          invalid={validations?.type}
-        >
-          <SelectItem value={SYMBOLS.CHANNEL_TYPES.EMAIL}>
-            {UI_CONTENT.EDIT_CHANNEL_FORM.CHANNEL_TYPE_LABEL_EMAIL}
-          </SelectItem>
-          {/*
-          <SelectItem value={SYMBOLS.CHANNEL_TYPES.SLACK}>
-            {UI_CONTENT.EDIT_CHANNEL_FORM.CHANNEL_TYPE_LABEL_SLACK}
-          </SelectItem>
-          */}
-        </Select>
-      </Validation>
+                <Validation name="type" validation={channelTypeIsValid}>
+                  <Select
+                    label={UI_CONTENT.EDIT_CHANNEL_FORM.FIELD_LABEL_CHANNEL_TYPE}
+                    onChange={handleChangeType}
+                    value={formState.type}
+                    invalid={validations?.type}
+                  >
+                    <SelectItem value={SYMBOLS.CHANNEL_TYPES.EMAIL}>
+                      {UI_CONTENT.EDIT_CHANNEL_FORM.CHANNEL_TYPE_LABEL_EMAIL}
+                    </SelectItem>
+                    {/*
+                    <SelectItem value={SYMBOLS.CHANNEL_TYPES.SLACK}>
+                      {UI_CONTENT.EDIT_CHANNEL_FORM.CHANNEL_TYPE_LABEL_SLACK}
+                    </SelectItem>
+                    */}
+                  </Select>
+                </Validation>
 
-      {
-        formState.type === SYMBOLS.CHANNEL_TYPES.EMAIL && (
-          <EmailChannelForm
-            onChangeSubject={handleChangeEmailSubject}
-            onChangeFormat={handleChangeEmailFormat}
-            onChangeQueryDeliveryMethod={handleChangeEmailQueryDeliveryMethod}
-            onChangeTo={handleChangeEmailTo}
-            onChangeCc={handleChangeEmailCc}
-            onChangeTemplate={handleChangeEmailTemplate}
-          />
-        )
-      }
+                {
+                  formState.type === SYMBOLS.CHANNEL_TYPES.EMAIL && (
+                    <EmailChannelForm
+                      onChangeSubject={handleChangeEmailSubject}
+                      onChangeFormat={handleChangeEmailFormat}
+                      onChangeQueryDeliveryMethod={handleChangeEmailQueryDeliveryMethod}
+                      onChangeTo={handleChangeEmailTo}
+                      onChangeCc={handleChangeEmailCc}
+                      onChangeTemplate={handleChangeEmailTemplate}
+                    />
+                  )
+                }
 
-      {
-        formState.type === SYMBOLS.CHANNEL_TYPES.SLACK && (
-          <SlackChannelForm
-            onChangeWebhookUrl={handleChangeSlackWebhookUrl}
-          />
-        )
-      }
+                {
+                  formState.type === SYMBOLS.CHANNEL_TYPES.SLACK && (
+                    <SlackChannelForm
+                      onChangeWebhookUrl={handleChangeSlackWebhookUrl}
+                    />
+                  )
+                }
 
-      <Stack
-        spacingType={[
-          Stack.SPACING_TYPE.LARGE,
-          Stack.SPACING_TYPE.NONE,
-        ]}
-      >
-        <StackItem>
-          <Button
-            onClick={handleSubmit}
-            type={Button.TYPE.PRIMARY}
-            spacingType={[
-              Button.SPACING_TYPE.NONE,
-              Button.SPACING_TYPE.SMALL,
-              Button.SPACING_TYPE.NONE,
-              Button.SPACING_TYPE.NONE,
-            ]}
-          >
-            {UI_CONTENT.GLOBAL.ACTION_LABEL_OK}
-          </Button>
-          <Button
-            onClick={handleCancel}
-            type={Button.TYPE.PLAIN}
-            spacingType={[
-              Button.SPACING_TYPE.NONE,
-              Button.SPACING_TYPE.SMALL,
-              Button.SPACING_TYPE.NONE,
-              Button.SPACING_TYPE.NONE,
-            ]}
-          >
-            {UI_CONTENT.GLOBAL.ACTION_LABEL_CANCEL}
-          </Button>
-        </StackItem>
-      </Stack>
-    </Form>
+                <Stack
+                  spacingType={[
+                    Stack.SPACING_TYPE.LARGE,
+                    Stack.SPACING_TYPE.NONE,
+                  ]}
+                >
+                  <StackItem>
+                    <Button
+                      onClick={handleSubmit}
+                      type={Button.TYPE.PRIMARY}
+                      spacingType={[
+                        Button.SPACING_TYPE.NONE,
+                        Button.SPACING_TYPE.SMALL,
+                        Button.SPACING_TYPE.NONE,
+                        Button.SPACING_TYPE.NONE,
+                      ]}
+                    >
+                      {UI_CONTENT.GLOBAL.ACTION_LABEL_OK}
+                    </Button>
+                    <Button
+                      onClick={handleCancel}
+                      type={Button.TYPE.PLAIN}
+                      spacingType={[
+                        Button.SPACING_TYPE.NONE,
+                        Button.SPACING_TYPE.SMALL,
+                        Button.SPACING_TYPE.NONE,
+                        Button.SPACING_TYPE.NONE,
+                      ]}
+                    >
+                      {UI_CONTENT.GLOBAL.ACTION_LABEL_CANCEL}
+                    </Button>
+                  </StackItem>
+                </Stack>
+              </Form>
+            </CardBody>
+          </Card>
+        </LayoutItem>
+      </Layout>
+    </div>
   )
 }
 

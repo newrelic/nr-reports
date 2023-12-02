@@ -2,9 +2,15 @@ import React, { useCallback, useContext, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import {
   Button,
+  Card,
+  CardHeader,
+  CardBody,
   Checkbox,
+  CollapsibleLayoutItem,
   Form,
   HeadingText,
+  Layout,
+  LayoutItem,
   Select,
   SelectItem,
   Stack,
@@ -34,6 +40,7 @@ import {
   UI_CONTENT,
 } from '../../../constants'
 import { FormContext, Validation, withFormContext } from '../../../contexts/form'
+import ReportHistoryList from '../../report-history-list'
 
 function reportToFormState(report) {
   return {
@@ -168,146 +175,159 @@ function EditReportScreen({ report, selectedReportIndex }) {
   }, [error, writeError, writeFinished, formState.name, updateFormState, handleSave, handleClose, home])
 
   return (
-    <Form
-      className="edit-report-form"
-      spacingType={[Form.SPACING_TYPE.LARGE]}
-    >
-      <HeadingText
-        type={HeadingText.TYPE.HEADING_2}
-        spacingType={[
-          HeadingText.SPACING_TYPE.OMIT,
-          HeadingText.SPACING_TYPE.OMIT,
-          HeadingText.SPACING_TYPE.LARGE,
-          HeadingText.SPACING_TYPE.OMIT,
-        ]}
-      >
-        {UI_CONTENT.EDIT_REPORT_FORM.HEADING}
-      </HeadingText>
+    <div className="edit-report-screen">
+      <Layout>
+        <LayoutItem>
+          <Card>
+            <CardHeader title={UI_CONTENT.EDIT_REPORT_SCREEN.HEADING} />
+            <CardBody>
+              <Form
+                className="edit-report-form"
+                spacingType={[Form.SPACING_TYPE.LARGE]}
+              >
+                <Stack
+                  spacingType={[
+                    Stack.SPACING_TYPE.NONE,
+                  ]}
+                  directionType={Stack.DIRECTION_TYPE.VERTICAL}
+                  fullWidth
+                >
+                  <StackItem>
+                    <Validation name="name" validation={nameNotEmpty}>
+                      <TextField
+                        placeholder={
+                          UI_CONTENT.EDIT_REPORT_FORM.REPORT_NAME_FIELD_PLACEHOLDER
+                        }
+                        label={UI_CONTENT.EDIT_REPORT_FORM.FIELD_LABEL_NAME}
+                        value={formState.name}
+                        onChange={handleChangeName}
+                        invalid={formState.validations?.name}
+                      />
+                    </Validation>
+                  </StackItem>
 
-      <Stack
-        spacingType={[
-          Stack.SPACING_TYPE.NONE,
-        ]}
-        directionType={Stack.DIRECTION_TYPE.VERTICAL}
-        fullWidth
-      >
-        <StackItem>
-          <Validation name="name" validation={nameNotEmpty}>
-            <TextField
-              placeholder={
-                UI_CONTENT.EDIT_REPORT_FORM.REPORT_NAME_FIELD_PLACEHOLDER
-              }
-              label={UI_CONTENT.EDIT_REPORT_FORM.FIELD_LABEL_NAME}
-              value={formState.name}
-              onChange={handleChangeName}
-              invalid={formState.validations?.name}
-            />
-          </Validation>
-        </StackItem>
+                  <StackItem>
+                    <Checkbox
+                      label={UI_CONTENT.EDIT_REPORT_FORM.FIELD_LABEL_ENABLED}
+                      checked={formState.enabled}
+                      onChange={handleChangeEnabled}
+                    />
+                  </StackItem>
 
-        <StackItem>
-          <Checkbox
-            label={UI_CONTENT.EDIT_REPORT_FORM.FIELD_LABEL_ENABLED}
-            checked={formState.enabled}
-            onChange={handleChangeEnabled}
-          />
-        </StackItem>
+                  <StackItem>
+                    <Validation name="type" validation={typeIsValid}>
+                      <Select
+                        label={UI_CONTENT.EDIT_REPORT_FORM.FIELD_LABEL_TYPE}
+                        onChange={handleChangeType}
+                        value={formState.type}
+                        invalid={formState.validations?.type}
+                      >
+                        <SelectItem value={SYMBOLS.REPORT_TYPES.DASHBOARD}>
+                          {UI_CONTENT.EDIT_REPORT_FORM.REPORT_TYPE_LABEL_DASHBOARD}
+                        </SelectItem>
+                        <SelectItem value={SYMBOLS.REPORT_TYPES.QUERY}>
+                          {UI_CONTENT.EDIT_REPORT_FORM.REPORT_TYPE_LABEL_QUERY}
+                        </SelectItem>
+                      </Select>
+                    </Validation>
+                  </StackItem>
 
-        <StackItem>
-          <Validation name="type" validation={typeIsValid}>
-            <Select
-              label={UI_CONTENT.EDIT_REPORT_FORM.FIELD_LABEL_TYPE}
-              onChange={handleChangeType}
-              value={formState.type}
-              invalid={formState.validations?.type}
-            >
-              <SelectItem value={SYMBOLS.REPORT_TYPES.DASHBOARD}>
-                {UI_CONTENT.EDIT_REPORT_FORM.REPORT_TYPE_LABEL_DASHBOARD}
-              </SelectItem>
-              <SelectItem value={SYMBOLS.REPORT_TYPES.QUERY}>
-                {UI_CONTENT.EDIT_REPORT_FORM.REPORT_TYPE_LABEL_QUERY}
-              </SelectItem>
-            </Select>
-          </Validation>
-        </StackItem>
+                  <StackItem className="form-wrapper">
+                    {
+                      formState.type === SYMBOLS.REPORT_TYPES.DASHBOARD ? (
+                        <DashboardsField
+                          report={report}
+                          formState={formState}
+                          updateFormState={updateFormState}
+                        />
+                      ) : (
+                        <QueryField
+                          report={report}
+                          formState={formState}
+                          updateFormState={updateFormState}
+                        />
+                      )
+                    }
+                  </StackItem>
 
-        <StackItem className="form-wrapper">
-          {
-            formState.type === SYMBOLS.REPORT_TYPES.DASHBOARD ? (
-              <DashboardsField
+                  <StackItem className="form-wrapper">
+                    <PublishConfigurationsField
+                      formState={formState}
+                      updateFormState={updateFormState}
+                    />
+                  </StackItem>
+
+                  <StackItem>
+                    <Stack
+                      spacingType={[
+                        Stack.SPACING_TYPE.LARGE,
+                        Stack.SPACING_TYPE.NONE,
+                      ]}
+                    >
+                      <StackItem>
+                        <Button
+                          onClick={handleSave}
+                          type={Button.TYPE.PRIMARY}
+                          loading={writing}
+                          spacingType={[
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.SMALL,
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.NONE,
+                          ]}
+                        >
+                          {UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE}
+                        </Button>
+                        <Button
+                          onClick={handleSaveAndClose}
+                          type={Button.TYPE.SECONDARY}
+                          loading={writing}
+                          spacingType={[
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.SMALL,
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.NONE,
+                          ]}
+                        >
+                          {UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE_AND_CLOSE}
+                        </Button>
+                        <Button
+                          onClick={handleClose}
+                          type={Button.TYPE.PLAIN}
+                          spacingType={[
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.SMALL,
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.NONE,
+                          ]}
+                        >
+                          {UI_CONTENT.GLOBAL.ACTION_LABEL_CANCEL}
+                        </Button>
+                      </StackItem>
+                    </Stack>
+                  </StackItem>
+
+                </Stack>
+              </Form>
+            </CardBody>
+          </Card>
+        </LayoutItem>
+        <CollapsibleLayoutItem
+          triggerType={CollapsibleLayoutItem.TRIGGER_TYPE.INBUILT}
+          type={LayoutItem.TYPE.SPLIT_RIGHT}
+          className="right-gutter"
+        >
+          <Card>
+            <CardHeader title={UI_CONTENT.EDIT_REPORT_SCREEN.HEADING_HISTORY} />
+            <CardBody>
+              <ReportHistoryList
                 report={report}
-                formState={formState}
-                updateFormState={updateFormState}
               />
-            ) : (
-              <QueryField
-                report={report}
-                formState={formState}
-                updateFormState={updateFormState}
-              />
-            )
-          }
-        </StackItem>
-
-        <StackItem className="form-wrapper">
-          <PublishConfigurationsField
-            formState={formState}
-            updateFormState={updateFormState}
-          />
-        </StackItem>
-
-        <StackItem>
-          <Stack
-            spacingType={[
-              Stack.SPACING_TYPE.LARGE,
-              Stack.SPACING_TYPE.NONE,
-            ]}
-          >
-            <StackItem>
-              <Button
-                onClick={handleSave}
-                type={Button.TYPE.PRIMARY}
-                loading={writing}
-                spacingType={[
-                  Button.SPACING_TYPE.NONE,
-                  Button.SPACING_TYPE.SMALL,
-                  Button.SPACING_TYPE.NONE,
-                  Button.SPACING_TYPE.NONE,
-                ]}
-              >
-                {UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE}
-              </Button>
-              <Button
-                onClick={handleSaveAndClose}
-                type={Button.TYPE.SECONDARY}
-                loading={writing}
-                spacingType={[
-                  Button.SPACING_TYPE.NONE,
-                  Button.SPACING_TYPE.SMALL,
-                  Button.SPACING_TYPE.NONE,
-                  Button.SPACING_TYPE.NONE,
-                ]}
-              >
-                {UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE_AND_CLOSE}
-              </Button>
-              <Button
-                onClick={handleClose}
-                type={Button.TYPE.PLAIN}
-                spacingType={[
-                  Button.SPACING_TYPE.NONE,
-                  Button.SPACING_TYPE.SMALL,
-                  Button.SPACING_TYPE.NONE,
-                  Button.SPACING_TYPE.NONE,
-                ]}
-              >
-                {UI_CONTENT.GLOBAL.ACTION_LABEL_CANCEL}
-              </Button>
-            </StackItem>
-          </Stack>
-        </StackItem>
-
-      </Stack>
-    </Form>
+            </CardBody>
+          </Card>
+        </CollapsibleLayoutItem>
+      </Layout>
+    </div>
   )
 }
 

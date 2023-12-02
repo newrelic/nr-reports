@@ -2,13 +2,19 @@
 @import './components/styles.scss';
 
 .report-builder {
-    height: 100%;
-    margin-bottom: 0px;
+  background-color: #F3F4F4;
+  height: calc(100% - 16px);
+  margin-bottom: 0px;
+  padding: 8px;
 
-    .navigation {
-      padding: 10px;
-      border-right: 1px solid $unknown;
-    }
+  .navigation {
+    padding: 10px;
+    border-right: 1px solid $unknown;
+  }
+
+  .report-builder-container {
+    height: 100%;
+  }
 }
 
 .nr1-form-field {

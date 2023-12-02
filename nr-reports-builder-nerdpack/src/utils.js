@@ -250,3 +250,7 @@ export function formatDateTimeForMillis(millis) {
 
   return date.toLocaleString()
 }
+
+export function splitStringAndTrim(str, delimiter = ',') {
+  return str.split(delimiter).map(s => s.trim())
+}
