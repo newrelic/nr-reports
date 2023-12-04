@@ -23,6 +23,10 @@
       font-size: 12px;
       line-height: 16px;
       cursor: text;
+
+      &.placeholder {
+        color: #9EA5A9;
+      }
     }
   }
 
@@ -61,7 +65,7 @@
     border-radius: 3px;
     color: #0b6acb;
     margin-right: 8px;
-    margin-bottom: 6px;
+    //margin-bottom: 6px;
 
     .text {
       flex: none;

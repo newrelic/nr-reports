@@ -39,7 +39,10 @@ export default function QueryField() {
     }, [updateFormState]),
     handleChangeQuery = useCallback(e => {
       updateFormState({ query: e.target.value })
-    }, [updateFormState])
+    }, [updateFormState]),
+    accountMenuLabeler = useCallback((item, index, items) => (
+      `${items.length} account${items.length > 1 ? 's' : ''}`
+    ), [])
 
   useEffect(() => {
     if (error) {
@@ -97,6 +100,7 @@ export default function QueryField() {
                       placeholderText={UI_CONTENT.QUERY_FORM.ACCOUNTS_FIELD_PLACEHOLDER}
                       onChange={handleChangeAccounts}
                       invalid={formState.validations?.accountIds}
+                      labeler={accountMenuLabeler}
                     />
                   </StackItem>
                 )

@@ -163,7 +163,10 @@ export default function BasicScheduleForm() {
     */
     handleChangeWeekOfMonth = useCallback((_, v) => {
       update({ weekOfMonth: v })
-    }, [update])
+    }, [update]),
+    dayOfWeekMenuLabeler = useCallback((item, index, items) => (
+      `${items.length} day${items.length > 1 ? 's' : ''}`
+    ), [])
 
   return (
     <Form
@@ -218,6 +221,7 @@ export default function BasicScheduleForm() {
               icon={Icon.TYPE.INTERFACE__CHEVRON__CHEVRON_BOTTOM}
               placeholderText={UI_CONTENT.BASIC_SCHEDULE_FORM.DAYS_OF_WEEK_FIELD_PLACEHOLDER}
               onChange={handleChangeDaysOfWeek}
+              labeler={dayOfWeekMenuLabeler}
             />
           </CustomField>
         )

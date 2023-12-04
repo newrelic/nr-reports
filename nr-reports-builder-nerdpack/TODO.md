@@ -7,4 +7,4 @@
 * [X] View last modified and last run
 * [X] View history
 * [ ] Support timezone selection
-* [ ] Fix multi-select label issue
+* [X] Fix multi-select label issue

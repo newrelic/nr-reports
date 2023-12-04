@@ -31,6 +31,7 @@ export default function MultiSelect2({
   icon = NO_ICON,
   showChips = true,
   placeholderText = '',
+  labeler = () => '',
   invalid = '',
   onChange,
 }) {
@@ -55,6 +56,10 @@ export default function MultiSelect2({
         onChange(newValue)
       }
     }, [value, onChange]),
+    removeAllHandler = useCallback(e => {
+      e.stopPropagation()
+      onChange([])
+    }, [onChange]),
     showItemsListHandler = useCallback(e => {
       e.stopPropagation()
 
@@ -110,16 +115,17 @@ export default function MultiSelect2({
             value.length > 0 && showChips && value.map((item, i) => (
               <Label
                 key={i}
-                value={item.label}
-                onRemove={() => checkHandler(item, i, false)}
+                value={labeler(item, i, value)}
+                onRemove={e => checkHandler(e, item, i, false)}
               />
             ))
           }
           {
             value.length > 0 && !showChips && (
-              <div className="values">
-                { value.map((item, i) => <span key={i}>{item.label}</span>) }
-              </div>
+              <Label
+                value={labeler(null, -1, value)}
+                onRemove={removeAllHandler}
+              />
             )
           }
         </div>
