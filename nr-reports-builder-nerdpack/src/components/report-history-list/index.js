@@ -55,33 +55,37 @@ export default function ReportHistoryList({ report }) {
       }
       {
         !loading && data && (
-          data[0].data.map(item => (
-            <Card key={`history-item-${item.timestamp}`}>
-              <CardHeader
-                title={formatDateTimeForMillis(item.timestamp)}
-                subtitle={item.error ? (
-                  UI_CONTENT.REPORT_HISTORY_LIST.STATUS_LABEL_FAILED
-                ) : (
-                  UI_CONTENT.REPORT_HISTORY_LIST.STATUS_LABEL_SUCCESS
-                )}
-              />
-              <CardBody>
-                {UI_CONTENT.REPORT_HISTORY_LIST.PUBLISH_MESSAGE}
-                <ul>
-                  {
-                    getPublishConfigNames(
-                      report,
-                      item.publishConfigIds,
-                    ).map(name => (
-                      <li key={`history-item-${item.timestamp}-${name}`}>
-                        {name}
-                      </li>
-                    ))
-                  }
-                </ul>
-              </CardBody>
-            </Card>
-          ))
+          data.length ? (
+            data[0].data.map(item => (
+              <Card key={`history-item-${item.timestamp}`}>
+                <CardHeader
+                  title={formatDateTimeForMillis(item.timestamp)}
+                  subtitle={item.error ? (
+                    UI_CONTENT.REPORT_HISTORY_LIST.STATUS_LABEL_FAILED
+                  ) : (
+                    UI_CONTENT.REPORT_HISTORY_LIST.STATUS_LABEL_SUCCESS
+                  )}
+                />
+                <CardBody>
+                  {UI_CONTENT.REPORT_HISTORY_LIST.PUBLISH_MESSAGE}
+                  <ul>
+                    {
+                      getPublishConfigNames(
+                        report,
+                        item.publishConfigIds,
+                      ).map(name => (
+                        <li key={`history-item-${item.timestamp}-${name}`}>
+                          {name}
+                        </li>
+                      ))
+                    }
+                  </ul>
+                </CardBody>
+              </Card>
+            ))
+          ) : (
+            <div>No history for this report.</div>
+          )
         )
       }
     </div>
