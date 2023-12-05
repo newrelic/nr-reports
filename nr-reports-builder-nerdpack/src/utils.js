@@ -126,7 +126,8 @@ function generateBasicScheduleDetails(settings) {
   }
 
   const amPmLabel = amPm === 'am' ? 'AM' : 'PM',
-    hourLabel = hour === -1 ? 'every hour' : `the hour ${hour} ${amPmLabel}`,
+    tz = timeZone ? timeZone.abbrev : 'UTC',
+    hourLabel = hour === -1 ? 'every hour' : `the hour ${hour} ${amPmLabel} ${tz}`,
     minuteLabel = minute === -1 ? 'every minute' : `minute ${minute}`
 
 
@@ -186,11 +187,13 @@ function generateShortBasicScheduleDetails(settings) {
   }
 
   const amPmLabel = amPm === 'am' ? ' AM' : ' PM',
+    tz = timeZone ? timeZone.abbrev : 'UTC',
     hourLabel = hour === -1 ? '*' : pad(hour, 2),
-    minuteLabel = minute === -1 ? '*' : `${pad(minute, 2)}${hour !== -1 ? amPmLabel : ''}`
+    minuteLabel = minute === -1 ? '*' : `${pad(minute, 2)}${hour !== -1 ? amPmLabel : ''}`,
+    tzLabel = hour !== -1 ? ` ${tz}` : ''
 
 
-  return `${periodLabel} at ${hourLabel}:${minuteLabel}`
+  return `${periodLabel} at ${hourLabel}:${minuteLabel}${tzLabel}`
 }
 
 export function generateFullScheduleDetails(schedule, settings) {

@@ -46,7 +46,7 @@ const HOURS = [-1],
 for (let i = 1; i <= 12; i += 1) { HOURS.push(i) }
 for (let i = 0; i < 59; i += 1) { if (i % 5 === 0) { MINUTES.push(i) } }
 
-function updateModelFromBasic(formState) {
+function updateModelFromBasic(formState, parseTimezone) {
   const {
     amPm,
     dayOfWeek,
@@ -55,15 +55,28 @@ function updateModelFromBasic(formState) {
     hour,
     minute,
     period,
-    timeZone,
+    timeZoneValue,
     weekOfMonth,
     model,
   } = formState
 
   model[MINUTES_FIELD] = minute === -1 ? ALL_WILDCARD_SYM : minute
-  model[HOURS_FIELD] = hour === -1 ? ALL_WILDCARD_SYM : (
-    amPm === 'am' ? hour % 12 : 12 + (hour % 12)
-  )
+
+  if (hour === -1) {
+    model[HOURS_FIELD] = ALL_WILDCARD_SYM
+  } else {
+    let tfHour = amPm === 'am' ? hour % 12 : 12 + (hour % 12)
+
+    if (timeZoneValue) {
+      const tz = parseTimezone(timeZoneValue)
+
+      if (tz) {
+        tfHour = (tfHour - tz.offset) % 24
+      }
+    }
+
+    model[HOURS_FIELD] = tfHour
+  }
 
   switch (frequency) {
     case 'daily':
@@ -119,13 +132,13 @@ export default function BasicScheduleForm() {
       hour,
       minute,
       period,
-      //timeZone,
+      timeZoneValue,
       weekOfMonth,
     } = formState,
-    //{ options, parseTimezone } = useTimezoneSelect({ labelStyle: 'original', timezones: TIMEZONES }),
+    { options, parseTimezone } = useTimezoneSelect({ labelStyle: 'original', timezones: TIMEZONES }),
     updateModel = useCallback(newFormState => {
-      newFormState.model = updateModelFromBasic(newFormState)
-    }, []),
+      newFormState.model = updateModelFromBasic(newFormState, parseTimezone)
+    }, [parseTimezone]),
     update = useCallback(updates => {
       updateFormState(updates, updateModel)
     }, [updateFormState, updateModel]),
@@ -153,14 +166,10 @@ export default function BasicScheduleForm() {
     handleChangeAmPm = useCallback((_, v) => {
       update({ amPm: v })
     }, [update]),
-    /*
     handleChangeTimezone = useCallback((_, v) => {
-      dispatch({
-        type: 'basicFormStateUpdated',
-        timeZone: v,
-      })
-    }, [dispatch]),
-    */
+      const timeZone = parseTimezone(v)
+      update({ timeZone, timeZoneValue: v })
+    }, [update, parseTimezone]),
     handleChangeWeekOfMonth = useCallback((_, v) => {
       update({ weekOfMonth: v })
     }, [update]),
@@ -305,11 +314,12 @@ export default function BasicScheduleForm() {
             <SelectItem value='am'>AM</SelectItem>
             <SelectItem value='pm'>PM</SelectItem>
           </Select>
-          {/*
+
           <Select
+            disabled={hour === -1}
             label=''
             onChange={handleChangeTimezone}
-            value={timeZone}
+            value={timeZoneValue}
           >
             {
               options.map(option => (
@@ -317,7 +327,7 @@ export default function BasicScheduleForm() {
               ))
             }
           </Select>
-          */}
+
         </div>
       </CustomField>
     </Form>

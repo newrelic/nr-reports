@@ -189,7 +189,8 @@ export default function ScheduleBuilderWrapper({
         hour: -1,
         minute:  -1,
         period: 'day',
-        timeZone: 'Etc/GMT',
+        timeZone: null,
+        timeZoneValue: 'Etc/GMT',
         weekOfMonth: 1,
         expr: '* * * * ? *',
         model: [
