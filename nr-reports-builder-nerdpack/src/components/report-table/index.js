@@ -12,13 +12,11 @@ import {
 import { RouteContext } from '../../contexts';
 import { useNrqlQuery } from '../../hooks';
 import { formatDateTimeForMillis, getReportType } from '../../utils';
-import { UI_CONTENT } from '../../constants';
+import { QUERIES, UI_CONTENT } from '../../constants';
 import ReportHistoryModal from '../report-history-modal';
 
-export default function ReportTable({
-  reports,
-  onSelectReport,
-  onDeleteReport,
+function ReportLastRunTableRowCell({
+  report,
 }) {
   const { params: { accountId }} = useContext(RouteContext),
     {
@@ -27,10 +25,38 @@ export default function ReportTable({
       error,
     } = useNrqlQuery({
       accountId: accountId,
-      query: 'SELECT timestamp FROM NrReportStatus LIMIT 1'
+      query: QUERIES.NRQL.REPORT_HISTORY(report, 1),
     }),
-    [lastRunDate, setLastRunDate] = useState(),
-    [viewReportHistoryIndex, setViewReportHistoryIndex] = useState(-1),
+    [lastRunDate, setLastRunDate] = useState()
+
+  useEffect(() => {
+    if (!loading && data) {
+      if (!error && data.length === 1) {
+        setLastRunDate(data[0].data[0].timestamp)
+      }
+    }
+  }, [loading, data, error])
+
+  return (
+    <>
+      {
+        loading && <Spinner type={Spinner.TYPE.DOT} />
+      }
+      {
+        lastRunDate && (
+          <span>{formatDateTimeForMillis(lastRunDate)}</span>
+        )
+      }
+    </>
+  )
+}
+
+export default function ReportTable({
+  reports,
+  onSelectReport,
+  onDeleteReport,
+}) {
+  const [viewReportHistoryIndex, setViewReportHistoryIndex] = useState(-1),
     handleViewHistory = useCallback(index => {
       setViewReportHistoryIndex(index)
     }, [setViewReportHistoryIndex]),
@@ -54,44 +80,29 @@ export default function ReportTable({
         },
       ]
     }, [handleViewHistory, onDeleteReport]),
-    renderRow = useCallback(({ item, index }) => (
+    renderRow = useCallback(({ item: report, index }) => (
       <TableRow key={item.id} actions={getActions}>
         <TableRowCell>
           <Link
-            onClick={() => onSelectReport(index) }
+            onClick={() => onSelectReport(index)}
           >
-            {item.name}
+            {report.name}
           </Link>
         </TableRowCell>
-        <TableRowCell>{getReportType(item)}</TableRowCell>
+        <TableRowCell>{getReportType(report)}</TableRowCell>
         <TableRowCell>{
-          typeof item.enabled === 'undefined' || item.enabled ? (
+          typeof report.enabled === 'undefined' || report.enabled ? (
             UI_CONTENT.GLOBAL.STATUS_LABEL_ENABLED
           ) : UI_CONTENT.GLOBAL.STATUS_LABEL_DISABLED
         }</TableRowCell>
         <TableRowCell>
-          {formatDateTimeForMillis(item.lastModifiedDate)}
+          {formatDateTimeForMillis(report.lastModifiedDate)}
         </TableRowCell>
         <TableRowCell>
-          {
-            loading && <Spinner type={Spinner.TYPE.DOT} />
-          }
-          {
-            lastRunDate && (
-              <span>{formatDateTimeForMillis(lastRunDate)}</span>
-            )
-          }
+          <ReportLastRunTableRowCell report={report} />
         </TableRowCell>
       </TableRow>
-    ), [getActions, onSelectReport, lastRunDate])
-
-  useEffect(() => {
-    if (!loading && data) {
-      if (!error && data.length === 1) {
-        setLastRunDate(data[0].data[0].timestamp)
-      }
-    }
-  }, [loading, data, error])
+    ), [getActions, onSelectReport])
 
   return (
     <>

@@ -8,6 +8,7 @@ import BusyView from '../busy-view'
 import { RouteContext } from "../../contexts"
 import { useNrqlQuery } from '../../hooks'
 import {
+  QUERIES,
   UI_CONTENT,
 } from "../../constants"
 import { formatDateTimeForMillis, splitStringAndTrim } from "../../utils"
@@ -39,7 +40,7 @@ export default function ReportHistoryList({ report }) {
       error,
     } = useNrqlQuery({
       accountId: accountId,
-      query: `SELECT timestamp, error, publishConfigIds FROM NrReportStatus WHERE reportId = '${report.id}' AND runnerId = 'nr-reports-lambda' LIMIT 100 SINCE 1 MONTH AGO`
+      query: QUERIES.NRQL.REPORT_HISTORY(report),
     })
 
   if (error) {
