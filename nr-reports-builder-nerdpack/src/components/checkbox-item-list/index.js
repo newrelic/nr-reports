@@ -13,6 +13,7 @@ import {
   Spinner,
 } from 'nr1'
 import ErrorView from "../error-view";
+import { UI_CONTENT } from "../../constants";
 
 function isItemSelected(selectedItems, item) {
   return selectedItems.findIndex(i => i[0] === item[0]) !== -1
@@ -26,6 +27,7 @@ const CheckboxItemList = forwardRef(function CheckboxItemList({
     items,
     fetchMore,
     selectedItems = [],
+    noResultsMessage = 'No results found'
   },
   ref
 ) {
@@ -66,9 +68,13 @@ const CheckboxItemList = forwardRef(function CheckboxItemList({
         )
       }
 
+      if (count === 0) {
+        return <div>{noResultsMessage}</div>
+      }
+
       return (
         <List
-          className="checkbox-item-list-list"
+          className="checkbox-item-list-inner"
           rowHeight={20}
           items={items}
           onLoadMore={fetchMore}

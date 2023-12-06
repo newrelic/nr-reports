@@ -93,6 +93,8 @@ export const UI_CONTENT = {
   },
   DASHBOARD_PICKER: {
     HEADING: 'Select dashboards',
+    NO_RESULTS_MESSAGE: 'No dashboards found',
+    SEARCH_FIELD_PLACEHOLDER: 'My favorite dashboard',
   },
   EDIT_CHANNEL_FORM: {
     CHANNEL_TYPE_LABEL_EMAIL: 'Email',

@@ -2,9 +2,10 @@
 
 * [X] Add validation to all fields
 * [X] Escape characters for schedule names so that spaces and things can be used
-* [ ] Dashboard picker search
+* [X] Dashboard picker search
 * [X] Enable/disable reports
 * [X] View last modified and last run
 * [X] View history
-* [ ] Support timezone selection
+* [X] Support timezone selection
 * [X] Fix multi-select label issue
+* [ ] Add customer id to report events
