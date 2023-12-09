@@ -1,118 +1,70 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import useDocumentWriter from '../use-document-writer'
 
-export default function useDataWriter({ accountId }) {
-  const [
-      {
-        writing,
-        manifest,
-        metadata,
-      },
-      setData
-    ] = useState({
-      writing: false,
-      manifest: null,
-      metadata: null,
-      error: null,
+export default function useDataWriter({
+  accountId,
+  onWriting,
+  onError,
+  onComplete,
+}) {
+  const [{ loading, called, done }, setState] = useState({
+      loading: false,
+      called: false,
+      done: false
     }),
-    {
-      write: writeManifest,
-      loading: writingManifest,
-      data: writeManifestResult,
-      error: writeManifestError,
-      called: writeManifestCalled,
-      reset: resetManifestWriter,
-    } = useDocumentWriter({
+    updateState = useCallback(
+      (l, c, d) => { setState({ loading: l, called: c, done: d }) },
+      [setState],
+    ),
+    manifestWriter = useDocumentWriter({
       accountId,
-      collectionId: 'manifests',
+      collection: 'manifests',
       documentId: 'manifest.json',
-      document: manifest,
     }),
-    {
-      write: writeMetadata,
-      loading: writingMetadata,
-      data: writeMetadataResult,
-      error: writeMetadataError,
-      called: writeMetadataCalled,
-      reset: resetMetadataWriter,
-    } = useDocumentWriter({
+    metadataWriter = useDocumentWriter({
       accountId,
-      collectionId: 'metadata',
+      collection: 'metadata',
       documentId: 'metadata.json',
-      document: metadata,
     }),
+    writers = useMemo(() => ([
+      manifestWriter,
+      metadataWriter,
+    ]), [manifestWriter, metadataWriter]),
     write = useCallback((manifest, metadata) => {
-      setData({ writing: true, error: null, manifest, metadata })
-    }),
+      manifestWriter[0]({ document: manifest })
+      metadataWriter[0]({ document: metadata })
+      updateState(true, true, false)
+      onWriting()
+    }, [updateState, manifestWriter, metadataWriter, onWriting]),
     reset = useCallback(() => {
-      resetManifestWriter()
-      resetMetadataWriter()
-    }, [])
+      writers.forEach(w => w[1].reset())
+    }, [writers])
 
   useEffect(() => {
-    if (writing) {
-      if (!writingManifest && !writingMetadata) {
-        if (!writeManifestCalled) {
-          writeManifest(manifest)
-        } else if (writeManifestError || !writeManifestResult.nerdStorageWriteDocument) {
-          setData({
-            writing: false,
-            manifest: null,
-            metadata: null,
-            error: writeManifestError || new Error('Received empty write result')
-          })
-        } else if (!writeMetadataCalled) {
-          writeMetadata(metadata)
-        } else if (writeMetadataError || !writeMetadataResult.nerdStorageWriteDocument) {
-          setData({
-            writing: false,
-            manifest: null,
-            metadata: null,
-            error: writeManifestError || new Error('Received empty write result')
-          })
-        } else {
-          setData({
-            writing: false,
-            manifest: writeManifestResult.nerdStorageWriteDocument,
-            metadata: writeMetadataResult.nerdStorageWriteDocument,
-            error: writeManifestError || new Error('Received empty write result'),
-          })
-        }
-      }
+    if (done || !called) {
+      return
     }
-  }, [
-    writing,
-    writeManifest,
-    writeMetadata,
-    writingManifest,
-    writeManifestCalled,
-    writeManifestError,
-    writeManifestResult,
-    writingMetadata,
-    writeMetadataCalled,
-    writeMetadataError,
-    writeMetadataResult,
-    setData,
-  ])
 
-  let writeResult = null
+    const w = writers.find(w => w.error)
 
-  if (
-    writeManifestCalled && !writeManifestError &&
-    writeMetadataCalled && !writeMetadataError
-  ) {
-    writeResult = {
-      manifest: writeManifestResult.nerdStorageWriteDocument,
-      metadata: writeMetadataResult.nerdStorageWriteDocument
+    if (w) {
+      reset()
+      updateState(false, false, true)
+      onError(w.error)
+      return
     }
-  }
 
-  return {
-    write,
-    writing,
-    called: writeManifestCalled,
-    error: writeManifestError || writeMetadataError,
-    data: writeResult,
-    reset,
-  }
+    const l = writers.find(w => w[1].loading)
+
+    if (!l) {
+      reset()
+      updateState(false, false, true)
+      onComplete(
+        writers[0][1].data.nerdStorageWriteDocument,
+        writers[1][1].data.nerdStorageWriteDocument,
+      )
+    }
+  }, [done, called, writers, updateState, reset, onError, onComplete])
+
+  return write
 }

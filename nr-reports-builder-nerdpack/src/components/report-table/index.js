@@ -81,7 +81,7 @@ export default function ReportTable({
       ]
     }, [handleViewHistory, onDeleteReport]),
     renderRow = useCallback(({ item: report, index }) => (
-      <TableRow key={item.id} actions={getActions}>
+      <TableRow key={report.id} actions={getActions}>
         <TableRowCell>
           <Link
             onClick={() => onSelectReport(index)}

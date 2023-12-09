@@ -2,14 +2,12 @@ import { useAccountStorageQuery } from 'nr1'
 
 export default function useDocumentReader({
   accountId,
-  collectionId,
+  collection,
   documentId,
- }) {
-  const { loading, data, error } = useAccountStorageQuery({
+}) {
+  return useAccountStorageQuery({
     accountId,
-    collection: collectionId,
-    documentId: documentId,
+    collection,
+    documentId,
   })
-
-  return { loading, data, error }
 }

@@ -1,8 +1,10 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
-  useReducer,
+  useMemo,
+  useState,
 } from 'react'
 import {
   useDataReader,
@@ -10,148 +12,79 @@ import {
 } from '../../hooks'
 import { RouteContext } from '../route'
 
-const initialState = {
-  reading: false,
-  readError: null,
-  write:  null,
-  writing: false,
-  writeError: null,
-  writeFinished: false,
-  manifest: null,
-  metadata: null,
-}
-
-function reducer(storageState, action) {
-  switch (action.type) {
-    case 'readStarted':
-      return {
-        ...storageState,
-        reading: true,
-        readError: null,
-      }
-
-    case 'readFailed':
-      return {
-        ...storageState,
-        reading: false,
-        readError: action.error,
-      }
-
-    case 'readFinished':
-      return {
-        ...storageState,
-        reading: false,
-        readError: null,
-        manifest: action.manifest,
-        metadata: action.metadata,
-      }
-
-    case 'writeStarted':
-      return {
-        ...storageState,
-        writing: true,
-        writeError: null,
-      }
-
-    case 'writeFailed':
-      return {
-        ...storageState,
-        writing: false,
-        writeError: action.error,
-      }
-
-    case 'writeFinished':
-      return {
-        ...storageState,
-        writing: false,
-        writeError: null,
-        writeFinished: true,
-        manifest: action.manifest,
-        metadata: action.metadata,
-      }
-
-    case 'writeReset':
-      return {
-        ...storageState,
-        writeFinished: false,
-      }
-  }
-
-  throw new Error(`Invalid state transiation ${action.type} received.`)
-}
-
 export const StorageContext = createContext(null)
-export const StorageDispatchContext = createContext(null)
 
 export default function StorageProvider({ children }) {
   const { params: { accountId }} = useContext(RouteContext),
-    {
-      reading,
-      error: readError,
-      manifest,
-      metadata,
-    } = useDataReader({ accountId }),
-    {
-      write,
-      writing,
-      error: writeError,
-      data: writeResult,
-      reset,
-    } = useDataWriter({ accountId }),
-    [state, dispatch] = useReducer(reducer, { ...initialState, write })
-
-  useEffect(() => {
-    if (reading && !state.reading) {
-      dispatch({ type: 'readStarted' })
-      return
-    }
-
-    if (state.reading && !reading) {
-      if (readError) {
-        dispatch({ type: 'readFailed', error: readError })
-        return
-      }
-
-      dispatch({
-        type: 'readFinished',
+    [storageState, setStorageState] = useState({
+      reading: false,
+      readError: null,
+      writing: false,
+      writeError: null,
+      writeFinished: false,
+      manifest: null,
+      metadata: null,
+    }),
+    updateStorageState = useCallback(
+      updates => setStorageState({ ...storageState, ...updates }),
+      [storageState, setStorageState]
+    ),
+    handleWriting = useCallback(() => {
+      updateStorageState({ writing: true, writeError: null })
+    }, [updateStorageState]),
+    handleWriteError = useCallback(err => {
+      updateStorageState({ writing: false, writeError: err })
+    }, [updateStorageState]),
+    handleWriteComplete = useCallback((manifest, metadata) => {
+      updateStorageState({
+        writing: false,
+        writeError: null,
+        writeFinished: true,
         manifest,
         metadata,
       })
-    }
-  }, [state, dispatch, reading, readError, manifest, metadata])
+    }, [updateStorageState]),
+    handleReading = useCallback(() => {
+      updateStorageState({ reading: true, readError: null })
+    }, [updateStorageState]),
+    handleReadError = useCallback(err => {
+      updateStorageState({ reading: false, readError: err })
+    }, [updateStorageState]),
+    handleReadComplete = useCallback((manifest, metadata) => {
+      updateStorageState({
+        reading: false,
+        readError: null,
+        manifest,
+        metadata
+      })
+    }, [updateStorageState]),
+    write = useDataWriter({
+      accountId,
+      onWriting: handleWriting,
+      onError: handleWriteError,
+      onComplete: handleWriteComplete,
+    }),
+    value = useMemo(() => ({
+      write,
+      ...storageState,
+    }), [write, storageState])
+
+  useDataReader({
+    accountId,
+    onReading: handleReading,
+    onError: handleReadError,
+    onComplete: handleReadComplete,
+  })
 
   useEffect(() => {
-    if (writing && !state.writing) {
-      dispatch({ type: 'writeStarted' })
-      return
+    if (storageState.writeFinished) {
+      updateStorageState({ writeFinished: false })
     }
-
-    if (state.writing && !writing) {
-      if (writeError) {
-        dispatch({ type: 'writeFailed', error: writeError })
-        return
-      }
-
-      dispatch({
-        type: 'writeFinished',
-        manifest: writeResult.manifest,
-        metadata: writeResult.metadata,
-      })
-
-      reset()
-      return
-    }
-
-    if (state.writeFinished) {
-      dispatch({ type: 'writeReset' })
-    }
-  }, [state, dispatch, writing, writeError, writeResult, reset])
+  }, [storageState.writeFinished, updateStorageState])
 
   return (
-    <StorageContext.Provider value={state}>
-      <StorageDispatchContext.Provider value={dispatch}>
-        {children}
-      </StorageDispatchContext.Provider>
+    <StorageContext.Provider value={value}>
+      {children}
     </StorageContext.Provider>
   )
 }
