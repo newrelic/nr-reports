@@ -151,7 +151,11 @@ export default function useManifestWriter() {
       update(report)
     }, [update]),
     del = useCallback(reportIndices => {
-      const manifestCopy = manifest ? clone(manifest) : { reports: [] }
+      const manifestCopy = manifest ? clone(manifest) : { reports: [] },
+        metadataCopy = copyMetadata(metadata),
+        publishConfigsCopy = publishConfigs ? (
+          clone(publishConfigs)
+        ) : { publishConfigs: [] }
 
       reportIndices.sort(sortByNumber)
 
@@ -159,7 +163,12 @@ export default function useManifestWriter() {
         manifestCopy.reports.splice(reportIndices[index], 1)
       }
 
-      write(manifestCopy, copyMetadata(metadata))
+      const realManifest = buildRealManifest(
+        manifestCopy,
+        publishConfigsCopy.publishConfigs,
+      )
+
+      write(manifestCopy, metadataCopy, publishConfigsCopy, realManifest)
     }, [write, manifest, metadata])
 
   return { create, update, del }
