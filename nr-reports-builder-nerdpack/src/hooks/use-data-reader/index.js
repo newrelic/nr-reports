@@ -17,7 +17,7 @@ export default function useDataReader({
     ),
     manifestReader = useDocumentReader({
       accountId,
-      collection: 'manifests',
+      collection: 'metadata',
       documentId: 'manifest.json',
     }),
     metadataReader = useDocumentReader({
@@ -25,10 +25,16 @@ export default function useDataReader({
       collection: 'metadata',
       documentId: 'metadata.json',
     }),
+    publishConfigsReader = useDocumentReader({
+      accountId,
+      collection: 'metadata',
+      documentId: 'publish-configs.json',
+    }),
     readers = useMemo(() => ([
       manifestReader,
       metadataReader,
-    ]), [manifestReader, metadataReader])
+      publishConfigsReader,
+    ]), [manifestReader, metadataReader, publishConfigsReader])
 
   useEffect(() => {
     if (done) {
@@ -53,7 +59,7 @@ export default function useDataReader({
 
     if (!l) {
       updateState(false, true)
-      onComplete(readers[0].data, readers[1].data)
+      onComplete(readers[0].data, readers[1].data, readers[2].data)
     }
   }, [done, loading, updateState, onReading, readers, onError, onComplete])
 }

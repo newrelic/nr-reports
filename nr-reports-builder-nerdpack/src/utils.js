@@ -257,3 +257,21 @@ export function formatDateTimeForMillis(millis) {
 export function splitStringAndTrim(str, delimiter = ',') {
   return str.split(delimiter).map(s => s.trim())
 }
+
+export function resolvePublishConfig(metaPublishConfigs, publishConfig) {
+  if (publishConfig.ref) {
+    const realPublishConfig = (
+      metaPublishConfigs?.publishConfigs.find(
+        pc => pc.id === publishConfig.ref
+      )
+    )
+
+    if (!realPublishConfig) {
+      throw new Error(`missing publish config ${publishConfig.ref}`)
+    }
+
+    return realPublishConfig
+  }
+
+  return publishConfig
+}

@@ -20,6 +20,7 @@ export function newPublishConfig() {
     enabled: true,
     schedule: '',
     channels: [],
+    metadata: {},
   }
 }
 

@@ -126,12 +126,17 @@ export const UI_CONTENT = {
   },
   EDIT_PUBLISH_CONFIG_FORM: {
     CONFIG_NAME_FIELD_PLACEHOLDER: 'email-team',
+    FIELD_LABEL_CREATE_NEW_CONFIG: 'Create a new configuration',
+    FIELD_LABEL_USE_EXISTING_CONFIG: 'Use an existing configuration',
     FIELD_LABEL_ENABLED: 'Enabled',
     FIELD_LABEL_NAME: 'Name',
+    MODE_VALUE_CREATE_NEW_CONFIG: 'create',
+    MODE_VALUE_USE_EXISTING_CONFIG: 'useExisting',
   },
   EDIT_PUBLISH_CONFIG_SCREEN: {
     HEADING: 'Edit publish configuration',
     CANCEL_PROMPT: 'You have made changes to this publish configuration. Are you sure you want to cancel?',
+    EDIT_SHARED_CONFIG_MESSAGE: count => `This publish configuration is referenced in ${count} reports. Changes will apply to all reports.`
   },
   EMAIL_CHANNEL_FORM: {
     CC_FIELD_PLACEHOLDER: `robin@newrelic.com\npat@newrelic.com`,

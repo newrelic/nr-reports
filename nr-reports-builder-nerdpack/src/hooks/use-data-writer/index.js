@@ -18,7 +18,7 @@ export default function useDataWriter({
     ),
     manifestWriter = useDocumentWriter({
       accountId,
-      collection: 'manifests',
+      collection: 'metadata',
       documentId: 'manifest.json',
     }),
     metadataWriter = useDocumentWriter({
@@ -26,16 +26,42 @@ export default function useDataWriter({
       collection: 'metadata',
       documentId: 'metadata.json',
     }),
+    publishConfigsWriter = useDocumentWriter({
+      accountId,
+      collection: 'metadata',
+      documentId: 'publish-configs.json',
+    }),
+    realManifestWriter = useDocumentWriter({
+      accountId,
+      collection: 'manifests',
+      documentId: 'manifest.json',
+    }),
     writers = useMemo(() => ([
       manifestWriter,
       metadataWriter,
-    ]), [manifestWriter, metadataWriter]),
-    write = useCallback((manifest, metadata) => {
+      publishConfigsWriter,
+      realManifestWriter,
+    ]), [
+      manifestWriter,
+      metadataWriter,
+      publishConfigsWriter,
+      realManifestWriter,
+    ]),
+    write = useCallback((manifest, metadata, publishConfigs, realManifest) => {
       manifestWriter[0]({ document: manifest })
       metadataWriter[0]({ document: metadata })
+      publishConfigsWriter[0]({ document: publishConfigs })
+      realManifestWriter[0]({ document: realManifest })
       updateState(true, true, false)
       onWriting()
-    }, [updateState, manifestWriter, metadataWriter, onWriting]),
+    }, [
+      updateState,
+      manifestWriter,
+      metadataWriter,
+      publishConfigsWriter,
+      realManifestWriter,
+      onWriting,
+    ]),
     reset = useCallback(() => {
       writers.forEach(w => w[1].reset())
     }, [writers])
@@ -62,6 +88,8 @@ export default function useDataWriter({
       onComplete(
         writers[0][1].data.nerdStorageWriteDocument,
         writers[1][1].data.nerdStorageWriteDocument,
+        writers[2][1].data.nerdStorageWriteDocument,
+        writers[3][1].data.nerdStorageWriteDocument,
       )
     }
   }, [done, called, writers, updateState, reset, onError, onComplete])

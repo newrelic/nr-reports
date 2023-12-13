@@ -24,6 +24,7 @@ export default function StorageProvider({ children }) {
       writeFinished: false,
       manifest: null,
       metadata: null,
+      publishConfigs: null,
     }),
     updateStorageState = useCallback(
       updates => setStorageState({ ...storageState, ...updates }),
@@ -35,13 +36,14 @@ export default function StorageProvider({ children }) {
     handleWriteError = useCallback(err => {
       updateStorageState({ writing: false, writeError: err })
     }, [updateStorageState]),
-    handleWriteComplete = useCallback((manifest, metadata) => {
+    handleWriteComplete = useCallback((manifest, metadata, publishConfigs) => {
       updateStorageState({
         writing: false,
         writeError: null,
         writeFinished: true,
         manifest,
         metadata,
+        publishConfigs,
       })
     }, [updateStorageState]),
     handleReading = useCallback(() => {
@@ -50,12 +52,13 @@ export default function StorageProvider({ children }) {
     handleReadError = useCallback(err => {
       updateStorageState({ reading: false, readError: err })
     }, [updateStorageState]),
-    handleReadComplete = useCallback((manifest, metadata) => {
+    handleReadComplete = useCallback((manifest, metadata, publishConfigs) => {
       updateStorageState({
         reading: false,
         readError: null,
         manifest,
-        metadata
+        metadata,
+        publishConfigs,
       })
     }, [updateStorageState]),
     write = useDataWriter({

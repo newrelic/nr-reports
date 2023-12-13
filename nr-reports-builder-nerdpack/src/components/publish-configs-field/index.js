@@ -17,8 +17,8 @@ import {
   ROUTES,
   UI_CONTENT,
 } from '../../constants'
-import { RouteDispatchContext } from '../../contexts'
-import { generateShortScheduleDetails } from '../../utils'
+import { RouteDispatchContext, StorageContext } from '../../contexts'
+import { generateShortScheduleDetails, resolvePublishConfig } from '../../utils'
 import { FormContext } from '../../contexts/form'
 
 function PublishConfigsTable({
@@ -36,33 +36,39 @@ function PublishConfigsTable({
         },
       ];
     }, [onDeleteConfig]),
+    { publishConfigs: metaPublishConfigs } = useContext(StorageContext),
     renderRow = useCallback(({ item, index }) => {
-      const settings = metadata[`publishConfig-${item.id}`] && (
-        metadata[`publishConfig-${item.id}`]['schedule-builder']
-      )
+      const publishConfig = resolvePublishConfig(
+          metaPublishConfigs,
+          item
+        ),
+        settings = publishConfig.metadata && (
+          publishConfig.metadata['schedule-builder']
+        )
       return (
-        <TableRow key={item.id} actions={getActions}>
+        <TableRow key={publishConfig.id} actions={getActions}>
           <TableRowCell>
             <Link
               onClick={() => onEditConfig(index) }
             >
-              {item.name}
+              {publishConfig.name}
             </Link>
           </TableRowCell>
           <TableRowCell>{ generateShortScheduleDetails(
-              item.schedule,
+              publishConfig.schedule,
               settings,
             )
           }</TableRowCell>
           <TableRowCell>{
-            typeof item.enabled === 'undefined' || item.enabled ? (
+            typeof publishConfig.enabled === 'undefined' ||
+            publishConfig.enabled ? (
               UI_CONTENT.GLOBAL.STATUS_LABEL_ENABLED
             ) : UI_CONTENT.GLOBAL.STATUS_LABEL_DISABLED
           }</TableRowCell>
-          <TableRowCell>{ item.channels.length }</TableRowCell>
+          <TableRowCell>{ publishConfig.channels.length }</TableRowCell>
         </TableRow>
       )
-    }, [onEditConfig, getActions])
+    }, [onEditConfig, getActions, metaPublishConfigs])
 
   return (
     <Table items={publishConfigs}>
