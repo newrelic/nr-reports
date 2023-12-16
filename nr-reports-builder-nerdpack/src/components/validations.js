@@ -77,15 +77,15 @@ export const emailFormatIsValid = (() => {
   }
 })()
 
-export const emailQueryDeliveryMethodIsValid = (() => {
+export const emailDeliveryMethodIsValid = (() => {
   const schema = z.enum([
     SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT,
     SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH,
   ])
 
   return formState => {
-    const result = schema.safeParse(formState.emailQueryDeliveryMethod)
-    return result.success ? null : `${formState.emailQueryDeliveryMethod} is not a valid query delivery method`
+    const result = schema.safeParse(formState.emailDeliveryMethod)
+    return result.success ? null : `${formState.emailDeliveryMethod} is not a valid delivery method`
   }
 })()
 

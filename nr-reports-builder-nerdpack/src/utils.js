@@ -267,11 +267,23 @@ export function resolvePublishConfig(metaPublishConfigs, publishConfig) {
     )
 
     if (!realPublishConfig) {
-      throw new Error(`missing publish config ${publishConfig.ref}`)
+      throw new Error(`Missing publish config ${publishConfig.ref}`)
     }
 
     return realPublishConfig
   }
 
   return publishConfig
+}
+
+export function sortByNumber(a, b) {
+  if (a < b) {
+    return -1
+  }
+
+  if (a > b) {
+    return 1
+  }
+
+  return 0
 }

@@ -29,7 +29,10 @@ import { clone } from '../../../utils'
 import { FormContext, Validation, withFormContext } from '../../../contexts/form'
 import { channelTypeIsValid } from '../../validations'
 
-function formStateFromChannel(parentFormState, selectedChannel) {
+function formStateFromChannel(
+  parentFormState,
+  selectedChannel
+) {
   let channel
 
   if (parentFormState.channels[selectedChannel]) {
@@ -39,7 +42,7 @@ function formStateFromChannel(parentFormState, selectedChannel) {
       channel = {
         type: SYMBOLS.CHANNEL_TYPES.EMAIL,
         emailFormat: selected.format || SYMBOLS.EMAIL_FORMATS.HTML,
-        emailQueryDeliveryMethod: selected.attachOutput ? (
+        emailDeliveryMethod: selected.attachOutput ? (
           SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT
         ) : (
           selected.passThrough ? (
@@ -63,7 +66,7 @@ function formStateFromChannel(parentFormState, selectedChannel) {
     channel = {
       type: SYMBOLS.CHANNEL_TYPES.EMAIL,
       emailFormat: SYMBOLS.EMAIL_FORMATS.HTML,
-      emailQueryDeliveryMethod: SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT,
+      emailDeliveryMethod: SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT,
       emailSubject: '',
       emailTo: '',
       emailCc: '',
@@ -72,7 +75,7 @@ function formStateFromChannel(parentFormState, selectedChannel) {
   }
 
   return {
-    parentFormState: clone(parentFormState),
+    parentFormState: parentFormState && clone(parentFormState),
     ...channel,
     dirty: false,
     valid: true,
@@ -87,10 +90,10 @@ function channelFromFormState(formState, selectedChannel) {
     channel.type = SYMBOLS.CHANNEL_TYPES.EMAIL,
     channel.format = formState.emailFormat,
     channel.attachOutput = (
-      formState.emailQueryDeliveryMethod === SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT
+      formState.emailDeliveryMethod === SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT
     ),
     channel.passThrough = (
-      formState.emailQueryDeliveryMethod === SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH
+      formState.emailDeliveryMethod === SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH
     ),
     channel.subject = formState.emailSubject
     channel.to = formState.emailTo ? formState.emailTo.replaceAll(/\s*\n+\s*/ug,',') : ''
@@ -108,7 +111,6 @@ function channelFromFormState(formState, selectedChannel) {
   }
 
   return {
-    parentFormState: formState.parentFormState.parentFormState,
     ...formState.parentFormState,
     channels,
     dirty: formState.dirty,
@@ -138,8 +140,8 @@ function EditChannelScreen({ selectedChannel }) {
     handleChangeEmailFormat = useCallback((_, v) => {
       updateFormState({ emailFormat: v })
     }, [formState] ),
-    handleChangeEmailQueryDeliveryMethod = useCallback((_, v) => {
-      updateFormState({ emailQueryDeliveryMethod: v })
+    handleChangeEmailDeliveryMethod = useCallback((_, v) => {
+      updateFormState({ emailDeliveryMethod: v })
     }, [formState] ),
     handleChangeEmailTo = useCallback(e => {
       updateFormState({ emailTo: e.target.value })
@@ -164,7 +166,6 @@ function EditChannelScreen({ selectedChannel }) {
       }
 
       navigate(ROUTES.EDIT_PUBLISH_CONFIG, {
-        parentFormState: formState.parentFormState.parentFormState,
         ...formState.parentFormState,
       })
     }, [navigate, formState])
@@ -215,7 +216,7 @@ function EditChannelScreen({ selectedChannel }) {
                     <EmailChannelForm
                       onChangeSubject={handleChangeEmailSubject}
                       onChangeFormat={handleChangeEmailFormat}
-                      onChangeQueryDeliveryMethod={handleChangeEmailQueryDeliveryMethod}
+                      onChangeDeliveryMethod={handleChangeEmailDeliveryMethod}
                       onChangeTo={handleChangeEmailTo}
                       onChangeCc={handleChangeEmailCc}
                       onChangeTemplate={handleChangeEmailTemplate}

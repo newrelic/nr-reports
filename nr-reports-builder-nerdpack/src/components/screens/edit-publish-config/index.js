@@ -1,23 +1,17 @@
-import React, { useCallback, useContext, useMemo, useState } from 'react'
+import React, { useCallback, useContext, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import {
   Button,
   Card,
   CardHeader,
   CardBody,
-  Checkbox,
   Form,
   Layout,
   LayoutItem,
-  Radio,
-  RadioGroup,
-  Select,
-  SelectItem,
   Stack,
   StackItem,
-  TextField,
+  Toast,
 } from 'nr1'
-import ChannelsField from '../../channels-field'
 import {
   RouteContext,
   RouteDispatchContext,
@@ -27,11 +21,11 @@ import {
   ROUTES,
   UI_CONTENT,
 } from '../../../constants'
+import PublishConfigForm from '../../publish-config-form'
 import { newPublishConfig, newPublishConfigMetadata } from '../../../model'
 import { clone, resolvePublishConfig } from '../../../utils'
-import ScheduleField from '../../schedule-field'
-import { FormContext, Validation, withFormContext } from '../../../contexts/form'
-import { nameNotEmpty } from '../../validations'
+import { FormContext, withFormContext } from '../../../contexts/form'
+import { useManifestWriter } from '../../../hooks'
 
 function countReferences(manifest, publishConfig) {
   // manifest will be null when creating the first report so no publish
@@ -51,22 +45,35 @@ function countReferences(manifest, publishConfig) {
 
 function formStateFromPublishConfig(
   parentFormState,
+  publishConfigs,
   manifest,
   metaPublishConfigs,
   selectedConfig,
 ) {
+  // Handle the case where for some reason selectedConfig >= 0 and either
+  // publishConfigs is null or selectedConfig >= publishConfigs.length (which
+  // shouldn't happen).
+
+  if (
+    selectedConfig >= 0 &&
+    (!publishConfigs || selectedConfig >= publishConfigs.length)
+  ) {
+    throw new Error(`Invalid publish config index ${selectedConfig} found`)
+  }
+
   const publishConfig = (
       selectedConfig >= 0 ? (
         resolvePublishConfig(
           metaPublishConfigs,
-          parentFormState.publishConfigs[selectedConfig],
+          publishConfigs[selectedConfig],
         )
       ) : newPublishConfig()
     ),
     references = countReferences(manifest, publishConfig)
 
   return {
-    parentFormState: clone(parentFormState),
+    parentFormState: parentFormState && clone(parentFormState),
+    prevConfigs: publishConfigs,
     metadata: (
       publishConfig.metadata || (
         newPublishConfigMetadata()
@@ -89,30 +96,35 @@ function formStateFromPublishConfig(
   }
 }
 
-function publishConfigFromFormState(formState, selectedConfig) {
-  const prevConfigs = formState.parentFormState.publishConfigs,
-    publishConfig = (
-      formState.mode === UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_USE_EXISTING_CONFIG ? (
-        { ref: formState.ref }
-      ) : (
-        {
-          id: formState.id,
-          name: formState.name,
-          enabled: formState.enabled,
-          schedule: formState.schedule,
-          channels: formState.channels,
-          metadata: formState.metadata,
-        }
-      )
+function publishConfigFromFormState(formState) {
+  const publishConfig = (
+    formState.mode === UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_USE_EXISTING_CONFIG ? (
+      { ref: formState.ref }
+    ) : (
+      {
+        id: formState.id,
+        name: formState.name,
+        enabled: formState.enabled,
+        schedule: formState.schedule,
+        channels: formState.channels,
+        metadata: formState.metadata,
+      }
     )
+  )
+
+  return publishConfig
+}
+
+function buildParentFormState(formState, selectedConfig) {
+  const publishConfig = publishConfigFromFormState(formState)
   let publishConfigs
 
   if (selectedConfig >= 0) {
-    publishConfigs = [ ...prevConfigs ]
+    publishConfigs = [ ...formState.prevConfigs ]
     publishConfigs[selectedConfig] = publishConfig
   } else {
     publishConfigs = [
-      ...prevConfigs,
+      ...formState.prevConfigs,
       publishConfig
     ]
   }
@@ -124,57 +136,19 @@ function publishConfigFromFormState(formState, selectedConfig) {
   }
 }
 
-function EditPublishConfigScreen({ selectedConfig }) {
+function EditPublishConfigScreen({
+  selectedConfig,
+  submitActionName,
+  onSubmit,
+  onCancel,
+}) {
   const {
       formState,
-      updateFormState,
       validateFormState,
     } = useContext(FormContext),
-    { navigate } = useContext(RouteDispatchContext),
-    { publishConfigs: metaPublishConfigs } = useContext(StorageContext),
-    navigateToEditReport = useCallback(() => {
-      navigate(
-        ROUTES.EDIT_REPORT,
-        { formState: publishConfigFromFormState(formState, selectedConfig) }
-      )
-    }, [navigate, formState, selectedConfig]),
-    handleChangeName = useCallback(e => {
-      updateFormState({ name: e.target.value })
-    }, [updateFormState]),
-    handleValidateName = useCallback(formState => {
-      if (
-        selectedConfig >= 0 ||
-        formState.mode === UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_CREATE_NEW_CONFIG
-      ) {
-        return nameNotEmpty(formState)
-      }
-
-      return null
-    }, [formState.mode, selectedConfig]),
-    handleChangeMode = useCallback((_, v) => {
-      if (
-        v === UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_USE_EXISTING_CONFIG
-      ) {
-        // The || here is to catch the case where useExisting is selected but
-        // the formState.ref has not been initialized because no selection was
-        // previously made.
-        updateFormState({
-          mode: v,
-          ref: formState.ref || metaPublishConfigs.publishConfigs[0].id,
-        })
-        return
-      }
-      updateFormState({ mode: v })
-    }, [formState.ref, metaPublishConfigs, updateFormState]),
-    handleChangeConfigRef = useCallback((_, v) => {
-      updateFormState({ ref: v })
-    }, [updateFormState]),
-    handleChangeEnabled = useCallback(e => {
-      updateFormState({ enabled: e.target.checked })
-    }, [updateFormState]),
     handleSubmit = useCallback(() => {
-      validateFormState(navigateToEditReport)
-    }, [validateFormState, navigateToEditReport]),
+      validateFormState(onSubmit)
+    }, [validateFormState, onSubmit]),
     handleCancel = useCallback(() => {
       if (formState.dirty) {
         if (!confirm(UI_CONTENT.EDIT_PUBLISH_CONFIG_SCREEN.CANCEL_PROMPT)) {
@@ -182,10 +156,8 @@ function EditPublishConfigScreen({ selectedConfig }) {
         }
       }
 
-      navigate(ROUTES.EDIT_REPORT, {
-        formState: formState.parentFormState || formState
-      })
-    }, [navigate, formState])
+      onCancel()
+    }, [formState, onCancel])
 
   return (
     <div className="edit-publish-config-screen">
@@ -203,107 +175,19 @@ function EditPublishConfigScreen({ selectedConfig }) {
                 className="edit-publish-config-form"
                 spacingType={[Form.SPACING_TYPE.LARGE]}
               >
-
                 <Stack
                   spacingType={[
                     Stack.SPACING_TYPE.NONE,
                   ]}
                   directionType={Stack.DIRECTION_TYPE.VERTICAL}
                   fullWidth
+                  horizontalType={Stack.HORIZONTAL_TYPE.FILL}
                 >
-                  {
-                    (
-                      selectedConfig === -1 &&
-                      metaPublishConfigs?.publishConfigs.length > 0
-                    ) && (
-                      <StackItem>
-                        <RadioGroup
-                          value={formState.mode}
-                          defaultValue={
-                            UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_CREATE_NEW_CONFIG
-                          }
-                          onChange={handleChangeMode}
-                        >
-                          <Radio
-                            label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_CREATE_NEW_CONFIG}
-                            value={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_CREATE_NEW_CONFIG}
-                          />
-                          <Radio
-                            label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_USE_EXISTING_CONFIG}
-                            value={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_USE_EXISTING_CONFIG}
-                          />
-                        </RadioGroup>
-                      </StackItem>
-                    )
-                  }
-                  {
-                    (
-                      selectedConfig >= 0 ||
-                      formState.mode === UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_CREATE_NEW_CONFIG
-                    ) && (
-                      <>
-                        <StackItem>
-                          <Validation name="name" validation={handleValidateName}>
-                            <TextField
-                              placeholder={
-                                UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.CONFIG_NAME_FIELD_PLACEHOLDER
-                              }
-                              label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_NAME}
-                              value={formState.name}
-                              onChange={handleChangeName}
-                              invalid={formState.validations?.name}
-                            />
-                          </Validation>
-                        </StackItem>
-
-                        <StackItem>
-                          <Checkbox
-                            label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_ENABLED}
-                            checked={formState.enabled}
-                            onChange={handleChangeEnabled}
-                          />
-                        </StackItem>
-
-                        <StackItem>
-                          <ScheduleField />
-                        </StackItem>
-
-                        <StackItem className="form-wrapper">
-                          <ChannelsField />
-                        </StackItem>
-                      </>
-                    )
-                  }
-                  {
-                    (
-                      selectedConfig === -1 &&
-                      formState.mode === UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_USE_EXISTING_CONFIG &&
-                      metaPublishConfigs?.publishConfigs
-                    ) && (
-                      <>
-                        <StackItem>
-                          <Select
-                            value={formState.ref}
-                            onChange={handleChangeConfigRef}
-                          >
-                            {
-                              metaPublishConfigs.publishConfigs.map(
-                                (item, index) => (
-                                  <SelectItem
-                                    key={index}
-                                    value={item.id}
-                                  >
-                                    {item.name}
-                                  </SelectItem>
-                                )
-                              )
-                            }
-                          </Select>
-                        </StackItem>
-                      </>
-                    )
-                  }
-
+                  <StackItem grow>
+                    <PublishConfigForm
+                      selectedConfig={selectedConfig}
+                    />
+                  </StackItem>
 
                   <StackItem>
                     <Stack
@@ -323,7 +207,10 @@ function EditPublishConfigScreen({ selectedConfig }) {
                             Button.SPACING_TYPE.NONE,
                           ]}
                         >
-                          {UI_CONTENT.GLOBAL.ACTION_LABEL_OK}
+                          {
+                            submitActionName ||
+                            UI_CONTENT.GLOBAL.ACTION_LABEL_OK
+                          }
                         </Button>
                         <Button
                           onClick={handleCancel}
@@ -340,7 +227,6 @@ function EditPublishConfigScreen({ selectedConfig }) {
                       </StackItem>
                     </Stack>
                   </StackItem>
-
                 </Stack>
               </Form>
             </CardBody>
@@ -348,6 +234,109 @@ function EditPublishConfigScreen({ selectedConfig }) {
         </LayoutItem>
       </Layout>
     </div>
+  )
+}
+
+function StandaloneEditPublishConfigScreen(props) {
+  const {
+      params: {
+        selectedConfig,
+      }
+    } = useContext(RouteContext),
+    {
+      formState,
+      dangerouslyUpdateFormState,
+    } = useContext(FormContext),
+    { navigate, home } = useContext(RouteDispatchContext),
+    {
+      writeError,
+      writeFinished,
+    } = useContext(StorageContext),
+    { updatePublishConfig } = useManifestWriter(),
+    writeFormState = useCallback(formState => {
+      updatePublishConfig(
+        publishConfigFromFormState(formState),
+        selectedConfig,
+      )
+    }, [updatePublishConfig, selectedConfig]),
+    handleSubmit = useCallback(formState => {
+      writeFormState(formState)
+    }, [writeFormState]),
+    handleCancel = useCallback(() => {
+      home({ tab: 'publishConfigs' })
+    }, [navigate])
+
+  useEffect(() => {
+    if (writeError) {
+      Toast.showToast({
+        title: UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.SAVE_ERROR_TITLE,
+        description: UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.SAVE_ERROR_DESCRIPTION(writeError.message),
+        /*
+        @TODO
+        actions: [
+          {
+            label: UI_CONTENT.GLOBAL.ACTION_LABEL_RETRY,
+            onClick: handleSave,
+          },
+        ],
+        */
+        type: Toast.TYPE.CRITICAL,
+      })
+    }
+
+    if (writeFinished) {
+      Toast.showToast({
+        title: UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.SAVE_SUCCESS_TITLE,
+        description: UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.SAVE_SUCCESS_DESCRIPTION(formState.name),
+        type: Toast.TYPE.NORMAL,
+      })
+
+      dangerouslyUpdateFormState({})
+
+      home({ tab: 'publishConfigs' })
+    }
+  }, [writeError, writeFinished, formState.name, dangerouslyUpdateFormState, handleSubmit, home])
+
+  return (
+    <EditPublishConfigScreen
+      {...props}
+      selectedConfig={selectedConfig}
+      submitActionName={UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE}
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+    />
+  )
+}
+
+function ReportEditPublishConfigScreen(props) {
+  const {
+      params: {
+        selectedConfig,
+      }
+    } = useContext(RouteContext),
+    {
+      formState,
+    } = useContext(FormContext),
+    { navigate } = useContext(RouteDispatchContext),
+    handleCancel = useCallback(() => {
+      navigate(ROUTES.EDIT_REPORT, {
+        formState: formState.parentFormState || formState
+      })
+    }, [navigate, formState]),
+    handleSubmit = useCallback(() => {
+      navigate(
+        ROUTES.EDIT_REPORT,
+        { formState: buildParentFormState(formState, selectedConfig) }
+      )
+    }, [navigate, formState, selectedConfig])
+
+  return (
+    <EditPublishConfigScreen
+      {...props}
+      selectedConfig={selectedConfig}
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+    />
   )
 }
 
@@ -361,24 +350,48 @@ export default function EditPublishConfigScreenWrapper(props) {
     {
       manifest,
       publishConfigs: metaPublishConfigs,
-    } = useContext(StorageContext),
-    initFormState = useCallback(() => formState.parentFormState ? (
-        { ...formState }
-      ) : (
-        formStateFromPublishConfig(
-          formState,
-          manifest,
-          metaPublishConfigs,
-          selectedConfig
-        )
-      ),
-      [formState, selectedConfig]
+    } = useContext(StorageContext)
+
+  if (!formState || formState.parentFormState === null) {
+    const initFormState = useCallback(() => {
+      if (formState) {
+        return { ...formState }
+      }
+
+      return formStateFromPublishConfig(
+        null,
+        metaPublishConfigs?.publishConfigs,
+        manifest,
+        metaPublishConfigs,
+        selectedConfig,
+      )
+    }, [formState, metaPublishConfigs, manifest, selectedConfig])
+
+    return withFormContext(
+      <StandaloneEditPublishConfigScreen
+        {...props}
+      />,
+      initFormState,
     )
+  }
+
+  const initFormState = useCallback(() => {
+    if (formState.parentFormState) {
+      return { ...formState }
+    }
+
+    return formStateFromPublishConfig(
+      formState,
+      formState.publishConfigs,
+      manifest,
+      metaPublishConfigs,
+      selectedConfig
+    )
+  }, [formState, manifest, metaPublishConfigs, selectedConfig])
 
   return withFormContext(
-    <EditPublishConfigScreen
+    <ReportEditPublishConfigScreen
       {...props}
-      selectedConfig={selectedConfig}
     />,
     initFormState,
   )

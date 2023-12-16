@@ -17,13 +17,13 @@ import {
   emailToNotEmptyValidEmails,
   emailCcValidEmails,
   emailFormatIsValid,
-  emailQueryDeliveryMethodIsValid,
+  emailDeliveryMethodIsValid,
 } from '../validations'
 
 export default function EmailChannelForm({
   onChangeSubject,
   onChangeFormat,
-  onChangeQueryDeliveryMethod,
+  onChangeDeliveryMethod,
   onChangeTo,
   onChangeCc,
   onChangeTemplate,
@@ -32,17 +32,12 @@ export default function EmailChannelForm({
     {
       emailSubject,
       emailFormat,
-      emailQueryDeliveryMethod,
+      emailDeliveryMethod,
       emailTo,
       emailCc,
       emailTemplate,
       validations,
-    } = formState,
-    {
-      parentFormState: {
-        type: reportType,
-      },
-    } = formState.parentFormState
+    } = formState
 
   return (
     <Stack
@@ -79,33 +74,30 @@ export default function EmailChannelForm({
           </RadioGroup>
         </Validation>
       </StackItem>
-      {
-        reportType === SYMBOLS.REPORT_TYPES.QUERY && (
-          <StackItem>
-            <Validation
-              name={UI_CONTENT.EMAIL_CHANNEL_FORM.QUERY_DELIVERY_METHOD_INPUT_NAME}
-              validation={emailQueryDeliveryMethodIsValid}
-            >
-              <RadioGroup
-                label={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_LABEL_QUERY_DELIVERY_METHOD}
-                name={UI_CONTENT.EMAIL_CHANNEL_FORM.QUERY_DELIVERY_METHOD_INPUT_NAME}
-                value={emailQueryDeliveryMethod}
-                defaultValue={SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT}
-                onChange={onChangeQueryDeliveryMethod}
-              >
-                <Radio
-                  label={UI_CONTENT.EMAIL_CHANNEL_FORM.QUERY_DELIVERY_METHOD_LABEL_ATTACH}
-                  value={SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT}
-                />
-                <Radio
-                  label={UI_CONTENT.EMAIL_CHANNEL_FORM.QUERY_DELIVERY_METHOD_LABEL_PASSTHROUGH}
-                  value={SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH}
-                />
-              </RadioGroup>
-            </Validation>
-          </StackItem>
-        )
-      }
+      <StackItem>
+        <Validation
+          name={UI_CONTENT.EMAIL_CHANNEL_FORM.DELIVERY_METHOD_INPUT_NAME}
+          validation={emailDeliveryMethodIsValid}
+        >
+          <RadioGroup
+            label={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_LABEL_DELIVERY_METHOD}
+            name={UI_CONTENT.EMAIL_CHANNEL_FORM.DELIVERY_METHOD_INPUT_NAME}
+            value={emailDeliveryMethod}
+            defaultValue={SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT}
+            onChange={onChangeDeliveryMethod}
+            info={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_INFO_DELIVERY_METHOD}
+          >
+            <Radio
+              label={UI_CONTENT.EMAIL_CHANNEL_FORM.DELIVERY_METHOD_LABEL_ATTACH}
+              value={SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT}
+            />
+            <Radio
+              label={UI_CONTENT.EMAIL_CHANNEL_FORM.DELIVERY_METHOD_LABEL_PASSTHROUGH}
+              value={SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH}
+            />
+          </RadioGroup>
+        </Validation>
+      </StackItem>
       <StackItem>
         <Validation
           name="emailSubject"
@@ -161,10 +153,6 @@ export default function EmailChannelForm({
           placeholder={UI_CONTENT.EMAIL_CHANNEL_FORM.TEMPLATE_FIELD_PLACEHOLDER}
           value={emailTemplate}
           onChange={onChangeTemplate}
-          disabled={(
-            reportType === SYMBOLS.REPORT_TYPES.QUERY &&
-            emailQueryDeliveryMethod === SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH
-          )}
         />
       </StackItem>
     </Stack>

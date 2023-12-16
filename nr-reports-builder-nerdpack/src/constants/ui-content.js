@@ -18,14 +18,6 @@ export const UI_CONTENT = {
       HEADING: 'Working on it, hang tight!',
       DESCRIPTION: 'Be right back.',
     },
-    EMPTY_STATE: {
-      HEADING: 'No reports found.',
-      DESCRIPTION: 'Create a new report',
-    },
-    NO_REPORT_SELECTED: {
-      HEADING: 'No report selected.',
-      DESCRIPTION: 'Please select a report.',
-    },
     STATUS_LABEL_ENABLED: 'Enabled',
     STATUS_LABEL_DISABLED: 'Disabled',
   },
@@ -42,10 +34,24 @@ export const UI_CONTENT = {
   },
 
   HOME: {
-    BUTTON_LABEL_CREATE_REPORT: 'Create new report',
-    DELETE_REPORT_PROMPT: 'Are you sure you want to delete this report? This action cannot be undone.',
-    HEADER_LABEL_PUBLISH_CONFIGS: 'Publish configurations',
-    HEADING: 'Reports',
+    REPORTS: {
+      EMPTY_STATE: {
+        HEADING: 'No reports found.',
+        DESCRIPTION: 'Create a new report',
+      },
+      BUTTON_LABEL_CREATE_REPORT: 'Create new report',
+      DELETE_REPORT_PROMPT: 'Are you sure you want to delete this report? This action cannot be undone.',
+      HEADING: 'Reports',
+    },
+    PUBLISH_CONFIGS: {
+      EMPTY_STATE: {
+        HEADING: 'No publish configurations found.',
+        DESCRIPTION: 'Create a new publish configuration',
+      },
+      BUTTON_LABEL_CREATE_PUBLISH_CONFIG: 'Create new publish configuration',
+      DELETE_PUBLISH_CONFIG_PROMPT: 'Are you sure you want to delete this publish configuration? Deleting this publish configuration will also delete it from all reports which use it. This action cannot be undone.',
+      HEADING: 'Publish configurations',
+    }
   },
 
   BASIC_SCHEDULE_FORM: {
@@ -132,6 +138,10 @@ export const UI_CONTENT = {
     FIELD_LABEL_NAME: 'Name',
     MODE_VALUE_CREATE_NEW_CONFIG: 'create',
     MODE_VALUE_USE_EXISTING_CONFIG: 'useExisting',
+    SAVE_ERROR_TITLE: 'Save failed',
+    SAVE_ERROR_DESCRIPTION: msg => `Your data could not be saved: ${msg}`,
+    SAVE_SUCCESS_TITLE: 'Publish configuration saved',
+    SAVE_SUCCESS_DESCRIPTION: name => `The publish configuration "${name}" was saved.`
   },
   EDIT_PUBLISH_CONFIG_SCREEN: {
     HEADING: 'Edit publish configuration',
@@ -140,17 +150,18 @@ export const UI_CONTENT = {
   },
   EMAIL_CHANNEL_FORM: {
     CC_FIELD_PLACEHOLDER: `robin@newrelic.com\npat@newrelic.com`,
+    FIELD_INFO_DELIVERY_METHOD: 'This setting applies to reports that produce text-based outputs such as query reports. It is ignored for reports that do not produce text as outputs such as dashboard reports.',
     FIELD_LABEL_CC: 'Cc',
     FIELD_LABEL_FORMAT: 'Format',
-    FIELD_LABEL_QUERY_DELIVERY_METHOD: 'Delivery method',
+    FIELD_LABEL_DELIVERY_METHOD: 'Delivery method',
     FIELD_LABEL_SUBJECT: 'Subject',
     FIELD_LABEL_TEMPLATE: 'Message template',
     FIELD_LABEL_TO: 'To',
     FORMAT_LABEL_HTML: 'HTML',
     FORMAT_LABEL_TEXT: 'Text',
-    QUERY_DELIVERY_METHOD_LABEL_ATTACH: 'Deliver the query results in CSV format as a file attachment',
-    QUERY_DELIVERY_METHOD_LABEL_PASSTHROUGH: 'Deliver the query results in CSV format as the message of the email. The email message field will be ignored.',
-    QUERY_DELIVERY_METHOD_INPUT_NAME: 'emailQueryDeliveryMethod',
+    DELIVERY_METHOD_LABEL_ATTACH: 'Deliver output from text-based reports as a file attachment',
+    DELIVERY_METHOD_LABEL_PASSTHROUGH: 'Use output from text-based reports as the message of the email. The email message field will be ignored.',
+    DELIVERY_METHOD_INPUT_NAME: 'emailDeliveryMethod',
     SUBJECT_FIELD_PLACEHOLDER: 'This week\'s performance report',
     TEMPLATE_FIELD_PLACEHOLDER: `Please find attached the performance dashboards for report {{name}}.`,
     TO_FIELD_PLACEHOLDER: `jan@newrelic.com\nsam@newrelic.com`,
