@@ -146,6 +146,9 @@ function EditPublishConfigScreen({
       formState,
       validateFormState,
     } = useContext(FormContext),
+    {
+      writing,
+    } = useContext(StorageContext),
     handleSubmit = useCallback(() => {
       validateFormState(onSubmit)
     }, [validateFormState, onSubmit]),
@@ -200,6 +203,7 @@ function EditPublishConfigScreen({
                         <Button
                           onClick={handleSubmit}
                           type={Button.TYPE.PRIMARY}
+                          loading={writing}
                           spacingType={[
                             Button.SPACING_TYPE.NONE,
                             Button.SPACING_TYPE.SMALL,

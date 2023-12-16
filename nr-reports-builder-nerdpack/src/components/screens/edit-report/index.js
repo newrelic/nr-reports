@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import {
   Button,
@@ -102,7 +102,6 @@ function EditReportScreen({ report, selectedReportIndex }) {
     writeFormState = useCallback(formState => {
       update(reportFromFormState(formState), selectedReportIndex)
     }, [update, selectedReportIndex]),
-    [closeOnSave, setCloseOnSave] = useState(false),
     handleChangeName = useCallback(e => {
       updateFormState({ name: e.target.value })
     }, [updateFormState]),
@@ -124,10 +123,6 @@ function EditReportScreen({ report, selectedReportIndex }) {
 
       home()
     }, [home, formState]),
-    handleSaveAndClose = useCallback(() => {
-      setCloseOnSave(true)
-      handleSave()
-    }, [setCloseOnSave, handleSave]),
     { error } = formState
 
   useEffect(() => {
@@ -168,9 +163,7 @@ function EditReportScreen({ report, selectedReportIndex }) {
 
       dangerouslyUpdateFormState({})
 
-      if (closeOnSave) {
-        home()
-      }
+      home()
     }
   }, [error, writeError, writeFinished, formState.name, updateFormState, handleSave, handleClose, home])
 
@@ -277,19 +270,6 @@ function EditReportScreen({ report, selectedReportIndex }) {
                           ]}
                         >
                           {UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE}
-                        </Button>
-                        <Button
-                          onClick={handleSaveAndClose}
-                          type={Button.TYPE.SECONDARY}
-                          loading={writing}
-                          spacingType={[
-                            Button.SPACING_TYPE.NONE,
-                            Button.SPACING_TYPE.SMALL,
-                            Button.SPACING_TYPE.NONE,
-                            Button.SPACING_TYPE.NONE,
-                          ]}
-                        >
-                          {UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE_AND_CLOSE}
                         </Button>
                         <Button
                           onClick={handleClose}
