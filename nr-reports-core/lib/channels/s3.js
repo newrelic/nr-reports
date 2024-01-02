@@ -11,7 +11,14 @@ const fs = require('fs'),
     S3_SOURCE_BUCKET_KEY,
   } = require('../constants')
 
-async function uploadToS3(context, manifest, report, channelConfig, output) {
+async function uploadToS3(
+  context,
+  manifest,
+  report,
+  publishConfig,
+  channelConfig,
+  output,
+) {
   const bucket = context.get(S3_DEST_BUCKET_KEY, S3_DEST_BUCKET_VAR)
 
   /*

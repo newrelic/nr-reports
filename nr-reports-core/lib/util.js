@@ -26,7 +26,8 @@ const logger = createLogger('util'),
     tasklists: true,
     openLinksInNewWindow: true,
     backslashEscapesHTMLTags: true,
-  })
+  }),
+  SIMPLE_VAR_REGEX = /[{][{]\s*([a-zA-Z_$][a-zA-Z0-9$_]*)\s*[}][}]/ug
 
 markdownConverter.setFlavor('github')
 
@@ -584,6 +585,18 @@ function markdownToHtml(text) {
   return markdownConverter.makeHtml(text)
 }
 
+function format(str, replacements) {
+  return str.replace(
+    SIMPLE_VAR_REGEX,
+    (_, key) => {
+      if (replacements[key]) {
+        return replacements[key]
+      }
+      return key
+    },
+  )
+}
+
 module.exports = {
   DEFAULT_CHANNEL,
   DEFAULT_CONCURRENCY,
@@ -617,4 +630,5 @@ module.exports = {
   trimStringAndLower,
   doAsyncWork,
   markdownToHtml,
+  format,
 }

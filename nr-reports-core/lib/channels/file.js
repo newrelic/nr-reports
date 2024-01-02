@@ -70,7 +70,14 @@ async function saveToFile(context, report, channelConfig, output) {
   )
 }
 
-async function copyToDestDir(context, manifest, report, channelConfig, output) {
+async function copyToDestDir(
+  context,
+  manifest,
+  report,
+  publishConfig,
+  channelConfig,
+  output,
+) {
 
   /*
    * If the output is already a file output, just copy the files to the destDir.

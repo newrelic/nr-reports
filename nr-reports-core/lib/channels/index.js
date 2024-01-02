@@ -4,6 +4,7 @@ const email = require('./email'),
   file = require('./file'),
   s3 = require('./s3'),
   slack = require('./slack'),
+  webhook = require('./webhook'),
   { createLogger, logTrace } = require('../logger'),
   { getOption, splitStringAndTrim, isUndefined } = require('../util'),
   {
@@ -17,6 +18,7 @@ const publishers = {
     file,
     s3,
     slack,
+    webhook,
   },
   logger = createLogger('publisher')
 
@@ -117,7 +119,7 @@ async function publish(
     })
 
     try {
-      await publisher.publish(publishContext, manifest, report, channel, output, tempDir)
+      await publisher.publish(publishContext, manifest, report, publishConfig, channel, output, tempDir)
       logger.trace(`Output for report ${reportName} published to channel ${channel.type}.`)
     } catch (err) {
       logger.error(`Publishing output for report ${reportName} to channel ${channel.type} failed with the following error. Publishing will continue with remaining channels.`)

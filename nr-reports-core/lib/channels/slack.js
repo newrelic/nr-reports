@@ -84,7 +84,14 @@ async function buildMessage(context, report, channelConfig, output) {
   })
 }
 
-async function postToSlack(context, manifest, report, channelConfig, output) {
+async function postToSlack(
+  context,
+  manifest,
+  report,
+  publishConfig,
+  channelConfig,
+  output,
+) {
   const reportName = report.name || report.id
 
   /*

@@ -279,6 +279,7 @@ async function sendEmail(
   context,
   manifest,
   report,
+  publishConfig,
   channelConfig,
   output,
   tempDir,
