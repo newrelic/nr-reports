@@ -1,4 +1,4 @@
-import React, { useCallback, useContext } from 'react'
+import React, { useCallback, useContext, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import {
   Button,
@@ -6,85 +6,135 @@ import {
   CardHeader,
   CardBody,
   Form,
-  HeadingText,
   Layout,
   LayoutItem,
-  Select,
-  SelectItem,
   Stack,
   StackItem,
+  Toast,
 } from 'nr1'
-import EmailChannelForm from "../../email-channel-form"
-import SlackChannelForm from "../../slack-channel-form"
 import {
   RouteContext,
   RouteDispatchContext,
+  StorageContext,
 } from '../../../contexts'
 import {
   ROUTES,
   SYMBOLS,
   UI_CONTENT,
 } from '../../../constants'
-import { clone } from '../../../utils'
-import { FormContext, Validation, withFormContext } from '../../../contexts/form'
-import { channelTypeIsValid } from '../../validations'
+import { clone, resolveChannel, resolvePublishConfig } from '../../../utils'
+import { FormContext, withFormContext } from '../../../contexts/form'
+import { newChannel, newChannelMetadata } from '../../../model'
+import { useManifestWriter } from '../../../hooks'
+import ChannelForm from '../../channel-form'
+
+function countReferences(manifest, metaPublishConfigs, channel) {
+  // manifest will be null when creating the first report so no channels
+  // will exist yet.
+  if (!manifest) {
+    return 0
+  }
+
+  return manifest.reports.reduce((acount, report) => {
+    for (let index = 0; index < report.publishConfigs.length; index += 1) {
+      const publishConfig = resolvePublishConfig(
+        metaPublishConfigs,
+        report.publishConfigs[index],
+      )
+
+      if (publishConfig) {
+        const cindex = publishConfig.channels?.findIndex(
+          c => c.ref === channel.id
+        )
+
+        if (cindex >= 0) {
+          return acount + 1
+        }
+      }
+    }
+
+    return acount
+  }, 0)
+}
 
 function formStateFromChannel(
   parentFormState,
-  selectedChannel
+  channels,
+  manifest,
+  metaPublishConfigs,
+  metaChannels,
+  selectedChannel,
 ) {
-  let channel
+  // Handle the case where for some reason selectedChannel >= 0 and either
+  // channels is null or selectedConfig >= channels.length (which shouldn't
+  // happen).
 
-  if (parentFormState.channels[selectedChannel]) {
-    const selected = parentFormState.channels[selectedChannel]
-
-    if (selected.type === SYMBOLS.CHANNEL_TYPES.EMAIL) {
-      channel = {
-        type: SYMBOLS.CHANNEL_TYPES.EMAIL,
-        emailFormat: selected.format || SYMBOLS.EMAIL_FORMATS.HTML,
-        emailDeliveryMethod: selected.attachOutput ? (
-          SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT
-        ) : (
-          selected.passThrough ? (
-            SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH
-          ) : (
-            SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT
-          )
-        ),
-        emailSubject: selected.subject,
-        emailTo: selected.to ? selected.to.replaceAll(/\s*,\s*/ug,"\n") : '',
-        emailCc: selected.cc ? selected.cc.replaceAll(/\s*,\s*/ug,',') : '',
-        emailTemplate: selected.emailTemplate || '',
-      }
-    } else if (selected.type === SYMBOLS.CHANNEL_TYPES.SLACK) {
-      channel = {
-        type: SYMBOLS.CHANNEL_TYPES.SLACK,
-        slackWebhookUrl: selected.webhookUrl,
-      }
-    }
-  } else {
-    channel = {
-      type: SYMBOLS.CHANNEL_TYPES.EMAIL,
-      emailFormat: SYMBOLS.EMAIL_FORMATS.HTML,
-      emailDeliveryMethod: SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT,
-      emailSubject: '',
-      emailTo: '',
-      emailCc: '',
-      emailTemplate: '',
-    }
+  if (
+    selectedChannel >= 0 &&
+    (!channels || selectedChannel >= channels.length)
+  ) {
+    throw new Error(`Invalid channel index ${selectedChannel} found`)
   }
 
-  return {
-    parentFormState: parentFormState && clone(parentFormState),
-    ...channel,
-    dirty: false,
-    valid: true,
+  const channel = (
+      selectedChannel >= 0 ? (
+        resolveChannel(
+          metaChannels,
+          channels[selectedChannel],
+        )
+      ) : newChannel()
+    ),
+    references = countReferences(manifest, metaPublishConfigs, channel),
+    formState = {
+      parentFormState: parentFormState && clone(parentFormState),
+      prevChannels: channels,
+      metadata: channel.metadata || newChannelMetadata(),
+      mode: selectedChannel >= 0 ? '' : (
+        UI_CONTENT.EDIT_CHANNEL_FORM.MODE_VALUE_CREATE_NEW_CHANNEL
+      ),
+      id: channel.id,
+      name: channel.name,
+      ref: null,
+      references,
+      dirty: false,
+      valid: true,
+    }
+
+  if (channel.type === SYMBOLS.CHANNEL_TYPES.EMAIL) {
+    formState.type = SYMBOLS.CHANNEL_TYPES.EMAIL
+    formState.emailFormat = channel.format || SYMBOLS.EMAIL_FORMATS.HTML
+    formState.emailDeliveryMethod = channel.attachOutput ? (
+      SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT
+    ) : (
+      channel.passThrough ? (
+        SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH
+      ) : (
+        SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT
+      )
+    )
+    formState.emailSubject = channel.subject
+    formState.emailTo = channel.to ? channel.to.replaceAll(/\s*,\s*/ug,"\n") : ''
+    formState.emailCc = channel.cc ? channel.cc.replaceAll(/\s*,\s*/ug,',') : ''
+    formState.emailTemplate = channel.emailTemplate || ''
+  } else if (channel.type === SYMBOLS.CHANNEL_TYPES.SLACK) {
+    formState.type = SYMBOLS.CHANNEL_TYPES.SLACK
+    // @TODO
+    // formState.slackWebhookUrl = channel.webhookUrl
   }
+
+  return formState
 }
 
-function channelFromFormState(formState, selectedChannel) {
-  const channels = [ ...formState.parentFormState.channels ],
-    channel = channels[selectedChannel] || { type: SYMBOLS.CHANNEL_TYPES.EMAIL }
+function channelFromFormState(formState) {
+  if (formState.mode === UI_CONTENT.EDIT_CHANNEL_FORM.MODE_VALUE_USE_EXISTING_CHANNEL) {
+    return { ref: formState.ref }
+  }
+
+  const channel = {
+    id: formState.id,
+    name: formState.name,
+    metadata: formState.metadata,
+  }
 
   if (formState.type === SYMBOLS.CHANNEL_TYPES.EMAIL) {
     channel.type = SYMBOLS.CHANNEL_TYPES.EMAIL,
@@ -101,13 +151,25 @@ function channelFromFormState(formState, selectedChannel) {
     channel.emailTemplate = formState.emailTemplate || ''
   } else if (formState.type === SYMBOLS.CHANNEL_TYPES.SLACK) {
     channel.type = SYMBOLS.CHANNEL_TYPES.SLACK
-    channel.webhookUrl = formState.slackWebhookUrl
+    // @TODO
+    // channel.webhookUrl = formState.slackWebhookUrl
   }
 
+  return channel
+}
+
+function buildParentFormState(formState, selectedChannel) {
+  const channel = channelFromFormState(formState)
+  let channels
+
   if (selectedChannel >= 0) {
+    channels = [ ...formState.prevChannels ]
     channels[selectedChannel] = channel
   } else {
-    channels.push(channel)
+    channels = [
+      ...formState.prevChannels,
+      channel,
+    ]
   }
 
   return {
@@ -117,46 +179,21 @@ function channelFromFormState(formState, selectedChannel) {
   }
 }
 
-function EditChannelScreen({ selectedChannel }) {
+function EditChannelScreen({
+  selectedChannel,
+  submitActionName,
+  onSubmit,
+  onCancel,
+}) {
   const {
       formState,
-      updateFormState,
       validateFormState,
     } = useContext(FormContext),
-    { validations } = formState,
-    { navigate } = useContext(RouteDispatchContext),
-    navigateToEditPublishConfig = useCallback(() => {
-      navigate(
-        ROUTES.EDIT_PUBLISH_CONFIG,
-        { formState: channelFromFormState(formState, selectedChannel) }
-      )
-    }, [navigate, formState, selectedChannel]),
-    handleChangeType = useCallback((_, v) => {
-      updateFormState({ type: v })
-    }, [updateFormState]),
-    handleChangeEmailSubject = useCallback(e => {
-      updateFormState({ emailSubject: e.target.value })
-    }, [formState] ),
-    handleChangeEmailFormat = useCallback((_, v) => {
-      updateFormState({ emailFormat: v })
-    }, [formState] ),
-    handleChangeEmailDeliveryMethod = useCallback((_, v) => {
-      updateFormState({ emailDeliveryMethod: v })
-    }, [formState] ),
-    handleChangeEmailTo = useCallback(e => {
-      updateFormState({ emailTo: e.target.value })
-    }, [formState] ),
-    handleChangeEmailCc = useCallback(e => {
-      updateFormState({ emailCc: e.target.value })
-    }, [formState]),
-    handleChangeEmailTemplate = useCallback(e => {
-      updateFormState({ emailTemplate: e.target.value })
-    }, [formState]),
-    handleChangeSlackWebhookUrl = useCallback(e => {
-      updateFormState({ slackWebhookUrl: e.target.value })
-    }, [formState]),
+    {
+      writing,
+    } = useContext(StorageContext),
     handleSubmit = useCallback(() => {
-      validateFormState(navigateToEditPublishConfig)
+      validateFormState(onSubmit)
     }),
     handleCancel = useCallback(() => {
       if (formState.dirty) {
@@ -165,104 +202,77 @@ function EditChannelScreen({ selectedChannel }) {
         }
       }
 
-      navigate(ROUTES.EDIT_PUBLISH_CONFIG, {
-        ...formState.parentFormState,
-      })
-    }, [navigate, formState])
+      onCancel()
+    }, [formState])
 
   return (
     <div className="edit-channel-screen">
       <Layout>
         <LayoutItem>
           <Card>
-            <CardHeader title={UI_CONTENT.EDIT_CHANNEL_SCREEN.HEADING} />
+            <CardHeader
+              title={UI_CONTENT.EDIT_CHANNEL_SCREEN.HEADING}
+              subtitle={formState.references > 1 ? (
+                UI_CONTENT.EDIT_CHANNEL_SCREEN.EDIT_SHARED_CHANNEL_MESSAGE(formState.references)
+              ) : ''}
+            />
             <CardBody>
               <Form
                 className="edit-channel-form"
                 spacingType={[Form.SPACING_TYPE.LARGE]}
               >
-                <HeadingText
-                  type={HeadingText.TYPE.HEADING_2}
-                  spacingType={[
-                    HeadingText.SPACING_TYPE.OMIT,
-                    HeadingText.SPACING_TYPE.OMIT,
-                    HeadingText.SPACING_TYPE.LARGE,
-                    HeadingText.SPACING_TYPE.OMIT,
-                  ]}
-                >
-                  {UI_CONTENT.EDIT_CHANNEL_FORM.HEADING}
-                </HeadingText>
-
-                <Validation name="type" validation={channelTypeIsValid}>
-                  <Select
-                    label={UI_CONTENT.EDIT_CHANNEL_FORM.FIELD_LABEL_CHANNEL_TYPE}
-                    onChange={handleChangeType}
-                    value={formState.type}
-                    invalid={validations?.type}
-                  >
-                    <SelectItem value={SYMBOLS.CHANNEL_TYPES.EMAIL}>
-                      {UI_CONTENT.EDIT_CHANNEL_FORM.CHANNEL_TYPE_LABEL_EMAIL}
-                    </SelectItem>
-                    {/*
-                    <SelectItem value={SYMBOLS.CHANNEL_TYPES.SLACK}>
-                      {UI_CONTENT.EDIT_CHANNEL_FORM.CHANNEL_TYPE_LABEL_SLACK}
-                    </SelectItem>
-                    */}
-                  </Select>
-                </Validation>
-
-                {
-                  formState.type === SYMBOLS.CHANNEL_TYPES.EMAIL && (
-                    <EmailChannelForm
-                      onChangeSubject={handleChangeEmailSubject}
-                      onChangeFormat={handleChangeEmailFormat}
-                      onChangeDeliveryMethod={handleChangeEmailDeliveryMethod}
-                      onChangeTo={handleChangeEmailTo}
-                      onChangeCc={handleChangeEmailCc}
-                      onChangeTemplate={handleChangeEmailTemplate}
-                    />
-                  )
-                }
-
-                {
-                  formState.type === SYMBOLS.CHANNEL_TYPES.SLACK && (
-                    <SlackChannelForm
-                      onChangeWebhookUrl={handleChangeSlackWebhookUrl}
-                    />
-                  )
-                }
-
                 <Stack
                   spacingType={[
-                    Stack.SPACING_TYPE.LARGE,
                     Stack.SPACING_TYPE.NONE,
                   ]}
+                  directionType={Stack.DIRECTION_TYPE.VERTICAL}
+                  fullWidth
+                  horizontalType={Stack.HORIZONTAL_TYPE.FILL}
                 >
+                  <StackItem grow>
+                    <ChannelForm
+                      selectedChannel={selectedChannel}
+                    />
+                  </StackItem>
+
                   <StackItem>
-                    <Button
-                      onClick={handleSubmit}
-                      type={Button.TYPE.PRIMARY}
+                    <Stack
                       spacingType={[
-                        Button.SPACING_TYPE.NONE,
-                        Button.SPACING_TYPE.SMALL,
-                        Button.SPACING_TYPE.NONE,
-                        Button.SPACING_TYPE.NONE,
+                        Stack.SPACING_TYPE.LARGE,
+                        Stack.SPACING_TYPE.NONE,
                       ]}
                     >
-                      {UI_CONTENT.GLOBAL.ACTION_LABEL_OK}
-                    </Button>
-                    <Button
-                      onClick={handleCancel}
-                      type={Button.TYPE.PLAIN}
-                      spacingType={[
-                        Button.SPACING_TYPE.NONE,
-                        Button.SPACING_TYPE.SMALL,
-                        Button.SPACING_TYPE.NONE,
-                        Button.SPACING_TYPE.NONE,
-                      ]}
-                    >
-                      {UI_CONTENT.GLOBAL.ACTION_LABEL_CANCEL}
-                    </Button>
+                      <StackItem>
+                        <Button
+                          onClick={handleSubmit}
+                          type={Button.TYPE.PRIMARY}
+                          loading={writing}
+                          spacingType={[
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.SMALL,
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.NONE,
+                          ]}
+                        >
+                          {
+                            submitActionName ||
+                            UI_CONTENT.GLOBAL.ACTION_LABEL_OK
+                          }
+                        </Button>
+                        <Button
+                          onClick={handleCancel}
+                          type={Button.TYPE.PLAIN}
+                          spacingType={[
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.SMALL,
+                            Button.SPACING_TYPE.NONE,
+                            Button.SPACING_TYPE.NONE,
+                          ]}
+                        >
+                          {UI_CONTENT.GLOBAL.ACTION_LABEL_CANCEL}
+                        </Button>
+                      </StackItem>
+                    </Stack>
                   </StackItem>
                 </Stack>
               </Form>
@@ -274,6 +284,109 @@ function EditChannelScreen({ selectedChannel }) {
   )
 }
 
+function StandaloneEditChannelScreen(props) {
+  const {
+      params: {
+        selectedChannel,
+      }
+    } = useContext(RouteContext),
+    {
+      formState,
+      dangerouslyUpdateFormState,
+    } = useContext(FormContext),
+    { navigate, home } = useContext(RouteDispatchContext),
+    {
+      writeError,
+      writeFinished,
+    } = useContext(StorageContext),
+    { updateChannel } = useManifestWriter(),
+    writeFormState = useCallback(formState => {
+      updateChannel(
+        channelFromFormState(formState),
+        selectedChannel,
+      )
+    }, [updateChannel, selectedChannel]),
+    handleSubmit = useCallback(formState => {
+      writeFormState(formState)
+    }, [writeFormState]),
+    handleCancel = useCallback(() => {
+      home({ tab: 'channels' })
+    }, [navigate])
+
+  useEffect(() => {
+    if (writeError) {
+      Toast.showToast({
+        title: UI_CONTENT.EDIT_CHANNEL_FORM.SAVE_ERROR_TITLE,
+        description: UI_CONTENT.EDIT_CHANNEL_FORM.SAVE_ERROR_DESCRIPTION(writeError.message),
+        /*
+        @TODO
+        actions: [
+          {
+            label: UI_CONTENT.GLOBAL.ACTION_LABEL_RETRY,
+            onClick: handleSave,
+          },
+        ],
+        */
+        type: Toast.TYPE.CRITICAL,
+      })
+    }
+
+    if (writeFinished) {
+      Toast.showToast({
+        title: UI_CONTENT.EDIT_CHANNEL_FORM.SAVE_SUCCESS_TITLE,
+        description: UI_CONTENT.EDIT_CHANNEL_FORM.SAVE_SUCCESS_DESCRIPTION(formState.name),
+        type: Toast.TYPE.NORMAL,
+      })
+
+      dangerouslyUpdateFormState({})
+
+      home({ tab: 'channels' })
+    }
+  }, [writeError, writeFinished, formState.name, dangerouslyUpdateFormState, home])
+
+  return (
+    <EditChannelScreen
+      {...props}
+      selectedChannel={selectedChannel}
+      submitActionName={UI_CONTENT.GLOBAL.ACTION_LABEL_SAVE}
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+    />
+  )
+}
+
+function ReportEditChannelScreen(props) {
+  const {
+      params: {
+        selectedChannel,
+      }
+    } = useContext(RouteContext),
+    {
+      formState,
+    } = useContext(FormContext),
+    { navigate } = useContext(RouteDispatchContext),
+    handleCancel = useCallback(() => {
+      navigate(ROUTES.EDIT_PUBLISH_CONFIG, {
+        ...formState.parentFormState,
+      })
+    }, [navigate, formState]),
+    handleSubmit = useCallback(() => {
+      navigate(
+        ROUTES.EDIT_PUBLISH_CONFIG,
+        { formState: buildParentFormState(formState, selectedChannel) }
+      )
+    }, [navigate, formState, selectedChannel])
+
+  return (
+    <EditChannelScreen
+      {...props}
+      selectedChannel={selectedChannel}
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+    />
+  )
+}
+
 export default function EditChannelScreenWrapper(props) {
   const {
       params: {
@@ -281,14 +394,53 @@ export default function EditChannelScreenWrapper(props) {
         selectedChannel,
       }
     } = useContext(RouteContext),
-    initFormState = useCallback(() => (
-        formStateFromChannel(formState, selectedChannel)
-      ),
-      [formState, selectedChannel]
+    {
+      manifest,
+      publishConfigs: metaPublishConfigs,
+      channels: metaChannels,
+    } = useContext(StorageContext)
+
+  if (!formState /*|| formState.parentFormState === null*/) {
+    const initFormState = useCallback(() => {
+      /*
+      if (formState) {
+        return { ...formState }
+      }
+      */
+
+      return formStateFromChannel(
+        null,
+        metaChannels?.channels,
+        manifest,
+        metaPublishConfigs,
+        metaChannels,
+        selectedChannel,
+      )
+    }, [/*formState, */ metaChannels, metaPublishConfigs, manifest, selectedChannel])
+
+    return withFormContext(
+      <StandaloneEditChannelScreen
+        {...props}
+      />,
+      initFormState,
     )
+  }
+
+  const initFormState = useCallback(() => (
+      formStateFromChannel(
+        formState,
+        formState.channels,
+        manifest,
+        metaPublishConfigs,
+        metaChannels,
+        selectedChannel,
+      )
+    ),
+    [formState, manifest, metaChannels, metaPublishConfigs, selectedChannel]
+  )
 
   return withFormContext(
-    <EditChannelScreen
+    <ReportEditChannelScreen
       {...props}
       selectedChannel={selectedChannel}
     />,

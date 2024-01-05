@@ -22,6 +22,10 @@ export class Validator {
     delete this.validations[name]
   }
 
+  clear() {
+    this.validations = {}
+  }
+
   validate(formState, updatedKeys = null) {
     const keys = updatedKeys || Object.keys(formState),
       results = updatedKeys ? {
@@ -87,6 +91,8 @@ function FormProvider({ initFormState, children }) {
 
       setFormState({ ...formState, ...result })
     }, [formState, setFormState])
+
+  validator.clear()
 
   return (
     <FormContext.Provider value={{

@@ -31,6 +31,11 @@ export default function useDataWriter({
       collection: 'metadata',
       documentId: 'publish-configs.json',
     }),
+    channelsWriter = useDocumentWriter({
+      accountId,
+      collection: 'metadata',
+      documentId: 'channels.json',
+    }),
     realManifestWriter = useDocumentWriter({
       accountId,
       collection: 'manifests',
@@ -40,17 +45,26 @@ export default function useDataWriter({
       manifestWriter,
       metadataWriter,
       publishConfigsWriter,
+      channelsWriter,
       realManifestWriter,
     ]), [
       manifestWriter,
       metadataWriter,
       publishConfigsWriter,
+      channelsWriter,
       realManifestWriter,
     ]),
-    write = useCallback((manifest, metadata, publishConfigs, realManifest) => {
+    write = useCallback((
+      manifest,
+      metadata,
+      publishConfigs,
+      channels,
+      realManifest,
+    ) => {
       manifestWriter[0]({ document: manifest })
       metadataWriter[0]({ document: metadata })
       publishConfigsWriter[0]({ document: publishConfigs })
+      channelsWriter[0]({ document: channels })
       realManifestWriter[0]({ document: realManifest })
       updateState(true, true, false)
       onWriting()
@@ -59,6 +73,7 @@ export default function useDataWriter({
       manifestWriter,
       metadataWriter,
       publishConfigsWriter,
+      channelsWriter,
       realManifestWriter,
       onWriting,
     ]),
@@ -90,6 +105,7 @@ export default function useDataWriter({
         writers[1][1].data.nerdStorageWriteDocument,
         writers[2][1].data.nerdStorageWriteDocument,
         writers[3][1].data.nerdStorageWriteDocument,
+        writers[4][1].data.nerdStorageWriteDocument,
       )
     }
   }, [done, called, writers, updateState, reset, onError, onComplete])

@@ -51,7 +51,19 @@ export const UI_CONTENT = {
       BUTTON_LABEL_CREATE_PUBLISH_CONFIG: 'Create new publish configuration',
       DELETE_PUBLISH_CONFIG_PROMPT: 'Are you sure you want to delete this publish configuration? Deleting this publish configuration will also delete it from all reports which use it. This action cannot be undone.',
       HEADING: 'Publish configurations',
-    }
+    },
+    CHANNELS: {
+      EMPTY_STATE: {
+        HEADING: 'No channels found.',
+        DESCRIPTION: 'Create a new channel',
+      },
+      BUTTON_LABEL_CREATE_CHANNEL: 'Create new channel',
+      DELETE_CHANNEL_PROMPT: 'Are you sure you want to delete this channel? Deleting this channel will also delete it from all publish configurations which use it. This action cannot be undone.',
+      HEADING: 'Channels',
+    },
+    TAB_LABEL_REPORTS: 'Reports',
+    TAB_LABEL_PUBLISH_CONFIGS: 'Publish configuration',
+    TAB_LABEL_CHANNELS: 'Channels',
   },
 
   BASIC_SCHEDULE_FORM: {
@@ -105,11 +117,23 @@ export const UI_CONTENT = {
   EDIT_CHANNEL_FORM: {
     CHANNEL_TYPE_LABEL_EMAIL: 'Email',
     CHANNEL_TYPE_LABEL_SLACK: 'Slack',
+    CHANNEL_NAME_FIELD_PLACEHOLDER: 'email-team',
+    FIELD_LABEL_CHANNEL_REF: 'Channel',
     FIELD_LABEL_CHANNEL_TYPE: 'Type',
+    FIELD_LABEL_CREATE_NEW_CHANNEL: 'Create a new channel',
+    FIELD_LABEL_NAME: 'Name',
+    FIELD_LABEL_USE_EXISTING_CHANNEL: 'Use an existing channel',
+    MODE_VALUE_CREATE_NEW_CHANNEL: 'create',
+    MODE_VALUE_USE_EXISTING_CHANNEL: 'useExisting',
+    SAVE_ERROR_TITLE: 'Save failed',
+    SAVE_ERROR_DESCRIPTION: msg => `Your data could not be saved: ${msg}`,
+    SAVE_SUCCESS_TITLE: 'Channel saved',
+    SAVE_SUCCESS_DESCRIPTION: name => `The channel "${name}" was saved.`
   },
   EDIT_CHANNEL_SCREEN: {
     HEADING: 'Edit channel',
     CANCEL_PROMPT: 'You have made changes to this channel. Are you sure you want to cancel?',
+    EDIT_SHARED_CHANNEL_MESSAGE: count => `This channel is referenced in ${count} reports. Changes will apply to all reports.`
   },
   EDIT_REPORT_FORM: {
     FIELD_LABEL_ENABLED: 'Enabled',
@@ -132,6 +156,7 @@ export const UI_CONTENT = {
   },
   EDIT_PUBLISH_CONFIG_FORM: {
     CONFIG_NAME_FIELD_PLACEHOLDER: 'email-team',
+    FIELD_LABEL_CONFIG_REF: 'Publish configuration',
     FIELD_LABEL_CREATE_NEW_CONFIG: 'Create a new configuration',
     FIELD_LABEL_USE_EXISTING_CONFIG: 'Use an existing configuration',
     FIELD_LABEL_ENABLED: 'Enabled',

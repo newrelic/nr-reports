@@ -35,7 +35,7 @@ function countReferences(manifest, publishConfig) {
   }
 
   return manifest.reports.reduce((acount, report) => {
-    const index = report.publishConfigs.findIndex(
+    const index = report.publishConfigs?.findIndex(
       pc => pc.ref === publishConfig.id
     )
 

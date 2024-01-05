@@ -18,6 +18,73 @@ import {
 } from '../../../contexts'
 import { useManifestWriter } from '../../../hooks'
 import PublishConfigsTable from '../../publish-configs-table'
+import ChannelsTable from '../../channels-table'
+
+function ChannelsView() {
+  const { navigate } = useContext(RouteDispatchContext),
+    {
+      channels: metaChannels,
+    } = useContext(StorageContext),
+    { deleteChannels } = useManifestWriter(),
+    handleCreateChannel = useCallback(() => {
+      navigate(ROUTES.EDIT_CHANNEL, { selectedChannel: -1 })
+    }, [navigate]),
+    handleEditChannel = useCallback(index => {
+      navigate(ROUTES.EDIT_CHANNEL, { selectedChannel: index })
+    }, [navigate]),
+    handleDeleteChannel = useCallback(index => {
+      if (!confirm(
+        UI_CONTENT.HOME.CHANNELS.DELETE_CHANNEL_PROMPT
+      )) {
+        return
+      }
+
+      deleteChannels([index])
+    }, [deleteChannels])
+
+  if (
+    !metaChannels ||
+    metaChannels.channels.length === 0
+  ) {
+    return (
+      <EmptyView
+        heading={UI_CONTENT.HOME.CHANNELS.EMPTY_STATE.HEADING}
+        description={(
+          <Button
+            type={Button.TYPE.PRIMARY}
+            iconType={Button.ICON_TYPE.INTERFACE__SIGN__PLUS}
+            spacingType={[Button.SPACING_TYPE.LARGE]}
+            onClick={handleCreateChannel}
+          >
+            {UI_CONTENT.HOME.CHANNELS.EMPTY_STATE.DESCRIPTION}
+          </Button>
+        )}
+      />
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader title={UI_CONTENT.HOME.CHANNELS.HEADING}>
+        <Button
+          type={Button.TYPE.PRIMARY}
+          iconType={Icon.TYPE.INTERFACE__SIGN__PLUS}
+          sizeType={Button.SIZE_TYPE.SMALL}
+          onClick={handleCreateChannel}
+        >
+          {UI_CONTENT.HOME.CHANNELS.BUTTON_LABEL_CREATE_CHANNEL}
+        </Button>
+      </CardHeader>
+      <CardBody>
+        <ChannelsTable
+          channels={metaChannels.channels}
+          onEditChannel={handleEditChannel}
+          onDeleteChannel={handleDeleteChannel}
+        />
+      </CardBody>
+    </Card>
+  )
+}
 
 function PublishConfigurationsView() {
   const { navigate } = useContext(RouteDispatchContext),
@@ -163,11 +230,23 @@ export default function HomeScreen() {
 
   return (
     <Tabs defaultValue={tab || 'reports'}>
-      <TabItem value="reports" label="Reports">
+      <TabItem
+        value="reports"
+        label={UI_CONTENT.HOME.TAB_LABEL_REPORTS}
+      >
         <ReportsView />
       </TabItem>
-      <TabItem value="publishConfigs" label="Publish configurations">
+      <TabItem
+        value="publishConfigs"
+        label={UI_CONTENT.HOME.TAB_LABEL_PUBLISH_CONFIGS}
+      >
         <PublishConfigurationsView />
+      </TabItem>
+      <TabItem
+        value="channels"
+        label={UI_CONTENT.HOME.TAB_LABEL_CHANNELS}
+      >
+        <ChannelsView />
       </TabItem>
     </Tabs>
   )

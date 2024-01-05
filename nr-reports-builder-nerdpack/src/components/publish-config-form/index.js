@@ -151,6 +151,7 @@ export default function PublishConfigForm({
         <>
           <StackItem>
             <Select
+              label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_CONFIG_REF}
               value={formState.ref}
               onChange={handleChangeConfigRef}
             >

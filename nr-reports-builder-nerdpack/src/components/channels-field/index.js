@@ -1,116 +1,19 @@
-import React, { useCallback, useContext, useMemo } from 'react'
+import React, { useCallback, useContext } from 'react'
 import PropTypes from 'prop-types'
 import {
   BlockText,
   Button,
-  Link,
   Stack,
   StackItem,
-  Table,
-  TableHeader,
-  TableHeaderCell,
-  TableRow,
-  TableRowCell,
 } from 'nr1'
+import ChannelsTable from '../channels-table'
 import CustomField from '../custom-field'
 import {
   ROUTES,
-  SYMBOLS,
   UI_CONTENT,
 } from '../../constants'
 import { RouteDispatchContext } from '../../contexts'
 import { FormContext } from '../../contexts/form'
-
-function EmailChannelInfo({ channel }) {
-  const {
-    to,
-    cc,
-    subject,
-  } = channel
-
-  return (
-    <Stack
-      directionType={Stack.DIRECTION_TYPE.HORIZONTAL}
-      className="channel-info"
-      fullWidth
-    >
-      <StackItem>
-        To: {to}
-      </StackItem>
-      <StackItem>
-        Cc: {cc}
-      </StackItem>
-      <StackItem>
-        Subject: {subject}
-      </StackItem>
-    </Stack>
-  )
-}
-
-function SlackChannelInfo({ channel }) {
-  const {
-    webhookUrl,
-  } = channel
-
-  return (
-    <Stack
-      directionType={Stack.DIRECTION_TYPE.HORIZONTAL}
-      className="channel-info"
-      fullWidth
-    >
-      <StackItem>
-        Webhook URL: {`${webhookUrl.replace(/T[\d]+/u,'TXXXXXXXX').replace(/B[\d]+/u, 'BXXXXXXXX').slice(0, -10)}XXXXXXXXXX`}
-      </StackItem>
-    </Stack>
-  )
-}
-
-function ChannelsTable({ channels, onEditChannel, onDeleteChannel }) {
-  const getActions = useMemo(() => {
-      return [
-        {
-          label: UI_CONTENT.GLOBAL.ACTION_LABEL_DELETE,
-          type: TableRow.ACTION_TYPE.DESTRUCTIVE,
-          onClick: (evt, { item, index }) => onDeleteChannel(index),
-        },
-      ]
-    }, [onDeleteChannel]),
-    renderRow = useCallback(({ item, index }) => (
-      <TableRow key={`${item.type}-${index}`} actions={getActions}>
-        <TableRowCell>
-          <Link
-            onClick={() => onEditChannel(index) }
-          >
-            {item.type}
-          </Link>
-        </TableRowCell>
-        {
-          item.type === SYMBOLS.CHANNEL_TYPES.EMAIL && (
-            <TableRowCell><EmailChannelInfo channel={item} /></TableRowCell>
-          )
-        }
-        {/*
-          item.type === SYMBOLS.CHANNEL_TYPES.SLACK && (
-            <TableRowCell><SlackChannelInfo channel={item} /></TableRowCell>
-          )
-        */}
-      </TableRow>
-    ), [onEditChannel, getActions])
-
-  return (
-    <Table items={channels}>
-      <TableHeader>
-        <TableHeaderCell>
-          {UI_CONTENT.GLOBAL.HEADER_LABEL_NAME}
-        </TableHeaderCell>
-        <TableHeaderCell>
-          {UI_CONTENT.CHANNELS_FIELD.HEADER_LABEL_DETAILS}
-        </TableHeaderCell>
-      </TableHeader>
-      {renderRow}
-    </Table>
-  )
-}
 
 export default function ChannelsField() {
   const { formState, updateFormState } = useContext(FormContext),

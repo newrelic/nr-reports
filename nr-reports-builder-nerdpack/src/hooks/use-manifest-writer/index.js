@@ -18,23 +18,86 @@ function copyMetadata(metadata) {
   return metadataCopy
 }
 
+// Rebuild the channels for a publish config and the meta channels by scanning
+// the publish config for new/updated channels and adding or updating those in
+// the meta channels and replacing them with refs in the publish config.
+
+// NOTE: This is a very procedural way to do this as it modifies the input
+// params aka side-effects. But it's more performant than cloning the publish
+// config and channels multiple times (because rebuildPublishConfigs already
+// cloned them).
+
+function rebuildChannels(newPublishConfig, newChannels) {
+  const { channels: publishConfigChannels } = newPublishConfig
+
+  if (!publishConfigChannels || publishConfigChannels.length === 0) {
+    return
+  }
+
+  publishConfigChannels.forEach((channel, index) => {
+    // When an existing channel is edited from a publish config, it is saved
+    // back to the publish config but not as a ref. We can tell by checking the
+    // channel for a ref property.
+
+    // If the channel has a ref property, it is already a reference, so just
+    // verify the reference and return.
+
+    if (channel.ref) {
+      const jindex = newChannels.find(
+        c => c.id === channel.ref
+      )
+
+      if (jindex === -1) {
+        throw new Error(`Missing channel ${channel.ref}`)
+      }
+
+      return
+    }
+
+    // Otherwise, this is an entirely new channel or an existing channel that
+    // has been updated.
+
+    // If this is an update to an existing channel, its id property will match
+    // one in the meta channels.  If this is the case, update the channel in the
+    // meta channels and set the report channel back to a ref.
+
+    const jindex = newChannels.findIndex(c => {
+      return c.id === channel.id
+    })
+
+    if (jindex >= 0) {
+      newChannels[jindex] = channel
+      newPublishConfig.channels[index] = { ref: channel.id }
+      return
+    }
+
+    // If this is a completely new channel, add it to the meta channels and set
+    // the publish config one to a ref.
+
+    newChannels.push(channel)
+    newPublishConfig.channels[index] = { ref: channel.id }
+  })
+}
+
 // Rebuild the publish configs for a report and the meta publish configs by
 // scanning the report for new/updated configs and adding or updating those
 // in the meta publish configs and replacing them with refs in the report.
 
-function rebuildPublishConfigs(report, publishConfigs) {
+function rebuildPublishConfigs(report, publishConfigs, channels) {
   // Note that the publishConfigs parameter in this context is actually the
   // publishConfigs property of the meta publish configs, i.e.
-  // metaPublishConfigs.publishConfigs.
+  // metaPublishConfigs.publishConfigs. Likewise, channels is actually
+  // metaChannels.channels.
 
   const { publishConfigs: reportPublishConfigs } = report
 
   if (!reportPublishConfigs || reportPublishConfigs.length === 0) {
-    return { newReport: null, newPublishConfigs: null }
+    return { newReport: null, newPublishConfigs: null, newChannels: null }
   }
 
   const newReport = clone(report),
-    newPublishConfigs = clone(publishConfigs)
+    newPublishConfigs = clone(publishConfigs),
+    newChannels = clone(channels)
 
   reportPublishConfigs.forEach((publishConfig, index) => {
     // When an existing publish config is edited from a report, it is saved
@@ -59,25 +122,33 @@ function rebuildPublishConfigs(report, publishConfigs) {
     // Otherwise, this is an entirely new publish config or an existing config
     // that has been updated.
 
+    const newPublishConfig = clone(publishConfig)
+
+    // First, rebuild the channels for the publish config. See the note for this
+    // function. This is procedural but this way we don't keep rebuilding
+    // newChannels. Both the publishConfig and newChannels could be modified as
+    // side effects of this call.
+
+    rebuildChannels(newPublishConfig, newChannels)
+
     // If this is an update to an existing config, its id property will match
     // one in the meta configs.  If this is the case, update the config in the
     // meta configs and set the report config back to a ref.
 
     const jindex = newPublishConfigs.findIndex(pc => {
-      return pc.id === publishConfig.id
+      return pc.id === newPublishConfig.id
     })
 
     if (jindex >= 0) {
-      newPublishConfigs[jindex] = publishConfig
-      newReport.publishConfigs[index] = { ref: publishConfig.id }
-
+      newPublishConfigs[jindex] = newPublishConfig
+      newReport.publishConfigs[index] = { ref: newPublishConfig.id }
       return
     }
 
     // If this is a completely new publish config, add it to the meta configs
     // and set the report one to a ref.
-    newPublishConfigs.push(publishConfig)
-    newReport.publishConfigs[index] = { ref: publishConfig.id }
+    newPublishConfigs.push(newPublishConfig)
+    newReport.publishConfigs[index] = { ref: newPublishConfig.id }
   })
 
   // Return the new report and the new meta configs.
@@ -85,7 +156,36 @@ function rebuildPublishConfigs(report, publishConfigs) {
   return {
     newReport,
     newPublishConfigs,
+    newChannels,
   }
+}
+
+// Rebuild the meta publish configs after channel IDs have been removed.
+
+function rebuildMetaPublishConfigs(metaPublishConfigs, deletedChannelIds) {
+  const newMetaPublishConfigs = clone(metaPublishConfigs)
+
+  for (let index = 0; index < newMetaPublishConfigs.publishConfigs.length; index += 1) {
+    const publishConfig = newMetaPublishConfigs.publishConfigs[index],
+      indices = []
+
+    publishConfig.channels.forEach((c, index) => {
+      if (c.ref && deletedChannelIds.includes(c.ref)) {
+        indices.push(index)
+      }
+    })
+
+    indices.sort(sortByNumber)
+
+    for (let jindex = indices.length - 1; jindex >= 0; jindex -= 1) {
+      newMetaPublishConfigs
+        .publishConfigs[index]
+        .channels
+        .splice(indices[jindex], 1)
+    }
+  }
+
+  return newMetaPublishConfigs
 }
 
 // Rebuild the meta manifest after publish config IDs have been removed.
@@ -117,13 +217,14 @@ function rebuildMetaManifest(metaManifest, deletedPublishConfigIds) {
 }
 
 // Build the real manifest by making a copy of the meta manifest and replacing
-// all publish config references with their actual publish configurations
-// stored in the meta publish configs.
+// all publish config and channel references with their actual definitions
+// stored in the meta publish configs and channels.
 
-function buildRealManifest(metaManifest, publishConfigs) {
+function buildRealManifest(metaManifest, publishConfigs, channels) {
   // Note that the publishConfigs parameter in this context is actually the
   // publishConfigs property of the meta publish configs, i.e.
-  // metaPublishConfigs.publishConfigs.
+  // metaPublishConfigs.publishConfigs. Likewise, channels is really
+  // metaChannels.channels.
 
   const newMetaManifest = clone(metaManifest)
 
@@ -141,10 +242,50 @@ function buildRealManifest(metaManifest, publishConfigs) {
       const publishConfig = reportPublishConfigs[jindex]
 
       // If the current report publish config has no ref, it was a publish
-      // config that was just created or updated. So we just push it on to the
-      // new publish configs array.
+      // config that was just created or updated. So we can push it on to the
+      // new publish configs array after processing channels.
 
       if (!publishConfig.ref) {
+
+        // Rebuild the publish config channels
+
+        const newChannels = []
+
+        for (let kindex = 0; kindex < publishConfig.channels.length; kindex += 1) {
+          const channel = publishConfig.channels[kindex]
+
+          // Channel created or updated, just add it to the array
+
+          if (!channel.ref) {
+            newChannels.push(channel)
+            continue
+          }
+
+          // Channel is a reference to an existing meta channel so find the meta
+          // channel it references.
+
+          const newChannel = channels.find(
+            c => c.id === channel.ref,
+          )
+
+          // If we didn't find a meta channel matching the channel's ref, raise
+          // an error.
+
+          if (!newChannel) {
+            throw new Error(`Missing channel ${channel.ref}`)
+          }
+
+          // Otherwise push on a copy of the meta channel.
+
+          newChannels.push(clone(newChannel))
+        }
+
+        // Reset the channels in the publish config
+
+        publishConfig.channels = newChannels
+
+        // Push on the (possibly updated) publish config.
+
         newPublishConfigs.push(publishConfig)
         continue
       }
@@ -183,6 +324,7 @@ export default function useManifestWriter() {
       manifest: metaManifest,
       metadata,
       publishConfigs: metaPublishConfigs,
+      channels: metaChannels,
     } = useContext(StorageContext),
     update = useCallback((report, reportIndex = -1) => {
       if (
@@ -205,9 +347,13 @@ export default function useManifestWriter() {
         newMetaPublishConfigs = metaPublishConfigs ? (
           clone(metaPublishConfigs)
         ) : { publishConfigs: [] },
-        { newReport, newPublishConfigs } = rebuildPublishConfigs(
+        newMetaChannels = metaChannels ? (
+          clone(metaChannels)
+        ) : { channels: [] },
+        { newReport, newPublishConfigs, newChannels } = rebuildPublishConfigs(
           report,
-          newMetaPublishConfigs.publishConfigs
+          newMetaPublishConfigs.publishConfigs,
+          newMetaChannels.channels,
         )
 
       newMetaManifest.reports.splice(
@@ -220,17 +366,22 @@ export default function useManifestWriter() {
         newMetaPublishConfigs.publishConfigs = newPublishConfigs
       }
 
+      if (newChannels) {
+        newMetaChannels.channels = newChannels
+      }
+
       // Build the real manifest to pickup the new/updated report and replace
       // all publish config references with their actual publish configurations
       // stored in the meta publish configs.
 
       const realManifest = buildRealManifest(
         newMetaManifest,
-        newPublishConfigs,
+        newMetaPublishConfigs.publishConfigs,
+        newMetaChannels.channels,
       )
 
-      write(newMetaManifest, newMetadata, newMetaPublishConfigs, realManifest)
-    }, [write, metaManifest, metadata, metaPublishConfigs]),
+      write(newMetaManifest, newMetadata, newMetaPublishConfigs, newMetaChannels, realManifest)
+    }, [write, metaManifest, metadata, metaPublishConfigs, metaChannels]),
     updatePublishConfig = useCallback((
       publishConfig,
       publishConfigIndex = -1,
@@ -255,12 +406,20 @@ export default function useManifestWriter() {
         newMetadata = copyMetadata(metadata),
         newMetaPublishConfigs = metaPublishConfigs ? (
           clone(metaPublishConfigs)
-        ) : { publishConfigs: [] }
+        ) : { publishConfigs: [] },
+        newMetaChannels = metaChannels ? (
+          clone(metaChannels)
+        ) : { channels: [] },
+        newPublishConfig = clone(publishConfig)
 
+      // Rebuild the channels
+      rebuildChannels(newPublishConfig, newMetaChannels.channels)
+
+      // Insert the new publish config
       newMetaPublishConfigs.publishConfigs.splice(
         publishConfigIndex >= 0 ? publishConfigIndex : newMetaPublishConfigs.publishConfigs.length,
         publishConfigIndex >= 0 ? 1 : 0,
-        publishConfig,
+        newPublishConfig,
       )
 
       // Build the real manifest to pickup the new/updated publish configuration
@@ -270,16 +429,73 @@ export default function useManifestWriter() {
       const realManifest = buildRealManifest(
         newMetaManifest,
         newMetaPublishConfigs.publishConfigs,
+        newMetaChannels.channels,
       )
 
-      write(newMetaManifest, newMetadata, newMetaPublishConfigs, realManifest)
-    }, [write, metaManifest, metadata, metaPublishConfigs]),
+      write(newMetaManifest, newMetadata, newMetaPublishConfigs, newMetaChannels, realManifest)
+    }, [write, metaManifest, metadata, metaPublishConfigs, metaChannels]),
+    updateChannel = useCallback((
+      channel,
+      channelIndex = -1,
+    ) => {
+      if (
+        channelIndex >= 0 &&
+        (
+          !metaChannels ||
+          channelIndex >= metaChannels.channels.length
+        )
+      ) {
+        throw new Error(`Invalid channel index ${channelIndex} found during update`)
+      }
+
+      // It is possible when a channel is created before anything
+      // else that no manifest or publish configs or channels exist yet so we
+      // create empty ones to start with if not.
+
+      const newMetaManifest = metaManifest ? (
+          clone(metaManifest)
+        ) : { reports: [] },
+        newMetadata = copyMetadata(metadata),
+        newMetaPublishConfigs = metaPublishConfigs ? (
+          clone(metaPublishConfigs)
+        ) : { publishConfigs: [] },
+        newMetaChannels = metaChannels ? (
+          clone(metaChannels)
+        ) : { channels: [] }
+
+      newMetaChannels.channels.splice(
+        channelIndex >= 0 ? channelIndex : newMetaChannels.channels.length,
+        channelIndex >= 0 ? 1 : 0,
+        channel,
+      )
+
+      // Build the real manifest to pickup the new/updated channels
+      // and replace all references to publish configurations or channels
+      // to their actual definitions stored in the metadata
+
+      const realManifest = buildRealManifest(
+        newMetaManifest,
+        newMetaPublishConfigs.publishConfigs,
+        newMetaChannels.channels,
+      )
+
+      write(
+        newMetaManifest,
+        newMetadata,
+        newMetaPublishConfigs,
+        newMetaChannels,
+        realManifest,
+      )
+    }, [write, metaManifest, metadata, metaPublishConfigs, metaChannels]),
     create = useCallback(report => {
       update(report)
     }, [update]),
     createPublishConfig = useCallback(publishConfig => {
       updatePublishConfig(publishConfig)
     }, [updatePublishConfig]),
+    createChannel = useCallback(channel => {
+      updateChannel(channel)
+    }, [updateChannel]),
     del = useCallback(reportIndices => {
       // @TODO Creating empty documents if none are in storage is a lazy way of
       // dealing with a condition that shouldn't happen. I.e. we shouldn't be
@@ -294,7 +510,10 @@ export default function useManifestWriter() {
         newMetadata = copyMetadata(metadata),
         newMetaPublishConfigs = metaPublishConfigs ? (
           clone(metaPublishConfigs)
-        ) : { publishConfigs: [] }
+        ) : { publishConfigs: [] },
+        newMetaChannels = metaChannels ? (
+          clone(metaChannels)
+        ) : { channels: [] }
 
       // We sort by index low to high and traverse them in reverse order so that
       // we delete off the list from the back to the front. This way we don't
@@ -321,8 +540,8 @@ export default function useManifestWriter() {
         newMetaPublishConfigs.publishConfigs,
       )
 
-      write(newMetaManifest, newMetadata, newMetaPublishConfigs, realManifest)
-    }, [write, metaManifest, metadata, metaPublishConfigs]),
+      write(newMetaManifest, newMetadata, newMetaPublishConfigs, newMetaChannels, realManifest)
+    }, [write, metaManifest, metadata, metaPublishConfigs, metaChannels]),
     deletePublishConfigs = useCallback(publishConfigIndices => {
       // @TODO See comment above.
 
@@ -333,6 +552,9 @@ export default function useManifestWriter() {
         newMetaPublishConfigs = metaPublishConfigs ? (
           clone(metaPublishConfigs)
         ) : { publishConfigs: [] },
+        newMetaChannels = metaChannels ? (
+          clone(metaChannels)
+        ) : { channels: [] },
         publishConfigIds = []
 
       // We sort by index low to high and traverse them in reverse order so that
@@ -377,8 +599,70 @@ export default function useManifestWriter() {
           newMetaPublishConfigs.publishConfigs,
         )
 
-      write(newNewMetaManifest, newMetadata, newMetaPublishConfigs, realManifest)
-    }, [write, metaManifest, metadata, metaPublishConfigs])
+      write(newNewMetaManifest, newMetadata, newMetaPublishConfigs, newMetaChannels, realManifest)
+    }, [write, metaManifest, metadata, metaPublishConfigs, metaChannels]),
+    deleteChannels = useCallback(channelIndices => {
+      // @TODO See comment above.
+
+      const newMetaManifest = metaManifest ? (
+          clone(metaManifest)
+        ) : { reports: [] },
+        newMetadata = copyMetadata(metadata),
+        newMetaPublishConfigs = metaPublishConfigs ? (
+          clone(metaPublishConfigs)
+        ) : { publishConfigs: [] },
+        newMetaChannels = metaChannels ? (
+          clone(metaChannels)
+        ) : { channels: [] },
+        channelIds = []
+
+      // We sort by index low to high and traverse them in reverse order so that
+      // we delete off the list from the back to the front. This way we don't
+      // have to adjust the indices after every delete.
+
+      channelIndices.sort(sortByNumber)
+
+      for (
+        let index = channelIndices.length - 1; index >= 0; index -= 1
+      ) {
+        const channelIndex = channelIndices[index]
+
+        if (channelIndex >= newMetaChannels.channels.length) {
+          throw new Error(`Invalid channel index ${channelIndex} found during delete`)
+        }
+
+        // Push the id of the channel we are deleting so we can clear all
+        // references to it in publish configs when we rebuild the meta
+        // manifest.
+
+        channelIds.push(
+          newMetaChannels.channels[channelIndex].id
+        )
+
+        // Actually remove the channel
+
+        newMetaChannels.channels.splice(channelIndex, 1)
+      }
+
+      // We have to rebuild the meta publish configs so that all references to
+      // the channels that were deleted are cleared. This way we don't have any
+      // dangling references from publish configs to non-existent channels. We
+      // do this before we build the real manifest so that the real manifest
+      // doesn't have the non-existing channels either.
+
+      const newNewMetaPublishConfigs = rebuildMetaPublishConfigs(
+          newMetaPublishConfigs,
+          channelIds,
+        ),
+        realManifest = buildRealManifest(
+          newMetaManifest,
+          newNewMetaPublishConfigs.publishConfigs,
+          newMetaChannels.channels,
+        )
+
+      write(newMetaManifest, newMetadata, newNewMetaPublishConfigs, newMetaChannels, realManifest)
+    }, [write, metaManifest, metadata, metaPublishConfigs, metaChannels])
+
 
   return {
     create,
@@ -387,5 +671,8 @@ export default function useManifestWriter() {
     createPublishConfig,
     updatePublishConfig,
     deletePublishConfigs,
+    createChannel,
+    updateChannel,
+    deleteChannels,
   }
 }

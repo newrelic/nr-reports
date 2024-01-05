@@ -276,6 +276,24 @@ export function resolvePublishConfig(metaPublishConfigs, publishConfig) {
   return publishConfig
 }
 
+export function resolveChannel(metaChannels, channel) {
+  if (channel.ref) {
+    const realChannel = (
+      metaChannels?.channels.find(
+        c => c.id === channel.ref
+      )
+    )
+
+    if (!realChannel) {
+      throw new Error(`Missing channel ${channel.ref}`)
+    }
+
+    return realChannel
+  }
+
+  return channel
+}
+
 export function sortByNumber(a, b) {
   if (a < b) {
     return -1
