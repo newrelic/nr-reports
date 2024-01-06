@@ -1,6 +1,6 @@
 import { useCallback, useContext } from 'react'
 import { StorageContext } from '../../contexts'
-import { clone, sortByNumber } from '../../utils'
+import { clone, resolveChannel, resolvePublishConfig, sortByNumber } from '../../utils'
 
 function copyMetadata(metadata) {
   // Clone the existing metadata or create a new one with the dates zeroed out
@@ -216,11 +216,29 @@ function rebuildMetaManifest(metaManifest, deletedPublishConfigIds) {
   return newMetaManifest
 }
 
+function buildRealPublishConfig(publishConfig, metaPublishConfigs, metaChannels) {
+  const newPublishConfig = clone(resolvePublishConfig(
+      metaPublishConfigs,
+      publishConfig,
+    )),
+    { channels: publishConfigChannels } = newPublishConfig
+
+  // Reset the channels in the publish config
+
+  newPublishConfig.channels = publishConfigChannels ? (
+    publishConfigChannels.map(c => (
+      clone(resolveChannel(metaChannels, c))
+    ))
+  ) : []
+
+  return newPublishConfig
+}
+
 // Build the real manifest by making a copy of the meta manifest and replacing
 // all publish config and channel references with their actual definitions
 // stored in the meta publish configs and channels.
 
-function buildRealManifest(metaManifest, publishConfigs, channels) {
+function buildRealManifest(metaManifest, metaPublishConfigs, metaChannels) {
   // Note that the publishConfigs parameter in this context is actually the
   // publishConfigs property of the meta publish configs, i.e.
   // metaPublishConfigs.publishConfigs. Likewise, channels is really
@@ -232,87 +250,13 @@ function buildRealManifest(metaManifest, publishConfigs, channels) {
     const report = newMetaManifest.reports[index],
       { publishConfigs: reportPublishConfigs } = report
 
-    if (!reportPublishConfigs || reportPublishConfigs.length === 0) {
-      continue
-    }
+    // Reset the publish configs in the report
 
-    const newPublishConfigs = []
-
-    for (let jindex = 0; jindex < reportPublishConfigs.length; jindex += 1) {
-      const publishConfig = reportPublishConfigs[jindex]
-
-      // If the current report publish config has no ref, it was a publish
-      // config that was just created or updated. So we can push it on to the
-      // new publish configs array after processing channels.
-
-      if (!publishConfig.ref) {
-
-        // Rebuild the publish config channels
-
-        const newChannels = []
-
-        for (let kindex = 0; kindex < publishConfig.channels.length; kindex += 1) {
-          const channel = publishConfig.channels[kindex]
-
-          // Channel created or updated, just add it to the array
-
-          if (!channel.ref) {
-            newChannels.push(channel)
-            continue
-          }
-
-          // Channel is a reference to an existing meta channel so find the meta
-          // channel it references.
-
-          const newChannel = channels.find(
-            c => c.id === channel.ref,
-          )
-
-          // If we didn't find a meta channel matching the channel's ref, raise
-          // an error.
-
-          if (!newChannel) {
-            throw new Error(`Missing channel ${channel.ref}`)
-          }
-
-          // Otherwise push on a copy of the meta channel.
-
-          newChannels.push(clone(newChannel))
-        }
-
-        // Reset the channels in the publish config
-
-        publishConfig.channels = newChannels
-
-        // Push on the (possibly updated) publish config.
-
-        newPublishConfigs.push(publishConfig)
-        continue
-      }
-
-      // Otherwise this report publish config is a reference to an existing
-      // meta publish config so find the meta publish config it references.
-
-      const newPublishConfig = publishConfigs.find(
-        pc => pc.id === publishConfig.ref,
-      )
-
-      // If we didn't find a meta config matching the report config's ref,
-      // raise an error.
-
-      if (!newPublishConfig) {
-        throw new Error(`Missing publish config ${publishConfig.ref}`)
-      }
-
-      // Otherwise push on a copy of the meta config.
-
-      newPublishConfigs.push(clone(newPublishConfig))
-    }
-
-    // Now set the reports publish configs to the fully resolved full publish
-    // configs.
-
-    newMetaManifest.reports[index].publishConfigs = newPublishConfigs
+    newMetaManifest.reports[index].publishConfigs = reportPublishConfigs ? (
+      reportPublishConfigs.map(pc => (
+        buildRealPublishConfig(pc, metaPublishConfigs, metaChannels)
+      ))
+    ) : []
   }
 
   return newMetaManifest
@@ -376,8 +320,8 @@ export default function useManifestWriter() {
 
       const realManifest = buildRealManifest(
         newMetaManifest,
-        newMetaPublishConfigs.publishConfigs,
-        newMetaChannels.channels,
+        newMetaPublishConfigs,
+        newMetaChannels,
       )
 
       write(newMetaManifest, newMetadata, newMetaPublishConfigs, newMetaChannels, realManifest)
@@ -428,8 +372,8 @@ export default function useManifestWriter() {
 
       const realManifest = buildRealManifest(
         newMetaManifest,
-        newMetaPublishConfigs.publishConfigs,
-        newMetaChannels.channels,
+        newMetaPublishConfigs,
+        newMetaChannels,
       )
 
       write(newMetaManifest, newMetadata, newMetaPublishConfigs, newMetaChannels, realManifest)
@@ -475,8 +419,8 @@ export default function useManifestWriter() {
 
       const realManifest = buildRealManifest(
         newMetaManifest,
-        newMetaPublishConfigs.publishConfigs,
-        newMetaChannels.channels,
+        newMetaPublishConfigs,
+        newMetaChannels,
       )
 
       write(
@@ -537,7 +481,8 @@ export default function useManifestWriter() {
 
       const realManifest = buildRealManifest(
         newMetaManifest,
-        newMetaPublishConfigs.publishConfigs,
+        newMetaPublishConfigs,
+        newMetaChannels,
       )
 
       write(newMetaManifest, newMetadata, newMetaPublishConfigs, newMetaChannels, realManifest)
@@ -596,7 +541,8 @@ export default function useManifestWriter() {
         ),
         realManifest = buildRealManifest(
           newNewMetaManifest,
-          newMetaPublishConfigs.publishConfigs,
+          newMetaPublishConfigs,
+          newMetaChannels,
         )
 
       write(newNewMetaManifest, newMetadata, newMetaPublishConfigs, newMetaChannels, realManifest)
@@ -656,8 +602,8 @@ export default function useManifestWriter() {
         ),
         realManifest = buildRealManifest(
           newMetaManifest,
-          newNewMetaPublishConfigs.publishConfigs,
-          newMetaChannels.channels,
+          newNewMetaPublishConfigs,
+          newMetaChannels,
         )
 
       write(newMetaManifest, newMetadata, newNewMetaPublishConfigs, newMetaChannels, realManifest)
