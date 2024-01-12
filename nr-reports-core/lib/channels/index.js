@@ -97,7 +97,7 @@ async function publish(
   logTrace(logger, log => {
     log(
       { channels },
-      `Publishing output for report ${reportName} using publish config ${publishConfigName} to the following channels:`,
+      `Publishing output for report "${reportName}" using publish config "${publishConfigName}" to the following channels:`,
     )
   })
 
@@ -111,21 +111,21 @@ async function publish(
       )
 
     if (!publisher) {
-      throw new Error(`Invalid channel ${channel.type} for channel ${channelName}`)
+      throw new Error(`Invalid channel "${channel.type}" for channel "${channelName}" for publish config "${publishConfigName}" and report "${reportName}"`)
     }
 
     logTrace(logger, log => {
       log(
         { ...channelContext },
-        `Publishing output for report ${reportName} and publish config ${publishConfigName} to channel ${channelName} with type ${channel.type}...`,
+        `Publishing output for report "${reportName}" and publish config "${publishConfigName}" to channel "${channelName}" with type "${channel.type}"...`,
       )
     })
 
     try {
       await publisher.publish(channelContext, manifest, report, publishConfig, channel, output, tempDir)
-      logger.trace(`Output for report ${reportName} and publish config ${publishConfigName} published to channel ${channelName} with type ${channel.type}.`)
+      logger.trace(`Output for report "${reportName}" and publish config "${publishConfigName}" published to channel "${channelName}" with type "${channel.type}".`)
     } catch (err) {
-      logger.error(`Publishing output for report ${reportName} and publish config ${publishConfigName} to channel ${channelName} with type ${channel.type} failed with the following error. Publishing will continue with remaining channels.`)
+      logger.error(`Publishing output for report "${reportName}" and publish config "${publishConfigName}" to channel "${channelName}" with type "${channel.type}" failed with the following error. Publishing will continue with remaining channels.`)
       logger.error(err)
     }
   }

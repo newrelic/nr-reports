@@ -27,12 +27,17 @@ const logger = createLogger('util'),
     openLinksInNewWindow: true,
     backslashEscapesHTMLTags: true,
   }),
-  SIMPLE_VAR_REGEX = /[{][{]\s*([a-zA-Z_$][a-zA-Z0-9$_]*)\s*[}][}]/ug
+  SIMPLE_VAR_REGEX = /[{][{]\s*([a-zA-Z_$][a-zA-Z0-9$_]*)\s*[}][}]/ug,
+  ENV_VAR_NAME_INVALID_CHAR_REGEX = /[^a-zA-Z0-9_]+/ug
 
 markdownConverter.setFlavor('github')
 
 function isUndefined(val) {
   return typeof val === 'undefined'
+}
+
+function isDefinedAndNotNull(val) {
+  return !isUndefined(val) && val !== null
 }
 
 function getNestedHelper(val, arr = [], index = 0) {
@@ -117,9 +122,13 @@ function getEnvNs(
   }
 
   for (let index = namespace.length - 1; index >= 0; index -= 1) {
-    const value = getEnv(`${namespace[index]}.${envName}`)
+    const scopedEnvName = `${namespace[index]}_${envName}`.replace(
+        ENV_VAR_NAME_INVALID_CHAR_REGEX,
+        '_',
+      ).toUpperCase(),
+      value = getEnv(scopedEnvName)
 
-    if (!isUndefined(value)) {
+    if (isDefinedAndNotNull(value)) {
       return value
     }
   }
@@ -141,7 +150,6 @@ function getOption(options, optionName, envName = null, defaultValue = null) {
 
 class Context {
   constructor(ns, ...objs) {
-    this.namespace = ns
     for (const obj of objs) {
       if (obj) {
         for (const prop of Object.getOwnPropertyNames(obj)) {
@@ -151,6 +159,10 @@ class Context {
         }
       }
     }
+
+    // Set after so it does not get wiped out above
+
+    this.namespace = ns
   }
 
   context(obj) {
@@ -168,7 +180,7 @@ class Context {
   getWithEnvNs(propName, envName = null, defaultValue = null) {
     const opt = getOption(this, propName)
 
-    if (!isUndefined(opt)) {
+    if (isDefinedAndNotNull(opt)) {
       return opt
     }
 
