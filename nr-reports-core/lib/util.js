@@ -31,6 +31,10 @@ const logger = createLogger('util'),
 
 markdownConverter.setFlavor('github')
 
+function isUndefined(val) {
+  return typeof val === 'undefined'
+}
+
 function getNestedHelper(val, arr = [], index = 0) {
   if (index === arr.length) {
     return false
@@ -101,6 +105,28 @@ function getEnv(envName, defaultValue = null) {
   return defaultValue
 }
 
+function getEnvNs(
+  context,
+  envName,
+  defaultValue = null,
+) {
+  const { namespace } = context
+
+  if (!Array.isArray(namespace)) {
+    return getEnv(envName, defaultValue)
+  }
+
+  for (let index = namespace.length - 1; index >= 0; index -= 1) {
+    const value = getEnv(`${namespace[index]}.${envName}`)
+
+    if (!isUndefined(value)) {
+      return value
+    }
+  }
+
+  return getEnv(envName, defaultValue)
+}
+
 function getOption(options, optionName, envName = null, defaultValue = null) {
   if (options) {
     const type = typeof options[optionName]
@@ -114,7 +140,8 @@ function getOption(options, optionName, envName = null, defaultValue = null) {
 }
 
 class Context {
-  constructor(...objs) {
+  constructor(ns, ...objs) {
+    this.namespace = ns
     for (const obj of objs) {
       if (obj) {
         for (const prop of Object.getOwnPropertyNames(obj)) {
@@ -127,16 +154,38 @@ class Context {
   }
 
   context(obj) {
-    return new Context(this, obj)
+    return new Context(this.namespace, this, obj)
+  }
+
+  contextNs(ns, obj) {
+    return new Context(this.namespace.concat(ns), this, obj)
   }
 
   get(propName, envName = null, defaultValue = null) {
     return getOption(this, propName, envName, defaultValue)
   }
+
+  getWithEnvNs(propName, envName = null, defaultValue = null) {
+    const opt = getOption(this, propName)
+
+    if (!isUndefined(opt)) {
+      return opt
+    }
+
+    return getEnvNs(this, envName, defaultValue)
+  }
 }
 
-function makeChannel(type) {
-  return { type }
+function makeContext(...objs) {
+  return new Context([], ...objs)
+}
+
+function makeChannel(id, type, props) {
+  return {
+    id,
+    type,
+    ...props,
+  }
 }
 
 const DEFAULT_CHANNEL = 'file'
@@ -191,18 +240,6 @@ async function withTempFile(fn, tempDir, fileName) {
   }
 }
 
-function getDefaultChannel(report, defaultChannel) {
-  if (!defaultChannel) {
-    return makeChannel(DEFAULT_CHANNEL)
-  }
-
-  if (typeof defaultChannel === 'function') {
-    return defaultChannel(report)
-  }
-
-  return defaultChannel
-}
-
 async function loadFile(filePath) {
   return await readFile(filePath, { encoding: 'utf-8' })
 }
@@ -221,7 +258,7 @@ function isYaml(fileName) {
   return ext === 'yml' || ext === 'yaml'
 }
 
-function normalizeManifestHelper(manifest, defaultChannel) {
+function normalizeManifestHelper(manifest, defaultChannelType, channelDefaults) {
   manifest.reports.forEach((report, index) => {
     if (!report.id) {
       throw new Error(`Report ${index} must include an 'id' property`)
@@ -246,7 +283,11 @@ function normalizeManifestHelper(manifest, defaultChannel) {
       report.publishConfigs = [
         {
           id: DEFAULT_PUBLISH_CONFIG_ID,
-          channels: [getDefaultChannel(report, defaultChannel)],
+          channels: [makeChannel(
+            `${report.id}.${DEFAULT_PUBLISH_CONFIG_ID}.${defaultChannelType}`,
+            defaultChannelType,
+            channelDefaults,
+          )],
         },
       ]
     } else {
@@ -255,13 +296,23 @@ function normalizeManifestHelper(manifest, defaultChannel) {
           throw new Error(`Publish configuration with index ${jindex} for report "${reportName}" must include an 'id' property`)
         }
 
+        const publishConfigName = publishConfig.name || publishConfig.id
+
         if (
           !Array.isArray(publishConfig.channels) ||
           publishConfig.channels.length === 0
         ) {
-          report.publishConfigs[jindex].channels = [
-            getDefaultChannel(report, defaultChannel),
-          ]
+          report.publishConfigs[jindex].channels = [makeChannel(
+            `${report.id}.${publishConfig.id}.${defaultChannelType}`,
+            defaultChannelType,
+            channelDefaults,
+          )]
+        } else {
+          publishConfig.channels.forEach((channel, kindex) => {
+            if (!channel.id) {
+              throw new Error(`Channel with index ${kindex} for publish configuration "${publishConfigName}" and report "${reportName}" must include an 'id' property`)
+            }
+          })
         }
       })
     }
@@ -278,7 +329,7 @@ function normalizeManifestHelper(manifest, defaultChannel) {
   return manifest
 }
 
-function normalizeManifest(manifest, defaultChannel) {
+function normalizeManifest(manifest, defaultChannelType, channelDefaults) {
   if (Array.isArray(manifest)) {
     logger.trace('Manifest starts with array')
     return normalizeManifestHelper(
@@ -286,7 +337,8 @@ function normalizeManifest(manifest, defaultChannel) {
         id: DEFAULT_MANIFEST_ID,
         reports: manifest,
       },
-      defaultChannel,
+      defaultChannelType,
+      channelDefaults,
     )
   }
 
@@ -294,7 +346,7 @@ function normalizeManifest(manifest, defaultChannel) {
     throw new Error('Manifest is missing "reports" array or it is not an array')
   }
 
-  return normalizeManifestHelper(manifest, defaultChannel)
+  return normalizeManifestHelper(manifest, defaultChannelType, channelDefaults)
 }
 
 function parseJaml(fileName, contents) {
@@ -421,10 +473,6 @@ function toDate(input) {
   }
 
   return date
-}
-
-function isUndefined(val) {
-  return typeof val === 'undefined'
 }
 
 function getFormattedDateTime(input = new Date()) {
@@ -603,13 +651,15 @@ module.exports = {
   ENDPOINTS,
   HttpError,
   Context,
+  makeContext,
+  makeChannel,
   getNested,
   raiseForStatus,
   nonDestructiveMerge,
   getArgv,
   getEnv,
+  getEnvNs,
   getOption,
-  makeChannel,
   loadFile,
   normalizeManifest,
   parseJaml,

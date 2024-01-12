@@ -14,7 +14,7 @@ const {
     withTempDir,
     shouldRender,
     getOption,
-    Context,
+    makeContext,
   } = require('./util'),
   {
     discoverReports,
@@ -29,7 +29,7 @@ const logger = createLogger('engine')
 
 class Engine {
   constructor(newrelic, runnerId, runnerVersion, secrets, defaultChannelType, callbacks) {
-    this.context = new Context({
+    this.context = makeContext({
       newrelic,
       runnerId,
       runnerVersion,
@@ -119,7 +119,7 @@ class Engine {
               continue
             }
 
-            const reportContext = context.context(report)
+            const reportContext = context.contextNs(report.id, report)
 
             logTrace(logger, log => {
               log(
@@ -137,7 +137,7 @@ class Engine {
 
             if (output) {
               await publish(
-                context,
+                reportContext,
                 manifest,
                 report,
                 output,

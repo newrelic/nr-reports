@@ -3,10 +3,10 @@
 const fetch = require('node-fetch'),
   {
     format,
-    getOption,
     getFormattedDateTime,
     raiseForStatus,
     splitStringAndTrim,
+    getEnvNs,
   } = require('../util'),
   {
     WEBHOOK_URL_VAR,
@@ -21,32 +21,50 @@ const fetch = require('node-fetch'),
     WEBHOOK_PAYLOAD_REPORT_NAME_KEY,
     WEBHOOK_PAYLOAD_PUBLISH_CONFIG_ID_KEY,
     WEBHOOK_PAYLOAD_PUBLISH_CONFIG_NAME_KEY,
+    WEBHOOK_PAYLOAD_CHANNEL_ID_KEY,
+    WEBHOOK_PAYLOAD_CHANNEL_NAME_KEY,
     WEBHOOK_PAYLOAD_TIMESTAMP_KEY,
     WEBHOOK_PAYLOAD_DATETIME_KEY,
     WEBHOOK_PAYLOAD_RESULTS_KEY,
-    WEBHOOK_PAYLOAD_SECRET_PREFIX,
     WEBHOOK_HTTP_METHOD_DEFAULT,
   } = require('../constants'),
   { createLogger, logTrace } = require('../logger')
 
 const logger = createLogger('webhook')
 
-function getReplacements(context, report, publishConfig, output = null) {
-  const { secrets } = context,
-    m = {
-      [WEBHOOK_PAYLOAD_REPORT_ID_KEY]: report.id,
-      [WEBHOOK_PAYLOAD_REPORT_NAME_KEY]: report.name,
-      [WEBHOOK_PAYLOAD_PUBLISH_CONFIG_ID_KEY]: publishConfig.id,
-      [WEBHOOK_PAYLOAD_PUBLISH_CONFIG_NAME_KEY]: publishConfig.name,
-      [WEBHOOK_PAYLOAD_TIMESTAMP_KEY]: new Date().getTime(),
-      [WEBHOOK_PAYLOAD_DATETIME_KEY]: getFormattedDateTime(),
-    }
+function getReplacements(
+  context,
+  report,
+  publishConfig,
+  channelConfig,
+  output = null,
+) {
+  const m = {
+    [WEBHOOK_PAYLOAD_REPORT_ID_KEY]: report.id,
+    [WEBHOOK_PAYLOAD_REPORT_NAME_KEY]: report.name,
+    [WEBHOOK_PAYLOAD_PUBLISH_CONFIG_ID_KEY]: publishConfig.id,
+    [WEBHOOK_PAYLOAD_PUBLISH_CONFIG_NAME_KEY]: publishConfig.name,
+    [WEBHOOK_PAYLOAD_CHANNEL_ID_KEY]: channelConfig.id,
+    [WEBHOOK_PAYLOAD_CHANNEL_NAME_KEY]: channelConfig.name,
+    [WEBHOOK_PAYLOAD_TIMESTAMP_KEY]: new Date().getTime(),
+    [WEBHOOK_PAYLOAD_DATETIME_KEY]: getFormattedDateTime(),
+  }
 
-  Object.keys(secrets).forEach(
-    key => (
-      m[`${WEBHOOK_PAYLOAD_SECRET_PREFIX}.${key.toUpperCase()}`] = secrets[key]
-    ),
-  )
+  if (channelConfig.contextVars) {
+    channelConfig.contextVars.forEach(
+      key => (
+        m[key] = context.get(context, key)
+      ),
+    )
+  }
+
+  if (channelConfig.envVars) {
+    channelConfig.envVars.forEach(
+      key => (
+        m[key] = getEnvNs(context, key)
+      ),
+    )
+  }
 
   if (output) {
     m[WEBHOOK_PAYLOAD_RESULTS_KEY] = output
@@ -59,22 +77,19 @@ function buildHeaders(
   context,
   report,
   publishConfig,
+  channelConfig,
 ) {
   const httpHeaders = {
       'Content-Type': 'application/json',
     },
-    replacements = getReplacements(context, report, publishConfig)
-
-  const basicUser = getOption(
+    replacements = getReplacements(
       context,
-      null,
-      WEBHOOK_HTTP_BASIC_USER_VAR,
+      report,
+      publishConfig,
+      channelConfig,
     ),
-    basicPass = getOption(
-      context,
-      null,
-      WEBHOOK_HTTP_BASIC_PASS_VAR,
-    )
+    basicUser = getEnvNs(context, WEBHOOK_HTTP_BASIC_USER_VAR),
+    basicPass = getEnvNs(context, WEBHOOK_HTTP_BASIC_PASS_VAR)
 
   if (basicUser && basicPass) {
     httpHeaders.Authorization = (
@@ -83,8 +98,7 @@ function buildHeaders(
   }
 
   for (let index = 0; index < 5; index += 1) {
-    const header = getOption(
-      context,
+    const header = context.getWithEnvNs(
       `${WEBHOOK_HEADER_KEY}${index + 1}`,
       `${WEBHOOK_HEADER_VAR}_${index + 1}`,
     )
@@ -94,7 +108,7 @@ function buildHeaders(
 
       if (Array.isArray(kv) && kv.length === 2) {
         const key = kv[0],
-          value=kv[1]
+          value = kv[1]
 
         if (key.length > 0 && value.length > 0) {
           httpHeaders[key] = format(value, replacements)
@@ -110,6 +124,7 @@ async function send(
   context,
   report,
   publishConfig,
+  channelConfig,
   webhookUrl,
   message,
 ) {
@@ -117,8 +132,7 @@ async function send(
     log({ message }, 'Webhook request payload:')
   })
 
-  const httpMethod = getOption(
-      context,
+  const httpMethod = context.getWithEnvNs(
       WEBHOOK_HTTP_METHOD_KEY,
       WEBHOOK_HTTP_METHOD_VAR,
       WEBHOOK_HTTP_METHOD_DEFAULT,
@@ -129,6 +143,7 @@ async function send(
         context,
         report,
         publishConfig,
+        channelConfig,
       ),
       method: httpMethod,
       body: message,
@@ -145,7 +160,13 @@ async function send(
   return responseText
 }
 
-async function buildMessage(context, report, publishConfig, channelConfig, output) {
+async function buildMessage(
+  context,
+  report,
+  publishConfig,
+  channelConfig,
+  output,
+) {
 
   if (channelConfig.passThrough) {
     return await output.render(context, report, channelConfig)
@@ -161,6 +182,7 @@ async function buildMessage(context, report, publishConfig, channelConfig, outpu
       context,
       report,
       publishConfig,
+      channelConfig,
       JSON.stringify(
         await output.render(
           context,
@@ -180,8 +202,7 @@ async function invokeWebhook(
   channelConfig,
   output,
 ) {
-  const { secrets } = context,
-    reportName = report.name || report.id
+  const reportName = report.name || report.id
 
   /*
    * The Webhook channel does not support sending file attachments so if this is
@@ -195,10 +216,9 @@ async function invokeWebhook(
   }
 
   /*
-   * Check to ensure we have a Webhook URL. We pull this from secrets in case
-   * it has a key in it (like Slack Webhook URLs).
+   * Check to ensure we have a Webhook URL.
    */
-  const webhookUrl = getOption(secrets, WEBHOOK_URL_KEY, WEBHOOK_URL_VAR)
+  const webhookUrl = context.getWithEnvNs(WEBHOOK_URL_KEY, WEBHOOK_URL_VAR)
 
   if (!webhookUrl) {
     throw new Error(`Missing Webhook URL for report ${reportName}.`)
@@ -211,6 +231,7 @@ async function invokeWebhook(
     context,
     report,
     publishConfig,
+    channelConfig,
     webhookUrl,
     await buildMessage(
       context,

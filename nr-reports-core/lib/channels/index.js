@@ -88,7 +88,11 @@ async function publish(
   }
 
   const { channels } = publishConfig,
-    publishConfigName = publishConfig.name || publishConfig.id
+    publishConfigName = publishConfig.name || publishConfig.id,
+    publishContext = context.contextNs(
+      publishConfig.id,
+      { ...publishConfig },
+    )
 
   logTrace(logger, log => {
     log(
@@ -100,29 +104,28 @@ async function publish(
   for (let index = 0; index < channels.length; index += 1) {
     const channel = channels[index],
       publisher = publishers[channel.type],
-      publishContext = context.context({
-        ...manifest.config[channel.type],
-        ...report,
-        ...publishConfig,
-        ...channel,
-      })
+      channelName = channel.name || channel.id,
+      channelContext = publishContext.contextNs(
+        channel.id,
+        { ...channel },
+      )
 
     if (!publisher) {
-      throw new Error(`Invalid channel ${channel.type}`)
+      throw new Error(`Invalid channel ${channel.type} for channel ${channelName}`)
     }
 
     logTrace(logger, log => {
       log(
-        { ...publishContext, ...channel },
-        `Publishing output for report ${reportName} to channel ${channel.type}...`,
+        { ...channelContext },
+        `Publishing output for report ${reportName} and publish config ${publishConfigName} to channel ${channelName} with type ${channel.type}...`,
       )
     })
 
     try {
-      await publisher.publish(publishContext, manifest, report, publishConfig, channel, output, tempDir)
-      logger.trace(`Output for report ${reportName} published to channel ${channel.type}.`)
+      await publisher.publish(channelContext, manifest, report, publishConfig, channel, output, tempDir)
+      logger.trace(`Output for report ${reportName} and publish config ${publishConfigName} published to channel ${channelName} with type ${channel.type}.`)
     } catch (err) {
-      logger.error(`Publishing output for report ${reportName} to channel ${channel.type} failed with the following error. Publishing will continue with remaining channels.`)
+      logger.error(`Publishing output for report ${reportName} and publish config ${publishConfigName} to channel ${channelName} with type ${channel.type} failed with the following error. Publishing will continue with remaining channels.`)
       logger.error(err)
     }
   }
@@ -135,7 +138,7 @@ function getChannelDefaults(type, options) {
     throw new Error(`Invalid channel ${type}`)
   }
 
-  return { type, ...publisher.getChannelDefaults(options) }
+  return publisher.getChannelDefaults(options)
 }
 
 module.exports = {

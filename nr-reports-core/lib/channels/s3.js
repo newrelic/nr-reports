@@ -19,7 +19,10 @@ async function uploadToS3(
   channelConfig,
   output,
 ) {
-  const bucket = context.get(S3_DEST_BUCKET_KEY, S3_DEST_BUCKET_VAR)
+  const bucket = context.getWithEnvNs(
+    S3_DEST_BUCKET_KEY,
+    S3_DEST_BUCKET_VAR,
+  )
 
   /*
    * If the output is already a file output, just upload it to the s3 bucket.

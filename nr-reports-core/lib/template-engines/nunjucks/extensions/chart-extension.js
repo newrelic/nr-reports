@@ -5,7 +5,7 @@ const nunjucks = require('nunjucks'),
   {
     NerdgraphClient,
   } = require('../../../nerdgraph'),
-  { Context, requireAccountId, toNumber } = require('../../../util')
+  { requireAccountId, toNumber, makeContext } = require('../../../util')
 
 const logger = createLogger('chart-extension')
 
@@ -88,7 +88,7 @@ function ChartExtension() {
       context.setVariable(options.var || 'chartUrl', null)
 
       const vars = context.getVariables(),
-        newContext = new Context(vars, options),
+        newContext = makeContext(vars, options),
         accountId = requireAccountId(newContext),
         chartOptions = {
           type: options.type,

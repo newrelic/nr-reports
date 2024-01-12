@@ -5,7 +5,7 @@ const nunjucks = require('nunjucks'),
   {
     NerdgraphClient,
   } = require('../../../nerdgraph'),
-  { Context, requireAccountIds } = require('../../../util')
+  { requireAccountIds, makeContext } = require('../../../util')
 
 const logger = createLogger('nrql-extension')
 
@@ -88,7 +88,7 @@ function NrqlExtension() {
       context.setVariable(options.var || 'result', null)
 
       const vars = context.getVariables(),
-        newContext = new Context(vars, options),
+        newContext = makeContext(vars, options),
         accountIds = requireAccountIds(newContext),
         nerdgraph = new NerdgraphClient()
 

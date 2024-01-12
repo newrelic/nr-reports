@@ -10,8 +10,10 @@ const fs = require('fs'),
     toNumber,
     withTempFile,
     trimStringAndLower,
+    getEnvNs,
   } = require('../util'),
   {
+    EMAIL_SMTP_SERVER_KEY,
     EMAIL_SMTP_SERVER_VAR,
     EMAIL_SMTP_PORT_VAR,
     EMAIL_SMTP_SECURE_VAR,
@@ -31,6 +33,8 @@ const fs = require('fs'),
     EMAIL_SUBJECT_KEY,
     EMAIL_TEMPLATE_NAME_KEY,
     EMAIL_TEMPLATE_KEY,
+    EMAIL_SMTP_PORT_KEY,
+    EMAIL_SMTP_SECURE_KEY,
   } = require('../constants'),
   { FileOutput } = require('../output'),
   { renderTemplate } = require('../template-engines')
@@ -39,27 +43,29 @@ const logger = createLogger('email'),
   { writeFile } = fs.promises
 
 function createSmtpTransport(context) {
-  const { secrets } = context,
-    server = getOption(secrets, 'emailSmtpServer', EMAIL_SMTP_SERVER_VAR)
+  const server = context.getWithEnvNs(
+    EMAIL_SMTP_SERVER_KEY,
+    EMAIL_SMTP_SERVER_VAR,
+  )
 
   if (!server) {
     throw new Error('Missing SMTP server')
   }
 
-  const port = getOption(secrets, 'emailSmtpPort', EMAIL_SMTP_PORT_VAR),
-    secure = getOption(secrets, 'emailSmtpSecure', EMAIL_SMTP_SECURE_VAR),
+  const port = context.getWithEnvNs(EMAIL_SMTP_PORT_KEY, EMAIL_SMTP_PORT_VAR),
+    secure = context.getWithEnvNs(EMAIL_SMTP_SECURE_KEY, EMAIL_SMTP_SECURE_VAR),
     smtpConfig = {
       host: server,
       port: port ? toNumber(port) : EMAIL_SMTP_PORT_DEFAULT,
       secure: isUndefined(secure) ? true : toBoolean(secure),
       logger,
     },
-    user = getOption(secrets, 'emailSmtpUser', EMAIL_SMTP_USER_VAR)
+    user = getEnvNs(context, EMAIL_SMTP_USER_VAR)
 
   if (user) {
     smtpConfig.auth = {
       user,
-      pass: getOption(secrets, 'emailSmtpPass', EMAIL_SMTP_PASS_VAR),
+      pass: getEnvNs(context, EMAIL_SMTP_PASS_VAR),
     }
   }
 

@@ -10,12 +10,16 @@ const fs = require('fs'),
 
 const { mkdir, copyFile, writeFile } = fs.promises
 
-async function copyFiles(context, output) {
-  const destDir = context.get(
+function getDestDir(context) {
+  return context.getWithEnvNs(
     FILE_DEST_DIR_KEY,
     FILE_DEST_DIR_VAR,
     FILE_DEST_DIR_DEFAULT,
   )
+}
+
+async function copyFiles(context, output) {
+  const destDir = getDestDir(context)
 
   /*
    * Ensure the destination directory and any directories along the path
@@ -46,11 +50,7 @@ async function saveToFile(context, report, channelConfig, output) {
    * destination directory plus the output file name.
    */
   if (!path.isAbsolute(outputPath)) {
-    const destDir = context.get(
-      FILE_DEST_DIR_KEY,
-      FILE_DEST_DIR_VAR,
-      FILE_DEST_DIR_DEFAULT,
-    )
+    const destDir = getDestDir(context)
 
     await mkdir(destDir, { recursive: true })
 

@@ -1,7 +1,7 @@
 'use strict'
 
 const fetch = require('node-fetch'),
-  { raiseForStatus, getEnv } = require('../util'),
+  { raiseForStatus, getEnvNs } = require('../util'),
   { SLACK_WEBHOOK_URL } = require('../constants'),
   { createLogger, logTrace } = require('../logger')
 
@@ -109,7 +109,7 @@ async function postToSlack(
    * Check to ensure we have a Slack webhook URL. We only support getting this
    * from the environment because it has a key in it.
    */
-  const webhookUrl = getEnv(SLACK_WEBHOOK_URL)
+  const webhookUrl = getEnvNs(context, SLACK_WEBHOOK_URL)
 
   if (!webhookUrl) {
     throw new Error(`Missing Slack webhook URL for report ${reportName}.`)

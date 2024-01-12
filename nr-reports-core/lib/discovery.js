@@ -1,7 +1,7 @@
 'use strict'
 
 const path = require('path'),
-  { getChannelDefaults } = require('./channels'),
+  { getChannelDefaults: getPublisherChannelDefaults } = require('./channels'),
   { createLogger, logTrace } = require('./logger'),
   {
     DEFAULT_CHANNEL,
@@ -12,6 +12,7 @@ const path = require('path'),
     requireAccountId,
     splitStringAndTrim,
     isUndefined,
+    makeChannel,
   } = require('./util'),
   {
     getS3ObjectAsString,
@@ -50,8 +51,16 @@ const { NerdstorageClient } = require('./nerdstorage')
 
 const logger = createLogger('discovery')
 
-function makeChannel(type, options) {
-  return getChannelDefaults(type || DEFAULT_CHANNEL, options)
+function getChannelDefaults(type, options) {
+  return getPublisherChannelDefaults(type || DEFAULT_CHANNEL, options)
+}
+
+function makeDefaultChannel(id, type, options) {
+  return makeChannel(
+    id,
+    type,
+    getChannelDefaults(type, options),
+  )
 }
 
 function parseChannels(options, channels) {
@@ -60,7 +69,7 @@ function parseChannels(options, channels) {
   })
 
   const data = channels.split(/[\s]*,[\s]*/u).map(
-    type => makeChannel(type, options),
+    (type, index) => makeDefaultChannel(`${type}.${index}`, type, options),
   )
 
   logTrace(logger, log => {
@@ -74,28 +83,28 @@ function getChannels(defaultChannelType, options) {
   const channels = getOption(options, CHANNEL_IDS_OPTION, CHANNEL_IDS_VAR)
 
   if (!channels) {
-    return [makeChannel(defaultChannelType, options)]
-  }
-
-  if (Array.isArray(channels)) {
-    return channels.length === 0 ? (
-      [makeChannel(defaultChannelType, options)]
-    ) : channels
+    return [makeDefaultChannel(defaultChannelType, defaultChannelType, options)]
   }
 
   const data = parseChannels(options, channels)
 
-  return data.length !== 0 ? data : [makeChannel(defaultChannelType, options)]
+  return data.length !== 0 ? data : (
+    [makeDefaultChannel(defaultChannelType, defaultChannelType, options)]
+  )
 }
 
 function prepareManifest(
   options,
   data,
-  defaultChannel,
+  defaultChannelType,
   params,
   extras,
 ) {
-  const manifest = normalizeManifest(data, defaultChannel),
+  const manifest = normalizeManifest(
+      data,
+      defaultChannelType,
+      getChannelDefaults(defaultChannelType, options),
+    ),
     reportIdsOpt = getOption(options, REPORT_IDS_OPTION, REPORT_IDS_VAR)
 
   if (reportIdsOpt) {
@@ -146,14 +155,14 @@ async function loadManifest(
   options,
   fileLoader,
   manifestFile,
-  defaultChannel,
+  defaultChannelType,
   params,
   extras,
 ) {
   return prepareManifest(
     options,
     parseJaml(manifestFile, await fileLoader(manifestFile)),
-    defaultChannel,
+    defaultChannelType,
     params,
     extras,
   )
@@ -192,7 +201,7 @@ async function loadManifestFromNerdstorage(
   return prepareManifest(
     options,
     doc,
-    () => makeChannel(context.defaultChannelType, options),
+    context.defaultChannelType,
     params,
   )
 }
@@ -202,7 +211,6 @@ async function discoverReportsHelper(
   options,
   params,
   fileLoader,
-  defaultChannel,
   defaultChannelType,
   extras,
 ) {
@@ -220,7 +228,7 @@ async function discoverReportsHelper(
       options,
       fileLoader,
       manifestFile,
-      defaultChannel,
+      defaultChannelType,
       params,
       extras,
     )
@@ -361,7 +369,7 @@ async function discoverReportsHelper(
     options,
     async filePath => await loadFile(filePath),
     DEFAULT_MANIFEST_FILE_PATH,
-    defaultChannel,
+    defaultChannelType,
     params,
     extras,
   )
@@ -374,7 +382,7 @@ async function discoverReports(context, options, params) {
     return prepareManifest(
       {},
       options,
-      () => makeChannel(context.defaultChannelType, {}),
+      context.defaultChannelType,
       params,
     )
   }
@@ -393,7 +401,6 @@ async function discoverReports(context, options, params) {
       options,
       params,
       async filePath => await getS3ObjectAsString(sourceBucket, filePath),
-      () => makeChannel('s3', options),
       's3',
       { S3Bucket: sourceBucket },
     )
@@ -425,7 +432,6 @@ async function discoverReports(context, options, params) {
     options,
     params,
     async filePath => await loadFile(filePath),
-    () => makeChannel(context.defaultChannelType, options),
     context.defaultChannelType,
   )
 }
