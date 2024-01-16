@@ -19,16 +19,16 @@ export default function PublishConfigurationsField() {
   const { formState, updateFormState } = useContext(FormContext),
     { navigate } = useContext(RouteDispatchContext),
     handleAddConfig = useCallback(() => {
-      navigate(ROUTES.EDIT_PUBLISH_CONFIG, { formState, selectedConfig: -1 })
+      navigate(ROUTES.EDIT_SCHEDULE, { formState, selectedConfig: -1 })
     }, [navigate, formState]),
     handleEditConfig = useCallback(selectedConfig => {
-      navigate(ROUTES.EDIT_PUBLISH_CONFIG, {
+      navigate(ROUTES.EDIT_SCHEDULE, {
         formState,
         selectedConfig,
       })
     }, [navigate, formState]),
     handleDeleteConfig = useCallback(selectedConfig => {
-      if (!confirm(UI_CONTENT.PUBLISH_CONFIGS_FIELD.DELETE_PROMPT)) {
+      if (!confirm(UI_CONTENT.SCHEDULES_FIELD.DELETE_PROMPT)) {
         return
       }
 
@@ -42,7 +42,7 @@ export default function PublishConfigurationsField() {
   return (
     <div className="publish-configs-field">
       <CustomField
-        label={UI_CONTENT.PUBLISH_CONFIGS_FIELD.FIELD_LABEL_PUBLISH_CONFIGS_CUSTOM}
+        label={UI_CONTENT.SCHEDULES_FIELD.FIELD_LABEL_SCHEDULES_CUSTOM}
       >
         <Stack
           directionType={Stack.DIRECTION_TYPE.HORIZONTAL}
@@ -61,7 +61,7 @@ export default function PublishConfigurationsField() {
               />
             ) : (
               <BlockText>
-                {UI_CONTENT.PUBLISH_CONFIGS_FIELD.NO_CONFIGS_MESSAGE}
+                {UI_CONTENT.SCHEDULES_FIELD.NO_SCHEDULES_MESSAGE}
               </BlockText>
             )
           }
@@ -80,7 +80,7 @@ export default function PublishConfigurationsField() {
           Button.SPACING_TYPE.NONE,
         ]}
       >
-        {UI_CONTENT.PUBLISH_CONFIGS_FIELD.BUTTON_LABEL_ADD_CONFIG}
+        {UI_CONTENT.SCHEDULES_FIELD.BUTTON_LABEL_ADD_SCHEDULE}
       </Button>
     </div>
   )

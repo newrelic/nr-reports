@@ -30,7 +30,7 @@ export default function PublishConfigForm({
     handleValidateName = useCallback(formState => {
       if (
         selectedConfig >= 0 ||
-        formState.mode === UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_CREATE_NEW_CONFIG
+        formState.mode === UI_CONTENT.EDIT_SCHEDULE_FORM.MODE_VALUE_CREATE_NEW_SCHEDULE
       ) {
         return nameNotEmpty(formState)
       }
@@ -39,7 +39,7 @@ export default function PublishConfigForm({
     }, [formState.mode, selectedConfig]),
     handleChangeMode = useCallback((_, v) => {
       if (
-        v === UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_USE_EXISTING_CONFIG
+        v === UI_CONTENT.EDIT_SCHEDULE_FORM.MODE_VALUE_USE_EXISTING_SCHEDULE
       ) {
         // The || here is to catch the case where useExisting is selected but
         // the formState.ref has not been initialized because the form just
@@ -87,17 +87,17 @@ export default function PublishConfigForm({
           <RadioGroup
             value={formState.mode}
             defaultValue={
-              UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_CREATE_NEW_CONFIG
+              UI_CONTENT.EDIT_SCHEDULE_FORM.MODE_VALUE_CREATE_NEW_SCHEDULE
             }
             onChange={handleChangeMode}
           >
             <Radio
-              label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_CREATE_NEW_CONFIG}
-              value={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_CREATE_NEW_CONFIG}
+              label={UI_CONTENT.EDIT_SCHEDULE_FORM.FIELD_LABEL_CREATE_NEW_SCHEDULE}
+              value={UI_CONTENT.EDIT_SCHEDULE_FORM.MODE_VALUE_CREATE_NEW_SCHEDULE}
             />
             <Radio
-              label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_USE_EXISTING_CONFIG}
-              value={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_USE_EXISTING_CONFIG}
+              label={UI_CONTENT.EDIT_SCHEDULE_FORM.FIELD_LABEL_USE_EXISTING_SCHEDULE}
+              value={UI_CONTENT.EDIT_SCHEDULE_FORM.MODE_VALUE_USE_EXISTING_SCHEDULE}
             />
           </RadioGroup>
         </StackItem>
@@ -106,16 +106,16 @@ export default function PublishConfigForm({
     {
       (
         selectedConfig >= 0 ||
-        formState.mode === UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_CREATE_NEW_CONFIG
+        formState.mode === UI_CONTENT.EDIT_SCHEDULE_FORM.MODE_VALUE_CREATE_NEW_SCHEDULE
       ) && (
         <>
           <StackItem>
             <Validation name="name" validation={handleValidateName}>
               <TextField
                 placeholder={
-                  UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.CONFIG_NAME_FIELD_PLACEHOLDER
+                  UI_CONTENT.EDIT_SCHEDULE_FORM.SCHEDULE_NAME_FIELD_PLACEHOLDER
                 }
-                label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_NAME}
+                label={UI_CONTENT.EDIT_SCHEDULE_FORM.FIELD_LABEL_NAME}
                 value={formState.name}
                 onChange={handleChangeName}
                 invalid={formState.validations?.name}
@@ -125,7 +125,7 @@ export default function PublishConfigForm({
 
           <StackItem>
             <Checkbox
-              label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_ENABLED}
+              label={UI_CONTENT.EDIT_SCHEDULE_FORM.FIELD_LABEL_ENABLED}
               checked={formState.enabled}
               onChange={handleChangeEnabled}
             />
@@ -144,14 +144,14 @@ export default function PublishConfigForm({
     {
       (
         selectedConfig === -1 &&
-        formState.mode === UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_USE_EXISTING_CONFIG &&
+        formState.mode === UI_CONTENT.EDIT_SCHEDULE_FORM.MODE_VALUE_USE_EXISTING_SCHEDULE &&
         metaPublishConfigs?.publishConfigs &&
         metaPublishConfigs.publishConfigs.length > 0
       ) && (
         <>
           <StackItem>
             <Select
-              label={UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.FIELD_LABEL_CONFIG_REF}
+              label={UI_CONTENT.EDIT_SCHEDULE_FORM.FIELD_LABEL_SCHEDULE_REF}
               value={formState.ref}
               onChange={handleChangeConfigRef}
             >

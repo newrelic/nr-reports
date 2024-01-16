@@ -58,7 +58,7 @@ function formStateFromPublishConfig(
     selectedConfig >= 0 &&
     (!publishConfigs || selectedConfig >= publishConfigs.length)
   ) {
-    throw new Error(`Invalid publish config index ${selectedConfig} found`)
+    throw new Error(`Invalid schedule index ${selectedConfig} found`)
   }
 
   const publishConfig = (
@@ -80,7 +80,7 @@ function formStateFromPublishConfig(
       )
     ),
     mode: selectedConfig >= 0 ? '' : (
-      UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_CREATE_NEW_CONFIG
+      UI_CONTENT.EDIT_SCHEDULE_FORM.MODE_VALUE_CREATE_NEW_SCHEDULE
     ),
     id: publishConfig.id,
     name: publishConfig.name,
@@ -98,7 +98,7 @@ function formStateFromPublishConfig(
 
 function publishConfigFromFormState(formState) {
   const publishConfig = (
-    formState.mode === UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.MODE_VALUE_USE_EXISTING_CONFIG ? (
+    formState.mode === UI_CONTENT.EDIT_SCHEDULE_FORM.MODE_VALUE_USE_EXISTING_SCHEDULE ? (
       { ref: formState.ref }
     ) : (
       {
@@ -154,7 +154,7 @@ function EditPublishConfigScreen({
     }, [validateFormState, onSubmit]),
     handleCancel = useCallback(() => {
       if (formState.dirty) {
-        if (!confirm(UI_CONTENT.EDIT_PUBLISH_CONFIG_SCREEN.CANCEL_PROMPT)) {
+        if (!confirm(UI_CONTENT.EDIT_SCHEDULE_SCREEN.CANCEL_PROMPT)) {
           return
         }
       }
@@ -168,9 +168,9 @@ function EditPublishConfigScreen({
         <LayoutItem>
           <Card>
             <CardHeader
-              title={UI_CONTENT.EDIT_PUBLISH_CONFIG_SCREEN.HEADING}
+              title={UI_CONTENT.EDIT_SCHEDULE_SCREEN.HEADING}
               subtitle={formState.references > 1 ? (
-                UI_CONTENT.EDIT_PUBLISH_CONFIG_SCREEN.EDIT_SHARED_CONFIG_MESSAGE(formState.references)
+                UI_CONTENT.EDIT_SCHEDULE_SCREEN.EDIT_SHARED_SCHEDULE_MESSAGE(formState.references)
               ) : ''}
             />
             <CardBody>
@@ -273,8 +273,8 @@ function StandaloneEditPublishConfigScreen(props) {
   useEffect(() => {
     if (writeError) {
       Toast.showToast({
-        title: UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.SAVE_ERROR_TITLE,
-        description: UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.SAVE_ERROR_DESCRIPTION(writeError.message),
+        title: UI_CONTENT.EDIT_SCHEDULE_FORM.SAVE_ERROR_TITLE,
+        description: UI_CONTENT.EDIT_SCHEDULE_FORM.SAVE_ERROR_DESCRIPTION(writeError.message),
         /*
         @TODO
         actions: [
@@ -290,8 +290,8 @@ function StandaloneEditPublishConfigScreen(props) {
 
     if (writeFinished) {
       Toast.showToast({
-        title: UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.SAVE_SUCCESS_TITLE,
-        description: UI_CONTENT.EDIT_PUBLISH_CONFIG_FORM.SAVE_SUCCESS_DESCRIPTION(formState.name),
+        title: UI_CONTENT.EDIT_SCHEDULE_FORM.SAVE_SUCCESS_TITLE,
+        description: UI_CONTENT.EDIT_SCHEDULE_FORM.SAVE_SUCCESS_DESCRIPTION(formState.name),
         type: Toast.TYPE.NORMAL,
       })
 

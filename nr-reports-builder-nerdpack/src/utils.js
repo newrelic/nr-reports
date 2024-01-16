@@ -267,7 +267,7 @@ export function resolvePublishConfig(metaPublishConfigs, publishConfig) {
     )
 
     if (!realPublishConfig) {
-      throw new Error(`Missing publish config ${publishConfig.ref}`)
+      throw new Error(`Missing schedule ${publishConfig.ref}`)
     }
 
     return realPublishConfig

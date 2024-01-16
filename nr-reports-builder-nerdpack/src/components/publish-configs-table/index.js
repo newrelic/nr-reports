@@ -74,13 +74,13 @@ export default function PublishConfigsTable({
           {UI_CONTENT.GLOBAL.HEADER_LABEL_NAME}
         </TableHeaderCell>
         <TableHeaderCell width="30%">
-          {UI_CONTENT.PUBLISH_CONFIGS_FIELD.HEADER_LABEL_SCHEDULE}
+          {UI_CONTENT.SCHEDULES_FIELD.HEADER_LABEL_SCHEDULE}
         </TableHeaderCell>
         <TableHeaderCell width="15%">
           {UI_CONTENT.GLOBAL.HEADER_LABEL_ENABLED}
         </TableHeaderCell>
         <TableHeaderCell width="15%">
-          {UI_CONTENT.PUBLISH_CONFIGS_FIELD.HEADER_LABEL_CHANNELS}
+          {UI_CONTENT.SCHEDULES_FIELD.HEADER_LABEL_CHANNELS}
         </TableHeaderCell>
       </TableHeader>
       {renderRow}

@@ -60,7 +60,7 @@ export default function App() {
           <EditReportScreen />
         )
 
-      case ROUTES.EDIT_PUBLISH_CONFIG:
+      case ROUTES.EDIT_SCHEDULE:
         return (
           <EditPublishConfigScreen />
         )

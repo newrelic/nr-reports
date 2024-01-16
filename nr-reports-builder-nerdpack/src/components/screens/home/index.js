@@ -93,16 +93,16 @@ function PublishConfigurationsView() {
     } = useContext(StorageContext),
     { deletePublishConfigs } = useManifestWriter(),
     handleCreateConfig = useCallback(() => {
-      navigate(ROUTES.EDIT_PUBLISH_CONFIG, { selectedConfig: -1 })
+      navigate(ROUTES.EDIT_SCHEDULE, { selectedConfig: -1 })
     }, [navigate]),
     handleEditConfig = useCallback(index => {
-      navigate(ROUTES.EDIT_PUBLISH_CONFIG, {
+      navigate(ROUTES.EDIT_SCHEDULE, {
         selectedConfig: index,
       })
     }, [navigate]),
     handleDeleteConfig = useCallback(index => {
       if (!confirm(
-        UI_CONTENT.HOME.PUBLISH_CONFIGS.DELETE_PUBLISH_CONFIG_PROMPT
+        UI_CONTENT.HOME.SCHEDULES.DELETE_SCHEDULE_PROMPT
       )) {
         return
       }
@@ -116,7 +116,7 @@ function PublishConfigurationsView() {
   ) {
     return (
       <EmptyView
-        heading={UI_CONTENT.HOME.PUBLISH_CONFIGS.EMPTY_STATE.HEADING}
+        heading={UI_CONTENT.HOME.SCHEDULES.EMPTY_STATE.HEADING}
         description={(
           <Button
             type={Button.TYPE.PRIMARY}
@@ -124,7 +124,7 @@ function PublishConfigurationsView() {
             spacingType={[Button.SPACING_TYPE.LARGE]}
             onClick={handleCreateConfig}
           >
-            {UI_CONTENT.HOME.PUBLISH_CONFIGS.EMPTY_STATE.DESCRIPTION}
+            {UI_CONTENT.HOME.SCHEDULES.EMPTY_STATE.DESCRIPTION}
           </Button>
         )}
       />
@@ -133,14 +133,14 @@ function PublishConfigurationsView() {
 
   return (
     <Card>
-      <CardHeader title={UI_CONTENT.HOME.PUBLISH_CONFIGS.HEADING}>
+      <CardHeader title={UI_CONTENT.HOME.SCHEDULES.HEADING}>
         <Button
           type={Button.TYPE.PRIMARY}
           iconType={Icon.TYPE.INTERFACE__SIGN__PLUS}
           sizeType={Button.SIZE_TYPE.SMALL}
           onClick={handleCreateConfig}
         >
-          {UI_CONTENT.HOME.PUBLISH_CONFIGS.BUTTON_LABEL_CREATE_PUBLISH_CONFIG}
+          {UI_CONTENT.HOME.SCHEDULES.BUTTON_LABEL_CREATE_SCHEDULE}
         </Button>
       </CardHeader>
       <CardBody>
@@ -238,7 +238,7 @@ export default function HomeScreen() {
       </TabItem>
       <TabItem
         value="publishConfigs"
-        label={UI_CONTENT.HOME.TAB_LABEL_PUBLISH_CONFIGS}
+        label={UI_CONTENT.HOME.TAB_LABEL_SCHEDULES}
       >
         <PublishConfigurationsView />
       </TabItem>

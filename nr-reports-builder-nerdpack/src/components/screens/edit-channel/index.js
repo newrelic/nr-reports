@@ -366,13 +366,13 @@ function ReportEditChannelScreen(props) {
     } = useContext(FormContext),
     { navigate } = useContext(RouteDispatchContext),
     handleCancel = useCallback(() => {
-      navigate(ROUTES.EDIT_PUBLISH_CONFIG, {
+      navigate(ROUTES.EDIT_SCHEDULE, {
         ...formState.parentFormState,
       })
     }, [navigate, formState]),
     handleSubmit = useCallback(() => {
       navigate(
-        ROUTES.EDIT_PUBLISH_CONFIG,
+        ROUTES.EDIT_SCHEDULE,
         { formState: buildParentFormState(formState, selectedChannel) }
       )
     }, [navigate, formState, selectedChannel])

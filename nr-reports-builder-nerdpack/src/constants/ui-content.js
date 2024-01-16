@@ -43,14 +43,14 @@ export const UI_CONTENT = {
       DELETE_REPORT_PROMPT: 'Are you sure you want to delete this report? This action cannot be undone.',
       HEADING: 'Reports',
     },
-    PUBLISH_CONFIGS: {
+    SCHEDULES: {
       EMPTY_STATE: {
-        HEADING: 'No publish configurations found.',
-        DESCRIPTION: 'Create a new publish configuration',
+        HEADING: 'No schedules found.',
+        DESCRIPTION: 'Create a new schedule',
       },
-      BUTTON_LABEL_CREATE_PUBLISH_CONFIG: 'Create new publish configuration',
-      DELETE_PUBLISH_CONFIG_PROMPT: 'Are you sure you want to delete this publish configuration? Deleting this publish configuration will also delete it from all reports which use it. This action cannot be undone.',
-      HEADING: 'Publish configurations',
+      BUTTON_LABEL_CREATE_SCHEDULE: 'Create new schedule',
+      DELETE_SCHEDULE_PROMPT: 'Are you sure you want to delete this schedule? Deleting this schedule will also delete it from all reports which use it. This action cannot be undone.',
+      HEADING: 'Schedules',
     },
     CHANNELS: {
       EMPTY_STATE: {
@@ -58,11 +58,11 @@ export const UI_CONTENT = {
         DESCRIPTION: 'Create a new channel',
       },
       BUTTON_LABEL_CREATE_CHANNEL: 'Create new channel',
-      DELETE_CHANNEL_PROMPT: 'Are you sure you want to delete this channel? Deleting this channel will also delete it from all publish configurations which use it. This action cannot be undone.',
+      DELETE_CHANNEL_PROMPT: 'Are you sure you want to delete this channel? Deleting this channel will also delete it from all schedules which use it. This action cannot be undone.',
       HEADING: 'Channels',
     },
     TAB_LABEL_REPORTS: 'Reports',
-    TAB_LABEL_PUBLISH_CONFIGS: 'Publish configuration',
+    TAB_LABEL_SCHEDULES: 'Schedules',
     TAB_LABEL_CHANNELS: 'Channels',
   },
 
@@ -154,24 +154,24 @@ export const UI_CONTENT = {
     HEADING: 'Edit report',
     HEADING_HISTORY: 'History'
   },
-  EDIT_PUBLISH_CONFIG_FORM: {
-    CONFIG_NAME_FIELD_PLACEHOLDER: 'email-team',
-    FIELD_LABEL_CONFIG_REF: 'Publish configuration',
-    FIELD_LABEL_CREATE_NEW_CONFIG: 'Create a new configuration',
-    FIELD_LABEL_USE_EXISTING_CONFIG: 'Use an existing configuration',
+  EDIT_SCHEDULE_FORM: {
+    SCHEDULE_NAME_FIELD_PLACEHOLDER: 'email-team',
+    FIELD_LABEL_SCHEDULE_REF: 'Schedule',
+    FIELD_LABEL_CREATE_NEW_SCHEDULE: 'Create a new schedule',
+    FIELD_LABEL_USE_EXISTING_SCHEDULE: 'Use an existing schedule',
     FIELD_LABEL_ENABLED: 'Enabled',
     FIELD_LABEL_NAME: 'Name',
-    MODE_VALUE_CREATE_NEW_CONFIG: 'create',
-    MODE_VALUE_USE_EXISTING_CONFIG: 'useExisting',
+    MODE_VALUE_CREATE_NEW_SCHEDULE: 'create',
+    MODE_VALUE_USE_EXISTING_SCHEDULE: 'useExisting',
     SAVE_ERROR_TITLE: 'Save failed',
     SAVE_ERROR_DESCRIPTION: msg => `Your data could not be saved: ${msg}`,
-    SAVE_SUCCESS_TITLE: 'Publish configuration saved',
-    SAVE_SUCCESS_DESCRIPTION: name => `The publish configuration "${name}" was saved.`
+    SAVE_SUCCESS_TITLE: 'Schedule saved',
+    SAVE_SUCCESS_DESCRIPTION: name => `The schedule "${name}" was saved.`
   },
-  EDIT_PUBLISH_CONFIG_SCREEN: {
-    HEADING: 'Edit publish configuration',
-    CANCEL_PROMPT: 'You have made changes to this publish configuration. Are you sure you want to cancel?',
-    EDIT_SHARED_CONFIG_MESSAGE: count => `This publish configuration is referenced in ${count} reports. Changes will apply to all reports.`
+  EDIT_SCHEDULE_SCREEN: {
+    HEADING: 'Edit schedule',
+    CANCEL_PROMPT: 'You have made changes to this schedule. Are you sure you want to cancel?',
+    EDIT_SHARED_SCHEDULE_MESSAGE: count => `This schedule is referenced in ${count} reports. Changes will apply to all reports.`
   },
   EMAIL_CHANNEL_FORM: {
     CC_FIELD_PLACEHOLDER: `robin@newrelic.com\npat@newrelic.com`,
@@ -194,13 +194,13 @@ export const UI_CONTENT = {
   NRQL_EDITOR: {
     QUERY_FIELD_PLACEHOLDER: 'SELECT count(*) FROM Transaction FACET appName',
   },
-  PUBLISH_CONFIGS_FIELD: {
-    BUTTON_LABEL_ADD_CONFIG: 'Add configuration',
-    DELETE_PROMPT: 'Are you sure you want to delete this publish configuration?',
-    FIELD_LABEL_PUBLISH_CONFIGS_CUSTOM: 'Publish configurations',
+  SCHEDULES_FIELD: {
+    BUTTON_LABEL_ADD_SCHEDULE: 'Add schedule',
+    DELETE_PROMPT: 'Are you sure you want to delete this schedule?',
+    FIELD_LABEL_SCHEDULES_CUSTOM: 'Schedules',
     HEADER_LABEL_SCHEDULE: 'Schedule',
     HEADER_LABEL_CHANNELS: 'Channels',
-    NO_CONFIGS_MESSAGE: 'No publish configurations are defined.',
+    NO_SCHEDULES_MESSAGE: 'No schedules are defined.',
   },
   QUERY_FORM: {
     FIELD_LABEL_ACCOUNTS: 'Accounts',
@@ -211,7 +211,7 @@ export const UI_CONTENT = {
   REPORT_HISTORY_LIST: {
     STATUS_LABEL_FAILED: 'Failed',
     STATUS_LABEL_SUCCESS: 'Success',
-    PUBLISH_MESSAGE: 'Report outputs published to the following configurations:'
+    PUBLISH_MESSAGE: 'Report outputs published for the following schedules:'
   },
   REPORT_HISTORY_MODAL: {
     HEADING: name => `History for "${name}"`,
