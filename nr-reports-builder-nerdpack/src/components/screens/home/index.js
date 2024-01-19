@@ -96,9 +96,7 @@ function PublishConfigurationsView() {
       navigate(ROUTES.EDIT_SCHEDULE, { selectedConfig: -1 })
     }, [navigate]),
     handleEditConfig = useCallback(index => {
-      navigate(ROUTES.EDIT_SCHEDULE, {
-        selectedConfig: index,
-      })
+      navigate(ROUTES.EDIT_SCHEDULE, { selectedConfig: index })
     }, [navigate]),
     handleDeleteConfig = useCallback(index => {
       if (!confirm(
@@ -164,10 +162,7 @@ function ReportsView() {
       navigate(ROUTES.EDIT_REPORT, { selectedReportIndex: -1 })
     }, [navigate]),
     handleEditReport  = useCallback(index => {
-      navigate(
-        ROUTES.EDIT_REPORT,
-        { selectedReportIndex: index }
-      )
+      navigate(ROUTES.EDIT_REPORT, { selectedReportIndex: index })
     }, [navigate]),
     handleDeleteReport = useCallback(index => {
       if (!confirm(UI_CONTENT.HOME.REPORTS.DELETE_REPORT_PROMPT)) {
@@ -229,25 +224,27 @@ export default function HomeScreen() {
   } = useContext(RouteContext)
 
   return (
-    <Tabs defaultValue={tab || 'reports'}>
-      <TabItem
-        value="reports"
-        label={UI_CONTENT.HOME.TAB_LABEL_REPORTS}
-      >
-        <ReportsView />
-      </TabItem>
-      <TabItem
-        value="publishConfigs"
-        label={UI_CONTENT.HOME.TAB_LABEL_SCHEDULES}
-      >
-        <PublishConfigurationsView />
-      </TabItem>
-      <TabItem
-        value="channels"
-        label={UI_CONTENT.HOME.TAB_LABEL_CHANNELS}
-      >
-        <ChannelsView />
-      </TabItem>
-    </Tabs>
+    <div className="home-screen">
+      <Tabs defaultValue={tab || 'reports'}>
+        <TabItem
+          value="reports"
+          label={UI_CONTENT.HOME.TAB_LABEL_REPORTS}
+        >
+          <ReportsView />
+        </TabItem>
+        <TabItem
+          value="publishConfigs"
+          label={UI_CONTENT.HOME.TAB_LABEL_SCHEDULES}
+        >
+          <PublishConfigurationsView />
+        </TabItem>
+        <TabItem
+          value="channels"
+          label={UI_CONTENT.HOME.TAB_LABEL_CHANNELS}
+        >
+          <ChannelsView />
+        </TabItem>
+      </Tabs>
+    </div>
   )
 }

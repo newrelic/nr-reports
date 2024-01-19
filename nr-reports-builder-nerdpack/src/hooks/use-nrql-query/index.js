@@ -1,6 +1,6 @@
 import { useNrqlQuery as useNrqlQuerySdk } from 'nr1'
 
-export default function useDocumentReader({
+export default function useNrqlQuery({
   accountId,
   query,
  }) {

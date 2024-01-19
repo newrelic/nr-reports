@@ -68,7 +68,7 @@ export default function RouteProvider({ children }) {
         type: 'home',
         params,
       })
-    })
+    }, [dispatch])
 
   useEffect(() => {
     dispatch({ type: 'accountIdChanged', accountId: platformState.accountId })

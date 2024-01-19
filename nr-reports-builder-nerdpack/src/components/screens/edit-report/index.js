@@ -8,7 +8,6 @@ import {
   Checkbox,
   CollapsibleLayoutItem,
   Form,
-  HeadingText,
   Layout,
   LayoutItem,
   Select,
@@ -27,7 +26,7 @@ import {
   StorageContext,
 } from '../../../contexts'
 import { useManifestWriter } from '../../../hooks'
-import { newReport } from '../../../model'
+import { newReport, newReportMetadata } from '../../../model'
 import {
   nameNotEmpty,
   typeIsValid,
@@ -55,7 +54,7 @@ function reportToFormState(report) {
     accountIds: report.accountIds,
     lastModifiedDate: report.lastModifiedDate,
     publishConfigs: report.publishConfigs ? clone(report.publishConfigs) : [],
-    metadata: report.metadata || {},
+    metadata: report.metadata || newReportMetadata(),
     loadedDashboards: report.dashboards ? false : true,
     dirty: false,
     valid: true,
@@ -165,7 +164,7 @@ function EditReportScreen({ report, selectedReportIndex }) {
 
       home()
     }
-  }, [error, writeError, writeFinished, formState.name, updateFormState, handleSave, handleClose, home])
+  }, [error, writeError, writeFinished, formState.name, dangerouslyUpdateFormState, handleSave, handleClose, home])
 
   return (
     <div className="edit-report-screen">

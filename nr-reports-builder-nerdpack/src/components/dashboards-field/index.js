@@ -113,7 +113,7 @@ export default function DashboardsField({
         loadedDashboards: true,
       })
     }
-  }, [loading, error, entities, updateFormState])
+  }, [loading, error, entities, dangerouslyUpdateFormState])
 
   return (
     <div className="dashboards-field">

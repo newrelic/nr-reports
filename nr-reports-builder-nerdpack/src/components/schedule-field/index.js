@@ -32,7 +32,7 @@ export default function ScheduleField() {
     handleHideModal = useCallback(() => {
       setShowModal(false)
     }, [setShowModal]),
-    ScheduleDetails = useMemo(() => {
+    scheduleDetails = useMemo(() => {
       return generateFullScheduleDetails(schedule, settings)
     }, [schedule, settings])
 
@@ -42,7 +42,7 @@ export default function ScheduleField() {
         label={UI_CONTENT.SCHEDULE_FIELD.FIELD_LABEL_SCHEDULE_CUSTOM}
       >
         <div className="schedule-details">
-          {ScheduleDetails}
+          {scheduleDetails}
         </div>
       </CustomField>
 

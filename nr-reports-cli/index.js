@@ -257,7 +257,10 @@ async function main() {
       error: false,
       runnerId,
       runnerVersion,
-      ...options,
+      reportIds: options.reportIds,
+      publishConfigIds: options.publishConfigIds,
+      dashboardIds: options.dashboardIds,
+      channelIds: options.channelIds,
     },
   )
 }

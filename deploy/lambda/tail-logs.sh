@@ -9,7 +9,7 @@ while [ $# -ne 0 ]; do
     case "$1" in
         -n)
             shift
-            if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then FUNCTION_NAME=$1; shift; else err "missing function name -n"; fi
+            if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then FUNCTION_NAME=$1; shift; else err "missing function name with -n"; fi
             ;;
         -p)
             shift
@@ -26,11 +26,11 @@ source $(dirname "$0")/vars.sh
 if [ -z "$FUNCTION_NAME" ]; then
     P_FUNCTION_NAME=${PREFIX}FUNCTION_NAME
     FUNCTION_NAME=${!P_FUNCTION_NAME}
-fi
 
-if [ -z "$FUNCTION_NAME" ]; then
-    err 'missing function name'
-    exit 1
+    if [ -z "$FUNCTION_NAME" ]; then
+        err 'missing function name'
+        exit 1
+    fi
 fi
 
 println "Tailing logs for /aws/lambda/$FUNCTION_NAME..."

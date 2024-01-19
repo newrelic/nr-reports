@@ -68,7 +68,7 @@ function parseChannels(options, channels) {
     log({ channels }, 'Parsing channels:')
   })
 
-  const data = channels.split(/[\s]*,[\s]*/u).map(
+  const data = splitStringAndTrim(channels).map(
     (type, index) => makeDefaultChannel(`${type}.${index}`, type, options),
   )
 
@@ -313,7 +313,7 @@ async function discoverReportsHelper(
     logger.trace(`Found dashboards ${dashboards}.`)
 
     const dashboardGuids = (
-        Array.isArray(dashboards) ? dashboards : dashboards.split(/[\s]*,[\s]*/u)
+        Array.isArray(dashboards) ? dashboards : splitStringAndTrim(dashboards)
       ),
       channels = getChannels(defaultChannelType, options)
 

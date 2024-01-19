@@ -400,14 +400,8 @@ export default function EditChannelScreenWrapper(props) {
       channels: metaChannels,
     } = useContext(StorageContext)
 
-  if (!formState /*|| formState.parentFormState === null*/) {
+  if (!formState) {
     const initFormState = useCallback(() => {
-      /*
-      if (formState) {
-        return { ...formState }
-      }
-      */
-
       return formStateFromChannel(
         null,
         metaChannels?.channels,
@@ -416,7 +410,7 @@ export default function EditChannelScreenWrapper(props) {
         metaChannels,
         selectedChannel,
       )
-    }, [/*formState, */ metaChannels, metaPublishConfigs, manifest, selectedChannel])
+    }, [metaChannels, metaPublishConfigs, manifest, selectedChannel])
 
     return withFormContext(
       <StandaloneEditChannelScreen

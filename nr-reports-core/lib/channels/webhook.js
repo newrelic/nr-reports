@@ -28,7 +28,7 @@ const fetch = require('node-fetch'),
     WEBHOOK_PAYLOAD_RESULTS_KEY,
     WEBHOOK_HTTP_METHOD_DEFAULT,
   } = require('../constants'),
-  { createLogger, logTrace } = require('../logger')
+  { createLogger } = require('../logger')
 
 const logger = createLogger('webhook')
 
@@ -128,10 +128,6 @@ async function send(
   webhookUrl,
   message,
 ) {
-  logTrace(logger, log => {
-    log({ message }, 'Webhook request payload:')
-  })
-
   const httpMethod = context.getWithEnvNs(
       WEBHOOK_HTTP_METHOD_KEY,
       WEBHOOK_HTTP_METHOD_VAR,
@@ -152,10 +148,6 @@ async function send(
   raiseForStatus(response)
 
   const responseText = await response.text()
-
-  logTrace(logger, log => {
-    log({ response: responseText }, 'Webhook response:')
-  })
 
   return responseText
 }

@@ -49,7 +49,9 @@ function scheduleExpressionFromCronExpression(report, publishConfig) {
     parts.push('*')
   } else if (parts.length !== 6) {
     throw new Error(`Invalid cron expression "${schedule}" for report "${reportName}": Expected 6 parts in CRON expression but found ${parts.length}.`)
-  } else if (parts[2] !== '?' && parts[4] !== '?') {
+  }
+
+  if (parts[2] !== '?' && parts[4] !== '?') {
     throw new Error(`Invalid cron expression "${schedule}" for report "${reportName}": Day of month and day of week cannot both be specified.`)
   }
 

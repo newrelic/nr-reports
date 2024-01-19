@@ -7,10 +7,9 @@
   "engines": {
     "node": ">=14.0.0"
   },
-  "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/newrelic-experimental/nr-reports"
+    "url": "https://github.com/newrelic/nr-reports"
   },
   "scripts": {
     "build": "../deploy/lambda/build.sh -t $npm_package_name:$npm_package_version",

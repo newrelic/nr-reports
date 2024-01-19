@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/newrelic-experimental/nr-reports"
+    "url": "https://github.com/newrelic/nr-reports"
   },
   "scripts": {
     "build": "../deploy/lambda/build.sh -t $npm_package_name:$npm_package_version",
@@ -20,6 +20,10 @@
     "delete": "../deploy/lambda/delete.sh",
     "test-image": "../deploy/lambda/test-image.sh -t $npm_package_name:$npm_package_version --lambda-handler nr-reports-lambda/lambda.handler"
   },
+  "bugs": {
+    "url": "https://github.com/newrelic/nr-reports/issues"
+  },
+  "homepage": "https://github.com/newrelic/nr-reports#readme",
   "dependencies": {
     "chrome-aws-lambda": "^10.1.0",
     "nr-reports-core": "file:../nr-reports-core",

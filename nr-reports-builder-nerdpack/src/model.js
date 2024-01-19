@@ -14,6 +14,10 @@ export function newReport() {
   }
 }
 
+export function newReportMetadata() {
+  return {}
+}
+
 export function newPublishConfig() {
   return {
     id: generateRandomString(20),

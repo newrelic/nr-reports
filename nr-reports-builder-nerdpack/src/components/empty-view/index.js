@@ -6,34 +6,32 @@ export default function EmptyView(props) {
   const { image, heading, description } = props
 
   return (
-    <>
-      <Stack
-        className="empty-view"
-        verticalType={Stack.VERTICAL_TYPE.CENTER}
-        horizontalType={Stack.HORIZONTAL_TYPE.CENTER}
-        directionType={Stack.DIRECTION_TYPE.VERTICAL}
-        gapType={Stack.GAP_TYPE.NONE}
-        fullWidth
-        fullHeight
-      >
-        {
-          image &&
-          <StackItem>
-            <img src={image} />
-          </StackItem>
-        }
+    <Stack
+      className="empty-view"
+      verticalType={Stack.VERTICAL_TYPE.CENTER}
+      horizontalType={Stack.HORIZONTAL_TYPE.CENTER}
+      directionType={Stack.DIRECTION_TYPE.VERTICAL}
+      gapType={Stack.GAP_TYPE.NONE}
+      fullWidth
+      fullHeight
+    >
+      {
+        image &&
         <StackItem>
-          <HeadingText>
-            {heading}
-          </HeadingText>
+          <img src={image} />
         </StackItem>
-        <StackItem>
-          <BlockText type={BlockText.TYPE.PARAGRAPH}>
-            {description}
-          </BlockText>
-        </StackItem>
-      </Stack>
-    </>
+      }
+      <StackItem>
+        <HeadingText>
+          {heading}
+        </HeadingText>
+      </StackItem>
+      <StackItem>
+        <BlockText type={BlockText.TYPE.PARAGRAPH}>
+          {description}
+        </BlockText>
+      </StackItem>
+    </Stack>
   )
 }
 

@@ -74,11 +74,7 @@ function formStateFromPublishConfig(
   return {
     parentFormState: parentFormState && clone(parentFormState),
     prevConfigs: publishConfigs,
-    metadata: (
-      publishConfig.metadata || (
-        newPublishConfigMetadata()
-      )
-    ),
+    metadata: publishConfig.metadata || newPublishConfigMetadata(),
     mode: selectedConfig >= 0 ? '' : (
       UI_CONTENT.EDIT_SCHEDULE_FORM.MODE_VALUE_CREATE_NEW_SCHEDULE
     ),
@@ -299,7 +295,7 @@ function StandaloneEditPublishConfigScreen(props) {
 
       home({ tab: 'publishConfigs' })
     }
-  }, [writeError, writeFinished, formState.name, dangerouslyUpdateFormState, handleSubmit, home])
+  }, [writeError, writeFinished, formState.name, dangerouslyUpdateFormState, home])
 
   return (
     <EditPublishConfigScreen

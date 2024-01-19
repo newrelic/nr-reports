@@ -111,7 +111,7 @@ async function publish(
       )
 
     if (!publisher) {
-      throw new Error(`Invalid channel "${channel.type}" for channel "${channelName}" for publish config "${publishConfigName}" and report "${reportName}"`)
+      throw new Error(`Invalid type "${channel.type}" for channel "${channelName}" for publish config "${publishConfigName}" and report "${reportName}"`)
     }
 
     logTrace(logger, log => {

@@ -148,28 +148,26 @@ export default function PublishConfigForm({
         metaPublishConfigs?.publishConfigs &&
         metaPublishConfigs.publishConfigs.length > 0
       ) && (
-        <>
-          <StackItem>
-            <Select
-              label={UI_CONTENT.EDIT_SCHEDULE_FORM.FIELD_LABEL_SCHEDULE_REF}
-              value={formState.ref}
-              onChange={handleChangeConfigRef}
-            >
-              {
-                metaPublishConfigs.publishConfigs.map(
-                  (item, index) => (
-                    <SelectItem
-                      key={index}
-                      value={item.id}
-                    >
-                      {item.name}
-                    </SelectItem>
-                  )
+        <StackItem>
+          <Select
+            label={UI_CONTENT.EDIT_SCHEDULE_FORM.FIELD_LABEL_SCHEDULE_REF}
+            value={formState.ref}
+            onChange={handleChangeConfigRef}
+          >
+            {
+              metaPublishConfigs.publishConfigs.map(
+                (item, index) => (
+                  <SelectItem
+                    key={index}
+                    value={item.id}
+                  >
+                    {item.name}
+                  </SelectItem>
                 )
-              }
-            </Select>
-          </StackItem>
-        </>
+              )
+            }
+          </Select>
+        </StackItem>
       )
     }
     </Stack>

@@ -3,12 +3,12 @@
 source $(dirname "$0")/init.sh
 
 PREFIX=
-BUILD_TYPE=test
+BUILD_TYPE=deploy
 BUILD=0
 IMAGE_NAME=
-FUNCTION_NAME=
 ECR_IMAGE_REPO=
 ECR_IMAGE_TAG=
+FUNCTION_NAME=
 AWS_LAMBDA_UPDATE_OPTS=${AWS_LAMBDA_UPDATE_OPTS:-""}
 
 while [ $# -ne 0 ]; do
@@ -30,7 +30,7 @@ while [ $# -ne 0 ]; do
             ;;
         -n)
             shift
-            if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then FUNCTION_NAME=$1; shift; fi
+            if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then FUNCTION_NAME=$1; shift; else err "missing function name with -n"; fi
             ;;
         *)
             err "invalid option $1"
@@ -65,13 +65,13 @@ if [ -z "$ECR_IMAGE_REPO" -o -z "$ECR_IMAGE_TAG" ]; then
     err "missing ECR image repo or tag"
 fi
 
+PREFIX_ARG=""
+if [ -n "$ORIG_PREFIX" ]; then PREFIX_ARG="-p $ORIG_PREFIX"; fi
+
 if [ -z "$IMAGE_NAME" ]; then
     P_IMAGE_NAME=${PREFIX}IMAGE_NAME
     IMAGE_NAME=${!P_IMAGE_NAME:-$APP_DIR_NAME}
 fi
-
-PREFIX_ARG=""
-if [ -n "$ORIG_PREFIX" ]; then PREFIX_ARG="-p $ORIG_PREFIX"; fi
 
 if [ $BUILD -eq 1 ]; then
     $SCRIPT_DIR/build.sh -t "$IMAGE_NAME" --full --push --build-type $BUILD_TYPE $PREFIX_ARG
@@ -82,9 +82,13 @@ println "Root directory:                          $ROOT_DIR"
 println "App directory:                           $APP_DIR"
 println "AWS region:                              $AWS_REGION"
 println "Prefix:                                  $PREFIX"
-println "Function name:                           $FUNCTION_NAME"
+println "Build type:                              $BUILD_TYPE"
+println "Build:                                   $BUILD"
+println "Image name:                              $IMAGE_NAME"
 println "ECR image repo:                          $ECR_IMAGE_REPO"
 println "ECR image tag:                           $ECR_IMAGE_TAG"
+println "Function name:                           $FUNCTION_NAME"
+println "Update function options:                 $AWS_LAMBDA_UPDATE_OPTS"
 println "%s\n" "--------------------------------------------------------------------------------"
 
 aws lambda update-function-code \

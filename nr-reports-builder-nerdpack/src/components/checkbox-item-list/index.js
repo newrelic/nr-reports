@@ -13,7 +13,6 @@ import {
   Spinner,
 } from 'nr1'
 import ErrorView from "../error-view";
-import { UI_CONTENT } from "../../constants";
 
 function isItemSelected(selectedItems, item) {
   return selectedItems.findIndex(i => i[0] === item[0]) !== -1

@@ -242,7 +242,6 @@ function updateSchedule(
   delete updateScheduleParams.CreationDate
   delete updateScheduleParams.LastModificationDate
 
-
   return new Promise((resolve, reject) => {
     scheduler.updateSchedule(updateScheduleParams, (err, data) => {
       if (err) {

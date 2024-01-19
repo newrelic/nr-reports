@@ -2,10 +2,10 @@
 
 source $(dirname "$0")/init.sh
 
+PREFIX=
+BUILD_TYPE=local
 FULL=0
 BUILD=0
-BUILD_TYPE=local
-PREFIX=
 IMAGE_NAME=
 LAMBDA_HANDLER=
 
@@ -58,7 +58,7 @@ FULL_ARG=""
 if [ $FULL -eq 1 ]; then FULL_ARG="--full"; fi
 
 if [ $BUILD -eq 1 ]; then
-    $SCRIPT_DIR/build.sh -t "$IMAGE_NAME" $FULL_ARG $PREFIX_ARG
+    $SCRIPT_DIR/build.sh -t "$IMAGE_NAME" $FULL_ARG --build-type $BUILD_TYPE $PREFIX_ARG
 fi
 
 if [ -z "$AWS_ACCESS_KEY_ID" ]; then
@@ -80,6 +80,18 @@ fi
 if [ -f "$APP_DIR/deploy/.cfenv" ]; then
   read -a USER_CFENV_ARGS <<<$(cat $APP_DIR/deploy/.cfenv | sed -E 's/([^=]+)=(.*)/-e \1=\2/gi')
 fi
+
+println "\n%s" "-- TEST -----------------------------------------------------------------------"
+println "Root directory:                          $ROOT_DIR"
+println "App directory:                           $APP_DIR"
+println "AWS region:                              $AWS_REGION"
+println "Prefix:                                  $PREFIX"
+println "Build type:                              $BUILD_TYPE"
+println "Build:                                   $BUILD"
+println "Full build:                              $FULL"
+println "Image name:                              $IMAGE_NAME"
+println "Lambda handler:                          $LAMBDA_HANDLER"
+println "%s\n" "--------------------------------------------------------------------------------"
 
 docker run -a stdout -t --name lambda --rm \
     -p 9000:8080 \

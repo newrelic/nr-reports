@@ -5,7 +5,6 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { RouteContext } from '../route'
 
 export const FormContext = createContext(null)
 
@@ -80,7 +79,7 @@ function FormProvider({ initFormState, children }) {
     }, [formState, setFormState, validator]),
     dangerouslyUpdateFormState = useCallback(updates => {
       setFormState({ ...formState, ...updates })
-    }, [formState, setFormState, validator]),
+    }, [formState, setFormState]),
     validateFormState = useCallback(onSuccess => {
       const result = validator.validate(formState)
 
@@ -90,7 +89,7 @@ function FormProvider({ initFormState, children }) {
       }
 
       setFormState({ ...formState, ...result })
-    }, [formState, setFormState])
+    }, [formState, setFormState, validator])
 
   validator.clear()
 

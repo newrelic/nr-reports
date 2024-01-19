@@ -20,7 +20,7 @@ while [ $# -ne 0 ]; do
             ;;
         -t)
             shift
-            if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then IMAGE_NAME=$1; shift; fi
+            if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then IMAGE_NAME=$1; shift; else err "missing image name with -t"; fi
             ;;
         -p)
             shift
@@ -28,7 +28,7 @@ while [ $# -ne 0 ]; do
             ;;
         -n)
             shift
-            if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then STACK_NAME=$1; shift; fi
+            if [ -n "$1" ] && [ ${1:0:1} != "-" ]; then STACK_NAME=$1; shift; else err "missing stack name with -n"; fi
             ;;
         *)
             err "invalid option $1"
@@ -63,7 +63,9 @@ println "App directory:                           $APP_DIR"
 println "AWS region:                              $AWS_REGION"
 println "Prefix:                                  $PREFIX"
 println "Build type:                              $BUILD_TYPE"
+println "No build:                                $NOBUILD"
 println "Stack Name:                              $STACK_NAME"
+println "Deploy stack options:                    $AWS_CF_DEPLOY_OPTS"
 println "%s\n" "--------------------------------------------------------------------------------"
 
 printf "Deploying stack $STACK_NAME...\n"

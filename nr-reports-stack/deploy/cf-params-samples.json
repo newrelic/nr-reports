@@ -9,7 +9,7 @@
     },
     {
         "ParameterKey": "RunnerECRImageTag",
-        "ParameterValue": "2.0.0"
+        "ParameterValue": "3.0.0"
     },
     {
         "ParameterKey": "RunnerFunctionName",
@@ -29,7 +29,7 @@
     },
     {
         "ParameterKey": "SchedulerECRImageTag",
-        "ParameterValue": "2.0.0"
+        "ParameterValue": "3.0.0"
     },
     {
         "ParameterKey": "ScheduleFunctionName",

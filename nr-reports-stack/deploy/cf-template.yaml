@@ -136,7 +136,7 @@ Parameters:
   #
   NRLicenseKeySecret:
     Type: String
-    Description: ARN of an AWS Secrets Manager secret containing your New Relic license key.
+    Description: ID (name or ARN) of an AWS Secrets Manager secret containing your New Relic license key.
     AllowedPattern: (^$)|(^arn:(aws[a-zA-Z-]*)?:secretsmanager:.+:\d{12}:secret:[a-zA-Z0-9/_+=\.@\-]+$)
     Default: ''
   #
