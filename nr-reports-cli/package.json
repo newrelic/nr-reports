@@ -1,21 +1,25 @@
 {
   "name": "nr-reports-cli",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "author": "sdewitt@newrelic.com",
   "description": "The New Relic Reports CLI runner.",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=14.0.0"
   },
-  "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/newrelic-experimental/nr-reports"
+    "url": "https://github.com/newrelic/nr-reports"
   },
+  "main": "index.js",
   "scripts": {
     "build": "./scripts/build.sh",
     "build-cron": "./scripts/build-cron.sh"
   },
+  "bugs": {
+    "url": "https://github.com/newrelic/nr-reports/issues"
+  },
+  "homepage": "https://github.com/newrelic/nr-reports#readme",
   "dependencies": {
     "newrelic": "^9.13.0",
     "nr-reports-core": "file:../nr-reports-core",

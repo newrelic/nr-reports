@@ -1,0 +1,82 @@
+[
+    {
+        "ParameterKey": "CustomerId",
+        "ParameterValue": "MY_CUSTOMER_ID"
+    },
+    {
+        "ParameterKey": "RunnerECRImageRepo",
+        "ParameterValue": "12345.dkr.ecr.aws_region.amazonaws.com/example-runner-repo-name"
+    },
+    {
+        "ParameterKey": "RunnerECRImageTag",
+        "ParameterValue": "3.0.0"
+    },
+    {
+        "ParameterKey": "RunnerFunctionName",
+        "ParameterValue": "MyNewRelicReportRunner"
+    },
+    {
+        "ParameterKey": "RunnerFunctionTimeout",
+        "ParameterValue": "120"
+    },
+    {
+        "ParameterKey": "RunnerFunctionMemorySize",
+        "ParameterValue": "512"
+    },
+    {
+        "ParameterKey": "SchedulerECRImageRepo",
+        "ParameterValue": "12345.dkr.ecr.aws_region.amazonaws.com/example-scheduler-repo-name"
+    },
+    {
+        "ParameterKey": "SchedulerECRImageTag",
+        "ParameterValue": "3.0.0"
+    },
+    {
+        "ParameterKey": "ScheduleFunctionName",
+        "ParameterValue": "MyNewRelicReportScheduler"
+    },
+    {
+        "ParameterKey": "ScheduleFunctionTimeout",
+        "ParameterValue": "120"
+    },
+    {
+        "ParameterKey": "ScheduleFunctionMemorySize",
+        "ParameterValue": "512"
+    },
+    {
+        "ParameterKey": "SchedulerScheduleGroupName",
+        "ParameterValue": "MyReportSchedulerGroup"
+    },
+    {
+        "ParameterKey": "NRAccountId",
+        "ParameterValue": "123456"
+    },
+    {
+        "ParameterKey": "NRLicenseKeySecret",
+        "ParameterValue": "arn:aws:secretsmanager:us-east-1:12345:secret:ABCDEF"
+    },
+    {
+        "ParameterKey": "NRLogLevel",
+        "ParameterValue": "INFO"
+    },
+    {
+        "ParameterKey": "SecretName",
+        "ParameterValue": "MyNewRelicReportsSecret"
+    },
+    {
+        "ParameterKey": "UserApiKey",
+        "ParameterValue": "NRAK-123456789ABCDEF"
+    },
+    {
+        "ParameterKey": "NerdletPackageId",
+        "ParameterValue": "11111111-2222-3333-4444-555555555555"
+    },
+    {
+        "ParameterKey": "NerdletAccountId",
+        "ParameterValue": "123456"
+    },
+    {
+        "ParameterKey": "LogLevel",
+        "ParameterValue": "INFO"
+    }
+]

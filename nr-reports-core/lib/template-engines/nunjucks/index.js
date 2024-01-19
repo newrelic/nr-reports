@@ -11,7 +11,6 @@ const logger = createLogger('nunjucks')
 
 function init(context) {
   const {
-    apiKey,
     templatePath,
   } = context
 
@@ -33,8 +32,8 @@ function init(context) {
 
   const env = nunjucks.configure(templatesPath)
 
-  env.addExtension('NrqlExtension', new NrqlExtension(apiKey))
-  env.addExtension('ChartExtension', new ChartExtension(apiKey))
+  env.addExtension('NrqlExtension', new NrqlExtension())
+  env.addExtension('ChartExtension', new ChartExtension())
   env.addExtension('DumpContextExtension', new DumpContextExtension())
 
   return env

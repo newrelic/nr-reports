@@ -1,0 +1,15 @@
+.edit-channel-screen {
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+
+    .edit-channel-form {
+        background-color: #fff;
+        display: block;
+        margin: 0;
+
+        .form-wrapper {
+            width: 100%;
+        }
+    }
+}

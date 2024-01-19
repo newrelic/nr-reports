@@ -1,0 +1,315 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for the New Relic Reports lambda.
+
+Parameters:
+  #
+  # URI of the ECR repository for the runner lambda.
+  #
+  RunnerECRImageRepo:
+    Type: String
+    Description: URI of the ECR repository for the runner lambda.
+  #
+  # ECR image tag for the runner lambda.
+  #
+  RunnerECRImageTag:
+    Type: String
+    Description: ECR image tag for the runner lambda.
+  #
+  # ARN of the execution role the runner lambda will assume to access other
+  # AWS services.
+  #
+  # Used during deployment.
+  #
+  RunnerExecRoleArn:
+    Type: String
+    Description: ARN of the execution role the runner lambda will assume to access other AWS services.
+    AllowedPattern: 'arn:(aws[a-zA-Z-]*)?:iam::\d{12}:role/?[a-zA-Z_0-9+=,.@\-_/]+'
+  #
+  # Name of the runner lambda function.
+  #
+  # Used during deployment.
+  #
+  RunnerFunctionName:
+    Type: String
+    Description: Name of the lambda function.
+    Default: RunNewRelicReport
+  #
+  # Timeout (in seconds) for the runner lambda function.
+  #
+  # Used during deployment.
+  #
+  RunnerFunctionTimeout:
+    Type: Number
+    Description: Timeout (in seconds) for the lambda function.
+    MinValue: 1
+    MaxValue: 900
+    Default: 60
+  #
+  # Memory size for the runner lambda function.
+  #
+  # Used during deployment.
+  #
+  RunnerFunctionMemorySize:
+    Type: Number
+    Description: Memory size for the lambda function.
+    MinValue: 128
+    MaxValue: 10240
+    Default: 256
+  #
+  # New Relic account ID.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  #
+  NRAccountId:
+    Type: String
+    Description: Your New Relic account ID; necessary for distributed tracing.
+    AllowedPattern: '[0-9]+'
+  #
+  # New Relic license key. Defaults to empty but either this or the
+  # NRLicenseKeySecret parameter should be specified.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # NOTE: It is not recommended to use this. Instead, specify a secret ARN via
+  # the NRLicenseKeySecret parameter.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  #
+  NRLicenseKey:
+    Type: String
+    Description: Your New Relic license key.
+    AllowedPattern: '[a-zA-Z0-9\-_]*'
+    Default: ''
+  #
+  # Name of an AWS Secrets Manager secret containing your New Relic license key.
+  # The secret must contain a 'LicenseKey' property for the license key.
+  # Defaults to empty but either this or the NRLicenseKey should be specified.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  #
+  NRLicenseKeySecret:
+    Type: String
+    Description: ID (name or ARN) of an AWS Secrets Manager secret containing your New Relic license key.
+    AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]*'
+    Default: ''
+  #
+  # Log level for the New Relic AWS lambda extension. Defaults to 'INFO'.
+  #
+  # Used at runtime by the New Relic AWS lambda extension.
+  # See https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+  #
+  NRLogLevel:
+    Type: String
+    Description: Log level for the New Relic Lamba extension.
+    Default: INFO
+    AllowedValues:
+      - INFO
+      - DEBUG
+  #
+  # Region used for AWS API calls to RDS, S3, and Secrets Manager. Defaults to
+  # 'us-east-1'.
+  #
+  #AwsRegion:
+  #  Type: String
+  #  Description: AWS region used for AWS API calls (RDS/S3/Secretmanager).
+  #  AllowedPattern: '[a-zA-Z0-9._\-]*'
+  #  Default: 'us-east-1'
+  #
+  # Name of an AWS Secrets Manager secret containing the customer secret
+  # data. This is only required when using the hosted stack. It should not be
+  # set otherwise.
+  #
+  SecretName:
+    Type: String
+    Description: ID (name or ARN) of a Secret containing the customer secret data.
+    AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]*'
+    Default: ''
+  #
+  # New Relic User API key used for GraphQL Nerdstorage queries and mutations.
+  #
+  # NOTE: It is not recommended to use this. Instead, specify a secret ARN via
+  # the UserApiKeySecret parameter.
+  #
+  UserApiKey:
+    Type: String
+    Description: The New Relic User API key to use.
+    AllowedPattern: '[a-zA-Z0-9._\-]*'
+    Default: ''
+  #
+  # Name of an AWS Secrets Manager secret containing a New Relic User API key
+  # used for GraphQL Nerdstorage queries and mutations. By default, the secret
+  # must contain a 'UserApiKey' property for the API key. A different key can
+  # be specified by the UserApiKeySecretKey parameter.
+  #
+  UserApiKeySecret:
+    Type: String
+    Description: ID (name or ARN) of a Secret containing the New Relic User API key.
+    AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]*'
+    Default: ''
+  #
+  # Key to be used for looking up the User API key in the secret specified by
+  # the UserApiKeySecret parameter. Defaults to 'UserApiKey'.
+  #
+  UserApiKeySecretKey:
+    Type: String
+    Description: Key of key/value pair containing the User API key.
+    AllowedPattern: '[a-zA-Z0-9/!\-_.*()]+'
+    Default: 'UserApiKey'
+  #
+  # Log level for the lambda functions. Note that this is separate from the
+  # NRLogLevel which specifies the level for the New Relic lambda extension.
+  # Defaults to 'INFO'.
+  #
+  LogLevel:
+    Type: String
+    Description: Log level for the lambda (not the extension).
+    Default: INFO
+    AllowedValues:
+      - INFO
+      - VERBOSE
+      - DEBUG
+  #
+  # Manifest file. If specified, this manifest file will always override any
+  # specified template name, whether in the event payload or environment
+  # variables. If a source bucket is also specified, this value will be treated
+  # as a bucket key in the source bucket and resolved against the bucket. If no
+  # source bucket is specified, this value will be resolved against the local
+  # filesystem of the running container.
+  #
+  ManifestFile:
+    Type: String
+    Description: Name of the manifest file to load.
+    Default: ''
+  #
+  # Template name. If a manifest file is specified either in the event payload
+  # or as an environment variable, this value is ignored. Otherwise, this value
+  # will be treated as the name of a template to render.  If a source bucket is
+  # also specified, this value will be treated as a bucket key in the source
+  # bucket and resolved against the bucket. If no source bucket is specified,
+  # this value will be resolved against the local filesystem of the running
+  # container. If the value includes path-like segments separated by the system
+  # path separator, the template name will be treated as a relative path and
+  # resolved against each directory in the template path. This value always
+  # overrides any dashboard GUIDs specified either in the event payload or via
+  # an environment variable.
+  #
+  TemplateName:
+    Type: String
+    Description: Name of the template to render.
+    Default: ''
+  #
+  # Template path. If a manifest file is specified either in the event payload
+  # or as an environment variable, this value is ignored. If a source bucket is
+  # specified, this value will also be ignored. Otherwise, this value will be
+  # treated as a list of additional directories to search for templates,
+  # separated by the system path separator of the underlying image OS.
+  #
+  TemplatePath:
+    Type: String
+    Description: List of directories to search for templates, separated by the system path separator.
+    Default: ''
+  #
+  # Template parameters values file. If a source bucket is also specified, this
+  # value will be treated as a bucket key in the source bucket and resolved
+  # against the bucket. If no source bucket is specified, this value will be
+  # resolved against the local filesystem of the running container. Template
+  # parameters specified in the event payload always take precedence over this.
+  #
+  ValuesFile:
+    Type: String
+    Description: Name of the values file to load.
+    Default: ''
+  #
+  # Dashboard GUIDs. If specified, a comma delimited string of dashboard entity
+  # GUIDs to render. If a manifest file or template name is specified either in
+  # the event payload or as an environment variable, this value is ignored.
+  #
+  DashboardIds:
+    Type: String
+    Description: Comma delimited list of dashboard GUIDs.
+    Default: ''
+  #
+  # Channel IDs. If specified, a comma delimited string of channel identifiers.
+  # This value is ignored if a manifest file is specified.
+  #
+  ChannelIds:
+    Type: String
+    Description: Comma delimited List of channel IDs to which report outputs are sent.
+    Default: ''
+  #
+  # S3 source bucket. If specified, template names will be resolved against
+  # this bucket. If a manifest file is specified or the default manifest file
+  # is being used because no template name was specified, the manifest file will
+  # also be resolved against this bucket. If the S3_DEST_BUCKET environment
+  # variable is not specified, also used as the destination bucket for any 's3'
+  # channels that do not specify a destination bucket.
+  #
+  S3SourceBucket:
+    Type: String
+    Description: S3 source bucket.
+    AllowedPattern: '([a-z0-9][a-z0-9.\-]+[a-z0-9])?'
+    Default: ''
+  #
+  # S3 destination bucket. This bucket is used for any 's3' channels that do not
+  # specify a destination bucket.
+  #
+  S3DestBucket:
+    Type: String
+    Description: S3 destination bucket.
+    AllowedPattern: '([a-z0-9][a-z0-9.\-]+[a-z0-9])?'
+    Default: ''
+
+Resources:
+
+  #
+  # The report runner.
+  #
+
+  NrReportRunnerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      PackageType: Image
+      Code:
+        ImageUri: !Sub ${RunnerECRImageRepo}:${RunnerECRImageTag}
+      Role: !Ref RunnerExecRoleArn
+      Description: A lambda for generating custom New Relic reports.
+      FunctionName: !Ref RunnerFunctionName
+      Timeout: !Ref RunnerFunctionTimeout
+      MemorySize: !Ref RunnerFunctionMemorySize
+      Environment:
+        Variables:
+          # New Relic Lambda Extension variables
+          # https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/account-linking/#env-var
+          NEW_RELIC_LAMBDA_HANDLER: nr-reports-lambda/lambda.handler
+          NEW_RELIC_LAMBDA_EXTENSION_ENABLED: true
+          NEW_RELIC_EXTENSION_SEND_FUNCTION_LOGS: true
+          NEW_RELIC_EXTENSION_LOG_LEVEL: !Ref NRLogLevel
+          NEW_RELIC_ACCOUNT_ID: !Ref NRAccountId
+          #
+          # By default the extension will read the license key from a secret
+          # named NEW_RELIC_LICENSE_KEY which is setup when you install the
+          # Lambda integration using the newrelic-lamda CLI. Alternately...
+          #
+          # Uncomment to specify your license key manually (not recommended)
+          #NEW_RELIC_LICENSE_KEY: !Sub ${NRLicenseKey}
+          #
+          # Name of an AWS Secrets Manager secret containing your New Relic
+          # license key. The extension will read from a secret named
+          # NEW_RELIC_LICENSE_KEY by default.
+          NEW_RELIC_LICENSE_KEY_SECRET: !Ref NRLicenseKeySecret
+
+          # Lambda environment variables
+          #AWS_REGION: !Sub ${AwsRegion}
+          SECRET_NAME: !Ref SecretName
+          USER_API_KEY: !Ref UserApiKey
+          USER_API_KEY_SECRET: !Ref UserApiKeySecret
+          USER_API_KEY_SECRET_KEY: !Ref UserApiKeySecretKey
+          LOG_LEVEL: !Ref LogLevel
+          MANIFEST_FILE: !Ref ManifestFile
+          TEMPLATE_NAME: !Ref TemplateName
+          TEMPLATE_PATH: !Ref TemplatePath
+          VALUES_FILE: !Ref ValuesFile
+          DASHBOARD_IDS: !Ref DashboardIds
+          CHANNEL_IDS: !Ref ChannelIds
+          S3_SOURCE_BUCKET: !Ref S3SourceBucket
+          S3_DEST_BUCKET: !Ref S3DestBucket

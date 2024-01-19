@@ -1,0 +1,23 @@
+.overlay {
+  .overlay-backdrop {
+    position: fixed;
+    z-index: 1040;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #000;
+    opacity: 0.2;
+  }
+
+  .overlay-content {
+    position: fixed;
+    z-index: 1050;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 6px;
+  }
+}

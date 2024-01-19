@@ -1,6 +1,6 @@
 {
   "name": "nr-reports-core",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "author": "sdewitt@newrelic.com",
   "description": "The New Relic Reports core engine.",
   "license": "Apache-2.0",
@@ -9,9 +9,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/newrelic-experimental/nr-reports"
+    "url": "https://github.com/newrelic/nr-reports"
   },
   "scripts": {},
+  "bugs": {
+    "url": "https://github.com/newrelic/nr-reports/issues"
+  },
+  "homepage": "https://github.com/newrelic/nr-reports#readme",
   "dependencies": {
     "aws-sdk": "^2.1340.0",
     "csv-stringify": "^6.3.0",

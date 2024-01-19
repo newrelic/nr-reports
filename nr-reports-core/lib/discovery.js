@@ -1,24 +1,66 @@
 'use strict'
 
 const path = require('path'),
-  { getChannelDefaults } = require('./channels'),
+  { getChannelDefaults: getPublisherChannelDefaults } = require('./channels'),
   { createLogger, logTrace } = require('./logger'),
   {
     DEFAULT_CHANNEL,
     loadFile,
-    parseManifest,
+    normalizeManifest,
     parseJaml,
     getOption,
     requireAccountId,
+    splitStringAndTrim,
+    isUndefined,
+    makeChannel,
   } = require('./util'),
   {
     getS3ObjectAsString,
-  } = require('./aws-util')
+  } = require('./aws-util'),
+  {
+    CHANNEL_IDS_OPTION,
+    CHANNEL_IDS_VAR,
+    MANIFEST_FILE_PATH_OPTION,
+    MANIFEST_FILE_PATH_VAR,
+    REPORT_IDS_OPTION,
+    REPORT_IDS_VAR,
+    DEFAULT_MANIFEST_FILE_NAME,
+    TEMPLATE_NAME_OPTION,
+    TEMPLATE_NAME_VAR,
+    VALUES_FILE_PATH_OPTION,
+    VALUES_FILE_PATH_VAR,
+    OUTPUT_FILE_NAME_OPTION,
+    NO_RENDER_OPTION,
+    DASHBOARD_IDS_OPTION,
+    DASHBOARD_IDS_VAR,
+    DEFAULT_DASHBOARD_REPORT_ID,
+    COMBINE_PDFS_KEY,
+    NRQL_QUERY_OPTION,
+    NRQL_QUERY_VAR,
+    DEFAULT_QUERY_REPORT_ID,
+    DEFAULT_MANIFEST_FILE_PATH,
+    S3_SOURCE_BUCKET_KEY,
+    S3_SOURCE_BUCKET_VAR,
+    SOURCE_NERDLET_ID_OPTION,
+    SOURCE_NERDLET_ID_VAR,
+    MANIFESTS_COLLECTION_NAME,
+    DEFAULT_PUBLISH_CONFIG_ID,
+  } = require('./constants')
+
+const { NerdstorageClient } = require('./nerdstorage')
 
 const logger = createLogger('discovery')
 
-function makeChannel(type, options) {
-  return getChannelDefaults(type || DEFAULT_CHANNEL, options)
+function getChannelDefaults(type, options) {
+  return getPublisherChannelDefaults(type || DEFAULT_CHANNEL, options)
+}
+
+function makeDefaultChannel(id, type, options) {
+  return makeChannel(
+    id,
+    type,
+    getChannelDefaults(type, options),
+  )
 }
 
 function parseChannels(options, channels) {
@@ -26,8 +68,8 @@ function parseChannels(options, channels) {
     log({ channels }, 'Parsing channels:')
   })
 
-  const data = channels.split(/[\s]*,[\s]*/u).map(
-    type => makeChannel(type, options),
+  const data = splitStringAndTrim(channels).map(
+    (type, index) => makeDefaultChannel(`${type}.${index}`, type, options),
   )
 
   logTrace(logger, log => {
@@ -38,44 +80,61 @@ function parseChannels(options, channels) {
 }
 
 function getChannels(defaultChannelType, options) {
-  const channels = getOption(options, 'channelIds', 'CHANNEL_IDS')
+  const channels = getOption(options, CHANNEL_IDS_OPTION, CHANNEL_IDS_VAR)
 
   if (!channels) {
-    return [makeChannel(defaultChannelType, options)]
-  }
-
-  if (Array.isArray(channels)) {
-    return channels.length === 0 ? (
-      [makeChannel(defaultChannelType, options)]
-    ) : channels
+    return [makeDefaultChannel(defaultChannelType, defaultChannelType, options)]
   }
 
   const data = parseChannels(options, channels)
 
-  return data.length !== 0 ? data : [makeChannel(defaultChannelType, options)]
+  return data.length !== 0 ? data : (
+    [makeDefaultChannel(defaultChannelType, defaultChannelType, options)]
+  )
 }
 
-async function loadManifest(
-  fileLoader,
-  manifestFile,
-  defaultChannel,
-  values,
+function prepareManifest(
+  options,
+  data,
+  defaultChannelType,
+  params,
   extras,
 ) {
-  const manifest = parseManifest(
-    manifestFile,
-    await fileLoader(manifestFile),
-    defaultChannel,
-  )
+  const manifest = normalizeManifest(
+      data,
+      defaultChannelType,
+      getChannelDefaults(defaultChannelType, options),
+    ),
+    reportIdsOpt = getOption(options, REPORT_IDS_OPTION, REPORT_IDS_VAR)
 
-  manifest.reports = manifest.reports.map(report => {
+  if (reportIdsOpt) {
+    logger.trace(`Found report ids ${reportIdsOpt}.`)
+
+    const reportIds = splitStringAndTrim(reportIdsOpt)
+
+    manifest.reports = manifest.reports.filter(
+      r => reportIds.includes(r.id),
+    )
+  }
+
+  manifest.reports = manifest.reports.filter((report, index) => {
+    const enabled = isUndefined(report.enabled) || report.enabled
+
+    if (!enabled) {
+      const reportName = report.name || report.id || index
+
+      logger.trace(`Excluding ${reportName} because it is not enabled.`)
+    }
+
+    return enabled
+  }).map(report => {
     if (report.templateName) {
-      if (values && values[report.name]) {
+      if (params && params[report.id]) {
         return {
           ...report,
           parameters: {
             ...report.parameters,
-            ...values[report.name],
+            ...params[report.id],
           },
           ...extras,
         }
@@ -92,18 +151,73 @@ async function loadManifest(
   return manifest
 }
 
-async function discoverReportsHelper(
+async function loadManifest(
   options,
-  values,
   fileLoader,
-  defaultChannel,
+  manifestFile,
+  defaultChannelType,
+  params,
+  extras,
+) {
+  return prepareManifest(
+    options,
+    parseJaml(manifestFile, await fileLoader(manifestFile)),
+    defaultChannelType,
+    params,
+    extras,
+  )
+}
+
+async function loadManifestFromNerdstorage(
+  context,
+  options,
+  params,
+  nerdletPackageId,
+) {
+  const accountId = requireAccountId(context),
+    manifestFile = getOption(
+      options,
+      MANIFEST_FILE_PATH_OPTION,
+      MANIFEST_FILE_PATH_VAR,
+      DEFAULT_MANIFEST_FILE_NAME,
+    ),
+    nerdstorage = new NerdstorageClient(
+      context.secrets.apiKey,
+      nerdletPackageId,
+      accountId,
+    )
+
+  logger.trace(`Loading manifest ${manifestFile} from nerdstorage.`)
+
+  const doc = await nerdstorage.readDocument(
+    MANIFESTS_COLLECTION_NAME,
+    manifestFile,
+  )
+
+  if (!doc) {
+    throw new Error(`Document with ID ${manifestFile} does not exist in nerdstorage for nerdlet ${nerdletPackageId}.`)
+  }
+
+  return prepareManifest(
+    options,
+    doc,
+    context.defaultChannelType,
+    params,
+  )
+}
+
+async function discoverReportsHelper(
+  context,
+  options,
+  params,
+  fileLoader,
   defaultChannelType,
   extras,
 ) {
   const manifestFile = getOption(
     options,
-    'manifestFilePath',
-    'MANIFEST_FILE_PATH',
+    MANIFEST_FILE_PATH_OPTION,
+    MANIFEST_FILE_PATH_VAR,
   )
 
   // Name of manifest file
@@ -111,31 +225,38 @@ async function discoverReportsHelper(
     logger.trace(`Found manifest file ${manifestFile}.`)
 
     return await loadManifest(
+      options,
       fileLoader,
       manifestFile,
-      defaultChannel,
-      values,
+      defaultChannelType,
+      params,
       extras,
     )
   }
 
-  const templateName = getOption(options, 'templateName', 'TEMPLATE_NAME')
+  const templateName = getOption(
+    options,
+    TEMPLATE_NAME_OPTION,
+    TEMPLATE_NAME_VAR,
+  )
 
   // Name of template file
   if (templateName) {
     logger.trace(`Found template name ${templateName}.`)
 
-    const valuesFile = getOption(options, 'valuesFilePath', 'VALUES_FILE_PATH'),
+    const valuesFile = getOption(
+        options,
+        VALUES_FILE_PATH_OPTION,
+        VALUES_FILE_PATH_VAR,
+      ),
       channels = getChannels(defaultChannelType, options),
-      reportName = path.parse(templateName).name,
-      outputFileName = getOption(options, 'outputFileName'),
-      noRender = getOption(options, 'noRender', null, false)
+      reportId = path.parse(templateName).name,
+      outputFileName = getOption(options, OUTPUT_FILE_NAME_OPTION),
+      noRender = getOption(options, NO_RENDER_OPTION, null, false)
 
     if (valuesFile) {
 
-      // Do not allow values file to override options
-      // eslint-disable-next-line no-unused-vars
-      const { options: ignore, ...rest } = parseJaml(
+      const valuesFileParams = parseJaml(
         valuesFile,
         await fileLoader(valuesFile),
       )
@@ -144,12 +265,17 @@ async function discoverReportsHelper(
         config: {},
         variables: {},
         reports: [{
-          name: reportName,
+          id: reportId,
           templateName,
           render: !noRender,
           outputFileName,
-          parameters: { ...rest, ...values },
-          channels,
+          parameters: { ...valuesFileParams, ...params },
+          publishConfigs: [
+            {
+              id: DEFAULT_PUBLISH_CONFIG_ID,
+              channels,
+            },
+          ],
           ...extras,
         }],
       }
@@ -159,26 +285,35 @@ async function discoverReportsHelper(
       config: {},
       variables: {},
       reports: [{
-        name: reportName,
+        id: reportId,
         templateName,
         render: !noRender,
         outputFileName,
-        parameters: values || {},
-        channels,
+        parameters: params || {},
+        publishConfigs: [
+          {
+            id: DEFAULT_PUBLISH_CONFIG_ID,
+            channels,
+          },
+        ],
         ...extras,
       }],
     }
   }
 
-  const dashboards = getOption(options, 'dashboardIds', 'DASHBOARD_IDS'),
-    combinePdfs = getOption(options, "combinePdfs")
+  const dashboards = getOption(
+      options,
+      DASHBOARD_IDS_OPTION,
+      DASHBOARD_IDS_VAR,
+    ),
+    combinePdfs = getOption(options, COMBINE_PDFS_KEY)
 
   // Array or comma-delimited list of dashboard GUIDs
   if (dashboards) {
     logger.trace(`Found dashboards ${dashboards}.`)
 
     const dashboardGuids = (
-        Array.isArray(dashboards) ? dashboards : dashboards.split(/[\s]*,[\s]*/u)
+        Array.isArray(dashboards) ? dashboards : splitStringAndTrim(dashboards)
       ),
       channels = getChannels(defaultChannelType, options)
 
@@ -186,34 +321,42 @@ async function discoverReportsHelper(
       config: {},
       variables: {},
       reports: [{
-        name: 'dashboard-report',
+        id: DEFAULT_DASHBOARD_REPORT_ID,
         dashboards: dashboardGuids,
         combinePdfs,
-        channels,
+        publishConfigs: [
+          {
+            id: DEFAULT_PUBLISH_CONFIG_ID,
+            channels,
+          },
+        ],
         ...extras,
       }],
     }
   }
 
-  const query = getOption(options, 'nrqlQuery', 'NRQL_QUERY')
+  const query = getOption(options, NRQL_QUERY_OPTION, NRQL_QUERY_VAR)
 
   // NRQL query
   if (query) {
     logger.trace(`Found query ${query}.`)
 
-    const accountId = requireAccountId(options),
-      channels = getChannels(defaultChannelType, options),
-      outputFileName = getOption(options, 'outputFileName')
+    const channels = getChannels(defaultChannelType, options),
+      outputFileName = getOption(options, OUTPUT_FILE_NAME_OPTION)
 
     return {
       config: {},
       variables: {},
       reports: [{
-        name: 'query-report',
-        accountId,
+        id: DEFAULT_QUERY_REPORT_ID,
         query,
         outputFileName,
-        channels,
+        publishConfigs: [
+          {
+            id: DEFAULT_PUBLISH_CONFIG_ID,
+            channels,
+          },
+        ],
         ...extras,
       }],
     }
@@ -223,34 +366,41 @@ async function discoverReportsHelper(
 
   // Try to load a default manifest from local storage
   return await loadManifest(
+    options,
     async filePath => await loadFile(filePath),
-    'include/manifest.json',
-    defaultChannel,
-    values,
+    DEFAULT_MANIFEST_FILE_PATH,
+    defaultChannelType,
+    params,
     extras,
   )
 }
 
-async function discoverReports(args, defaultChannelType) {
-  if (Array.isArray(args)) {
-    logger.trace('Args is an array of reports.')
-    return args
+async function discoverReports(context, options, params) {
+  if (Array.isArray(options)) {
+    logger.trace('Options object is an array of reports.')
+
+    return prepareManifest(
+      {},
+      options,
+      context.defaultChannelType,
+      params,
+    )
   }
 
-  const {
-      options,
-      ...values
-    } = args,
-    sourceBucket = getOption(options, 'sourceBucket', 'S3_SOURCE_BUCKET')
+  const sourceBucket = getOption(
+    options,
+    S3_SOURCE_BUCKET_KEY,
+    S3_SOURCE_BUCKET_VAR,
+  )
 
   if (sourceBucket) {
     logger.trace(`Found sourceBucket ${sourceBucket}.`)
 
     return await discoverReportsHelper(
+      context,
       options,
-      values,
+      params,
       async filePath => await getS3ObjectAsString(sourceBucket, filePath),
-      () => makeChannel('s3', options),
       's3',
       { S3Bucket: sourceBucket },
     )
@@ -258,12 +408,31 @@ async function discoverReports(args, defaultChannelType) {
 
   logger.trace('No sourceBucket found.')
 
+  const sourceNerdletId = getOption(
+    context.secrets,
+    SOURCE_NERDLET_ID_OPTION,
+    SOURCE_NERDLET_ID_VAR,
+  )
+
+  if (sourceNerdletId) {
+    logger.trace(`Found sourceNerdletId ${sourceNerdletId}.`)
+
+    return await loadManifestFromNerdstorage(
+      context,
+      options,
+      params,
+      sourceNerdletId,
+    )
+  }
+
+  logger.trace('No sourceNerdletId found.')
+
   return await discoverReportsHelper(
+    context,
     options,
-    values,
+    params,
     async filePath => await loadFile(filePath),
-    () => makeChannel(defaultChannelType, options),
-    defaultChannelType,
+    context.defaultChannelType,
   )
 }
 

@@ -5,7 +5,7 @@ const nunjucks = require('nunjucks'),
   {
     NerdgraphClient,
   } = require('../../../nerdgraph'),
-  { Context, requireAccountIds } = require('../../../util')
+  { requireAccountIds, makeContext } = require('../../../util')
 
 const logger = createLogger('nrql-extension')
 
@@ -22,9 +22,8 @@ function handleError(context, err, errorBody, callback) {
   callback(null, new nunjucks.runtime.SafeString(`Query failed: ${err}`))
 }
 
-function NrqlExtension(apiKey) {
+function NrqlExtension() {
   this.tags = ['nrql']
-  this.apiKey = apiKey
 
   this.parse = function(parser, nodes, lexer) {
 
@@ -89,7 +88,7 @@ function NrqlExtension(apiKey) {
       context.setVariable(options.var || 'result', null)
 
       const vars = context.getVariables(),
-        newContext = new Context(vars, options),
+        newContext = makeContext(vars, options),
         accountIds = requireAccountIds(newContext),
         nerdgraph = new NerdgraphClient()
 
@@ -98,7 +97,7 @@ function NrqlExtension(apiKey) {
       })
 
       const result = await nerdgraph.runNrql(
-        this.apiKey,
+        newContext.secrets.apiKey,
         accountIds,
         env.renderString(query, newContext),
         {

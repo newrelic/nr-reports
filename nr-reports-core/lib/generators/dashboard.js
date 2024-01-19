@@ -85,7 +85,7 @@ async function generateDashboardReport(
     logger.trace(`Running dashboard report for dashboards [${dashboards}]...`)
 
     const promises = dashboards.map(async dashboard => (
-        await downloadDashboardPdf(context.apiKey, dashboard, tempDir)
+        await downloadDashboardPdf(context.secrets.apiKey, dashboard, tempDir)
       )),
       dashboardPdfs = await Promise.all(promises)
 

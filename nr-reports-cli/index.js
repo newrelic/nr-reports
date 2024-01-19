@@ -18,7 +18,9 @@ const yargs = require('yargs/yargs'),
   } = require('nr-reports-core')
 
 const DEFAULT_DELAY_TIMEOUT_MS = 10000,
-  logger = rootLogger
+  logger = rootLogger,
+  runnerId = getEnv('APP_NAME', 'nr-reports-cli'),
+  runnerVersion = getEnv('APP_VERSION', '<unknown>')
 
 function configureLogger(argv) {
   const logLevel = trimStringAndLower(getEnv('LOG_LEVEL', DEFAULT_LOG_LEVEL)),
@@ -38,7 +40,7 @@ function configureOptions() {
   y.wrap(y.terminalWidth())
     .usage(`Usage:
 
-$0 -f <manifest-file>
+$0 -f <manifest-file> [-r <report-ids>] [-u <publish-config-ids>]
 $0 -n <name> [-v <values-file>] [-p <template-path>] [-c <channel-ids>] [-o <output-file>] [--skip-render] [--full-chrome]
 $0 -d <dashboard-ids> [-c <channel-ids>]
 $0 -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
@@ -60,6 +62,8 @@ attempt to load a manifest file at the path "include/manifest.json".
 Refer to the "Options" section or documentation for additional options and
 details.`)
     .example('$0 -f manifest-file.json', 'run reports defined in manifest-file.json')
+    .example('$0 -f manifest-file.json -r hello-world,dashboards', 'run the reports named hello-world and dashboards defined in manifest-file.json')
+    .example('$0 -f manifest-file.json -p send-email,upload-s3', 'run the reports defined in manifest-file.json and use the first publish configuration that matches the IDs send-email, upload-s3, or default')
     .example('$0 -n template.html', 'run a template report using the template named template.html')
     .example('$0 -n template.html -v values.json', 'run a template report using the template named template.html with template parameters from the file values.json')
     .example('$0 -n template.html --skip-render -c email,s3', 'run a template report using the template named template.html but do not render it as a PDF and publish output to email and s3 channels')
@@ -71,12 +75,26 @@ details.`)
 
     The \`MANIFEST_FILE_PATH\` environment variable may also be used to specify a manifest file. If both are specified, the \`-f\` option takes precedence.
     `,
+    }).option('r', {
+      alias: 'report-name',
+      type: 'string',
+      describe: `Run only the reports with report names listed in <report-names>. Takes precedence over \`-n\`, \`-d\`, and \`-q\` and their corresponding environment variables. Ignored if a manifest file is not specified.
+
+    The \`REPORT_NAMES\` environment variable may also be used to specify report names. If both are specified, the \`-r\` option takes precedence.
+    `,
+    }).option('u', {
+      alias: 'publish-config-ids',
+      type: 'string',
+      describe: `Publish report outputs using the first publish configuration with an ID that matches an ID in the list <publish-config-ids> for each report. If no match is found the publish configuration with the ID \`default\` is used. Ignored if a manifest file is not specified.
+
+    The \`PUBLISH_CONFIG_IDS\` environment variable may also be used to specify publish configuration ids. If both are specified, the \`-u\` option takes precedence.
+    `,
     })
     .option('n', {
       alias: 'template-name',
       type: 'string',
       describe: `Run a template report using the template named \`<name>\`. Takes precedence over \`-d\` and \`-a\` and their corresponding environment variables. Ignored if a manifest file is specified.
-     
+
     The \`TEMPLATE_NAME\` environment variable may also be used to specify a template name. If both are specified, the \`-n\` option takes precedence.
   `,
     })
@@ -85,28 +103,28 @@ details.`)
       type: 'string',
       describe: `Use the template parameters defined in \`<values-file>\` when running a template report.
 
-    The \`VALUES_FILE_PATH\` environment variable may also be used to specify a values file.      
+    The \`VALUES_FILE_PATH\` environment variable may also be used to specify a values file.
   `,
     })
     .option('p', {
       alias: 'template-path',
       type: 'string',
       describe: `Include paths in \`<template-path>\` on the template search path when running a template report. Multiple paths are separated by the OS path separator character.
-      
+
     The \`TEMPLATE_PATH\` environment variable may also be used to specify the template search path.
   `,
     })
     .boolean('skip-render')
     .default('skip-render', false)
     .describe('skip-render', `Skip template rendering when running a template report.
-    
+
     When specified, the raw output of the template report will be passed through to the channels. The engine will not launch a headless Chrome instance and will not render a PDF using the browser.
   `)
     .option('d', {
       alias: 'dashboard-ids',
       type: 'string',
       describe: `Run a dashboard report with the dashboard GUIDs listed in \`<dashboard-ids>\`. Dashboard GUIDs are separated by commas. Takes precedence over \`-q\`. Ignored if a manifest file or a template name is specified.
-      
+
     The \`DASHBOARD_IDS\` environment variable may also be used to specify the dashboard GUIDs. If both are specified, the \`-d\` option takes precedence.
   `,
     })
@@ -114,7 +132,7 @@ details.`)
       alias: 'nrql-query',
       type: 'string',
       describe: `Run a query report with the NRQL query \`<nrql-query>\`. Requires \`-a\`. Ignored if a manifest file, template name, or a dashboard GUID string is specified.
-      
+
     The \`NRQL_QUERY\` environment variable may also be used to specify the a NRQL query. If both are specified, the \`-q\` option takes precedence.
   `,
     })
@@ -147,14 +165,26 @@ details.`)
   return y
 }
 
-function getApiKey() {
+function getSecretData(accountId) {
   const apiKey = getEnv('NEW_RELIC_API_KEY')
 
   if (!apiKey) {
     throw Error('No api key found in NEW_RELIC_API_KEY')
   }
 
-  return apiKey
+  // This is done so we don't accidentally expose the context.secrets
+  // info when dumping the context to a log or to the screen. The properties
+  // have to explicitly be referenced in code. Otherwise, something like
+  // [apiKey getter] will be shown, not the value behind it.
+
+  return {
+    get apiKey() {
+      return apiKey
+    },
+    get accountId() {
+      return accountId
+    },
+  }
 }
 
 function processPendingData() {
@@ -181,8 +211,24 @@ async function main() {
 
   configureLogger(argv)
 
-  const engine = new Engine(
-      getApiKey(),
+  const options = {
+      manifestFilePath: argv.f,
+      reportIds: argv.r,
+      publishConfigIds: argv.u,
+      templateName: argv.n,
+      templatePath: argv.p,
+      valuesFilePath: argv.v,
+      dashboardIds: argv.d,
+      channelIds: argv.c,
+      nrqlQuery: argv.q,
+      outputFileName: argv.o,
+      noRender: argv.skipRender,
+    },
+    engine = new Engine(
+      newrelic,
+      runnerId,
+      runnerVersion,
+      getSecretData(argv.a),
       DEFAULT_CHANNEL,
       {
         getPuppetArgs: async () => ({
@@ -199,24 +245,9 @@ async function main() {
           }
         },
       },
-    ),
-    values = {
-      options: {
-        manifestFilePath: argv.f,
-        templateName: argv.n,
-        templatePath: argv.p,
-        valuesFilePath: argv.v,
-        dashboardIds: argv.d,
-        channelIds: argv.c,
-        accountId: argv.a,
-        nrqlQuery: argv.q,
-        outputFileName: argv.o,
-        noRender: argv.skipRender,
-        // sourceBucket: null, // TODO
-      },
-    }
+    )
 
-  await engine.run(values)
+  await engine.run(options)
 
   logger.trace('Recording job status...')
 
@@ -224,7 +255,12 @@ async function main() {
     'NrReportsStatus',
     {
       error: false,
-      ...values.options,
+      runnerId,
+      runnerVersion,
+      reportIds: options.reportIds,
+      publishConfigIds: options.publishConfigIds,
+      dashboardIds: options.dashboardIds,
+      channelIds: options.channelIds,
     },
   )
 }
@@ -249,6 +285,8 @@ newrelic.startBackgroundTransaction(
           'NrReportsStatus',
           {
             error: true,
+            runnerId,
+            runnerVersion,
             message: err.message,
           },
         )

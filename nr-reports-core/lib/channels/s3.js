@@ -11,8 +11,18 @@ const fs = require('fs'),
     S3_SOURCE_BUCKET_KEY,
   } = require('../constants')
 
-async function uploadToS3(context, manifest, report, channelConfig, output) {
-  const bucket = context.get(S3_DEST_BUCKET_KEY, S3_DEST_BUCKET_VAR)
+async function uploadToS3(
+  context,
+  manifest,
+  report,
+  publishConfig,
+  channelConfig,
+  output,
+) {
+  const bucket = context.getWithEnvNs(
+    S3_DEST_BUCKET_KEY,
+    S3_DEST_BUCKET_VAR,
+  )
 
   /*
    * If the output is already a file output, just upload it to the s3 bucket.

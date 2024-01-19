@@ -1,7 +1,7 @@
 'use strict'
 
 const fetch = require('node-fetch'),
-  { raiseForStatus, getEnv } = require('../util'),
+  { raiseForStatus, getEnvNs } = require('../util'),
   { SLACK_WEBHOOK_URL } = require('../constants'),
   { createLogger, logTrace } = require('../logger')
 
@@ -84,7 +84,15 @@ async function buildMessage(context, report, channelConfig, output) {
   })
 }
 
-async function postToSlack(context, manifest, report, channelConfig, output) {
+async function postToSlack(
+  context,
+  manifest,
+  report,
+  publishConfig,
+  channelConfig,
+  output,
+) {
+  const reportName = report.name || report.id
 
   /*
    * This channel only supports Slack webhooks, not the API. Files can not be
@@ -92,7 +100,7 @@ async function postToSlack(context, manifest, report, channelConfig, output) {
    */
   if (output.isFile()) {
     logger.warn(
-      `Skipping output for report ${report.name} because Slack webhook does not support file attachments.`,
+      `Skipping output for report ${reportName} because Slack webhook does not support file attachments.`,
     )
     return
   }
@@ -101,10 +109,10 @@ async function postToSlack(context, manifest, report, channelConfig, output) {
    * Check to ensure we have a Slack webhook URL. We only support getting this
    * from the environment because it has a key in it.
    */
-  const webhookUrl = getEnv(SLACK_WEBHOOK_URL)
+  const webhookUrl = getEnvNs(context, SLACK_WEBHOOK_URL)
 
   if (!webhookUrl) {
-    throw new Error('Missing Slack webhook URL')
+    throw new Error(`Missing Slack webhook URL for report ${reportName}.`)
   }
 
   /*

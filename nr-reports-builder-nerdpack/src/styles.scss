@@ -1,0 +1,28 @@
+@import '~@newrelic/nr-labs-components/dist/styles.css';
+@import './components/styles.scss';
+
+.report-builder {
+  background-color: #F3F4F4;
+  height: calc(100% - 16px);
+  margin-bottom: 0px;
+  padding: 8px;
+
+  .navigation {
+    padding: 10px;
+    border-right: 1px solid $unknown;
+  }
+
+  .report-builder-container {
+    height: 100%;
+  }
+}
+
+.nr1-form-field {
+  &[class*="split"] {
+    margin-bottom: 4px;
+  }
+
+  & > div {
+    margin-bottom: 4px;
+  }
+}

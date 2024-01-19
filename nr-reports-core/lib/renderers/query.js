@@ -5,6 +5,10 @@ const { getOption, buildCsv } = require('../util'),
   {
     FILE_TEMPLATE_NAME_KEY,
     FILE_TEMPLATE_VAR,
+    QUERY_RESULTS_FORMAT_KEY,
+    QUERY_RESULTS_FORMAT_VAR,
+    QUERY_RESULTS_FORMAT_DEFAULT,
+    QUERY_RESULTS_FORMAT_JSON,
   } = require('../constants')
 
 async function render(
@@ -37,9 +41,28 @@ async function render(
     }
 
     /*
-     * Columns and rows were set by the query generator so generate a CSV by
-     * default
+     * Columns and rows were set by the query generator. Use the resultsFormat
+     * channel configuration parameter to determine what to generate.
      */
+
+    const resultsFormat = getOption(
+      channelConfig,
+      QUERY_RESULTS_FORMAT_KEY,
+      QUERY_RESULTS_FORMAT_VAR,
+      QUERY_RESULTS_FORMAT_DEFAULT,
+    )
+
+    if (resultsFormat.toLowerCase() === QUERY_RESULTS_FORMAT_JSON) {
+      return JSON.stringify(
+        output.data.rows.map(row => (
+          output.data.columns.reduce((accum, col) => {
+            accum[col] = row[col] ? row[col] : null
+            return accum
+          }, {})
+        )),
+      )
+    }
+
     return buildCsv(output.data.columns, output.data.rows)
   }
 

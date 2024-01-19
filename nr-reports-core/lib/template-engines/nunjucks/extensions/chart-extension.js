@@ -5,7 +5,7 @@ const nunjucks = require('nunjucks'),
   {
     NerdgraphClient,
   } = require('../../../nerdgraph'),
-  { Context, requireAccountId, toNumber } = require('../../../util')
+  { requireAccountId, toNumber, makeContext } = require('../../../util')
 
 const logger = createLogger('chart-extension')
 
@@ -22,9 +22,8 @@ function handleError(context, err, errorBody, callback) {
   callback(null, new nunjucks.runtime.SafeString('This chart could not be displayed.'))
 }
 
-function ChartExtension(apiKey) {
+function ChartExtension() {
   this.tags = ['chart']
-  this.apiKey = apiKey
 
   this.parse = function(parser, nodes, lexer) {
 
@@ -89,7 +88,7 @@ function ChartExtension(apiKey) {
       context.setVariable(options.var || 'chartUrl', null)
 
       const vars = context.getVariables(),
-        newContext = new Context(vars, options),
+        newContext = makeContext(vars, options),
         accountId = requireAccountId(newContext),
         chartOptions = {
           type: options.type,
@@ -104,7 +103,7 @@ function ChartExtension(apiKey) {
       })
 
       const result = await nerdgraph.getShareableChartUrl(
-        this.apiKey,
+        newContext.secrets.apiKey,
         accountId,
         env.renderString(query, newContext),
         chartOptions,

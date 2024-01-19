@@ -50,7 +50,7 @@ function setLogLevel(logger, level) {
 }
 
 function obfuscate(obj, level = 0) {
-  if (level > 2) {
+  if (level > 3) {
     return Array.isArray(obj) ? (
       `[array],length:${obj.length} (max depth exceeded)`
     ) : (
@@ -63,7 +63,7 @@ function obfuscate(obj, level = 0) {
   Object.getOwnPropertyNames(obj).forEach(prop => {
     const type = typeof obj[prop]
 
-    if (/key|token|password/iu.test(prop)) {
+    if (/newrelic|browser|key|token|password|secret|account|user|pass|pwd/iu.test(prop)) {
       objPrime[prop] = '[REDACTED]'
       return
     }
