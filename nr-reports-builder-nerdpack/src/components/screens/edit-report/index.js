@@ -33,6 +33,7 @@ import {
 } from '../../validations'
 import {
   clone,
+  currentMillis,
 } from '../../../utils'
 import {
   SYMBOLS,
@@ -66,7 +67,7 @@ function reportFromFormState(formState) {
     id: formState.id,
     name: formState.name,
     enabled: formState.enabled,
-    lastModifiedDate: new Date().getTime(),
+    lastModifiedDate: currentMillis(),
     schedule: formState.schedule,
     publishConfigs: formState.publishConfigs,
     metadata: formState.metadata,

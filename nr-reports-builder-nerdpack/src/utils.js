@@ -209,6 +209,10 @@ export function generateRandomString(len) {
   return chars
 }
 
+export function currentMillis() {
+  return new Date().getTime()
+}
+
 export function formatDateTimeForMillis(millis) {
   const date = new Date(millis)
 
