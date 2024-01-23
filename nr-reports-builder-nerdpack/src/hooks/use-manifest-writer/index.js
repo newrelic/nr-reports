@@ -1,6 +1,12 @@
 import { useCallback, useContext } from 'react'
 import { StorageContext } from '../../contexts'
-import { clone, resolveChannel, resolvePublishConfig, sortByNumber } from '../../utils'
+import {
+  clone,
+  currentMillis,
+  resolveChannel,
+  resolvePublishConfig,
+  sortByNumber,
+} from '../../utils'
 
 function copyMetadata(metadata) {
   // Clone the existing metadata or create a new one with the dates zeroed out
@@ -13,7 +19,7 @@ function copyMetadata(metadata) {
 
   // Update the last modified date to right now.
 
-  metadataCopy.lastModifiedDate = new Date().getTime()
+  metadataCopy.lastModifiedDate = currentMillis()
 
   return metadataCopy
 }
@@ -28,10 +34,11 @@ function copyMetadata(metadata) {
 // cloned them).
 
 function rebuildChannels(newPublishConfig, newChannels) {
-  const { channels: publishConfigChannels } = newPublishConfig
+  const { channels: publishConfigChannels } = newPublishConfig,
+    updatedChannelIds = []
 
   if (!publishConfigChannels || publishConfigChannels.length === 0) {
-    return
+    return null
   }
 
   publishConfigChannels.forEach((channel, index) => {
@@ -59,7 +66,10 @@ function rebuildChannels(newPublishConfig, newChannels) {
 
     // If this is an update to an existing channel, its id property will match
     // one in the meta channels.  If this is the case, update the channel in the
-    // meta channels and set the report channel back to a ref.
+    // meta channels and set the report channel back to a ref. Also record the
+    // channel ID that is changing so that all reports that reference it,
+    // vis-a-vis publish configurations can have their last modified timestamps
+    // properly updated.
 
     const jindex = newChannels.findIndex(c => {
       return c.id === channel.id
@@ -68,6 +78,7 @@ function rebuildChannels(newPublishConfig, newChannels) {
     if (jindex >= 0) {
       newChannels[jindex] = channel
       newPublishConfig.channels[index] = { ref: channel.id }
+      updatedChannelIds.push(channel.id)
       return
     }
 
@@ -77,29 +88,28 @@ function rebuildChannels(newPublishConfig, newChannels) {
     newChannels.push(channel)
     newPublishConfig.channels[index] = { ref: channel.id }
   })
+
+  return updatedChannelIds
 }
 
 // Rebuild the publish configs for a report and the meta publish configs by
 // scanning the report for new/updated configs and adding or updating those
 // in the meta publish configs and replacing them with refs in the report.
 
-function rebuildPublishConfigs(report, publishConfigs, channels) {
-  // Note that the publishConfigs parameter in this context is actually the
-  // publishConfigs property of the meta publish configs, i.e.
-  // metaPublishConfigs.publishConfigs. Likewise, channels is actually
-  // metaChannels.channels.
+function rebuildPublishConfigs(report, metaPublishConfigs, metaChannels) {
+  const { publishConfigs } = report
 
-  const { publishConfigs: reportPublishConfigs } = report
-
-  if (!reportPublishConfigs || reportPublishConfigs.length === 0) {
-    return { newReport: null, newPublishConfigs: null, newChannels: null }
+  if (!publishConfigs || publishConfigs.length === 0) {
+    return null
   }
 
   const newReport = clone(report),
-    newPublishConfigs = clone(publishConfigs),
-    newChannels = clone(channels)
+    newPublishConfigs = clone(metaPublishConfigs.publishConfigs),
+    newChannels = clone(metaChannels.channels),
+    updatedConfigIds = [],
+    updatedChannelIds = []
 
-  reportPublishConfigs.forEach((publishConfig, index) => {
+  publishConfigs.forEach((publishConfig, index) => {
     // When an existing publish config is edited from a report, it is saved
     // back to the report but not as a ref. We can tell by checking the config
     // for a ref property.
@@ -108,9 +118,7 @@ function rebuildPublishConfigs(report, publishConfigs, channels) {
     // just verify the reference and return.
 
     if (publishConfig.ref) {
-      const jindex = newPublishConfigs.find(
-        pc => pc.id === publishConfig.ref
-      )
+      const jindex = newPublishConfigs.find(pc => pc.id === publishConfig.ref)
 
       if (jindex === -1) {
         throw new Error(`Missing publish config ${publishConfig.ref}`)
@@ -129,7 +137,11 @@ function rebuildPublishConfigs(report, publishConfigs, channels) {
     // newChannels. Both the publishConfig and newChannels could be modified as
     // side effects of this call.
 
-    rebuildChannels(newPublishConfig, newChannels)
+    const updChannelIds = rebuildChannels(newPublishConfig, newChannels)
+
+    if (updChannelIds && updChannelIds.length > 0) {
+      updatedChannelIds.splice(updatedChannelIds.length, 0, ...updChannelIds)
+    }
 
     // If this is an update to an existing config, its id property will match
     // one in the meta configs.  If this is the case, update the config in the
@@ -142,6 +154,15 @@ function rebuildPublishConfigs(report, publishConfigs, channels) {
     if (jindex >= 0) {
       newPublishConfigs[jindex] = newPublishConfig
       newReport.publishConfigs[index] = { ref: newPublishConfig.id }
+
+      // If an existing config was updated while editing the report, it's
+      // possible that other reports reference this config and that means that
+      // we'll need to later "touch" the timestamps for those reports.
+      // Otherwise, the scheduler will not see those reports as having been
+      // updated and so the corresponding schedules won't get updated. So here
+      // we record the IDs of any publish configs that were updated.
+
+      updatedConfigIds.push(newPublishConfig.id)
       return
     }
 
@@ -151,21 +172,79 @@ function rebuildPublishConfigs(report, publishConfigs, channels) {
     newReport.publishConfigs[index] = { ref: newPublishConfig.id }
   })
 
-  // Return the new report and the new meta configs.
+  // Return the new report and any new publish configs and channels. Also
+  // return the ids of any publish configs or channels that have been updated
+  // so that reports referencing this items can have their last modified
+  // timestamps updated.
 
   return {
     newReport,
     newPublishConfigs,
     newChannels,
+    updatedConfigIds,
+    updatedChannelIds,
+  }
+}
+
+// Update the last modified timestamps on any reports that reference publish
+// configurations with ids matching any id in the publishConfigIds array or ids
+// of publish configurations with channels with ids matching any id in the
+// channelIds array. Do this so that the scheduler sees the reports as having
+// been changed and can update appropriately.
+
+function touchReferrerReports(
+  newMetaManifest,
+  newMetaPublishConfigs,
+  publishConfigIds,
+  channelIds,
+) {
+  const now = currentMillis(),
+    updatedConfigIds = [ ...publishConfigIds ]
+
+  if (channelIds && channelIds.length > 0) {
+    for (
+      let index = 0;
+      index < newMetaPublishConfigs.publishConfigs.length;
+      index += 1
+    ) {
+      const publishConfig = newMetaPublishConfigs.publishConfigs[index],
+        channelIndex = publishConfig.channels.findIndex(
+          c => c.ref && channelIds.includes(c.ref)
+        )
+
+      if (channelIndex >= 0) {
+        updatedConfigIds.push(publishConfig.id)
+      }
+    }
+  }
+
+  for (let index = 0; index < newMetaManifest.reports.length; index += 1) {
+    const report = newMetaManifest.reports[index],
+      configIndex = report.publishConfigs?.findIndex(
+        pc => pc.ref && updatedConfigIds.includes(pc.ref)
+      )
+
+    if (configIndex >= 0) {
+      newMetaManifest.reports[index].lastModifiedDate = now
+    }
   }
 }
 
 // Rebuild the meta publish configs after channel IDs have been removed.
 
-function rebuildMetaPublishConfigs(metaPublishConfigs, deletedChannelIds) {
-  const newMetaPublishConfigs = clone(metaPublishConfigs)
+function rebuildMetaPublishConfigs(
+  newMetaManifest,
+  metaPublishConfigs,
+  deletedChannelIds,
+) {
+  const newMetaPublishConfigs = clone(metaPublishConfigs),
+    updatedConfigIds = []
 
-  for (let index = 0; index < newMetaPublishConfigs.publishConfigs.length; index += 1) {
+  for (
+    let index = 0;
+    index < newMetaPublishConfigs.publishConfigs.length;
+    index += 1
+  ) {
     const publishConfig = newMetaPublishConfigs.publishConfigs[index],
       indices = []
 
@@ -175,7 +254,12 @@ function rebuildMetaPublishConfigs(metaPublishConfigs, deletedChannelIds) {
       }
     })
 
+    if (indices.length === 0) {
+      continue
+    }
+
     indices.sort(sortByNumber)
+    updatedConfigIds.push(publishConfig.id)
 
     for (let jindex = indices.length - 1; jindex >= 0; jindex -= 1) {
       newMetaPublishConfigs
@@ -185,13 +269,18 @@ function rebuildMetaPublishConfigs(metaPublishConfigs, deletedChannelIds) {
     }
   }
 
+  if (updatedConfigIds.length > 0) {
+    touchReferrerReports(newMetaManifest, newMetaPublishConfigs, updatedConfigIds, [])
+  }
+
   return newMetaPublishConfigs
 }
 
 // Rebuild the meta manifest after publish config IDs have been removed.
 
 function rebuildMetaManifest(metaManifest, deletedPublishConfigIds) {
-  const newMetaManifest = clone(metaManifest)
+  const now = currentMillis(),
+    newMetaManifest = clone(metaManifest)
 
   for (let index = 0; index < newMetaManifest.reports.length; index += 1) {
     const report = newMetaManifest.reports[index],
@@ -203,20 +292,27 @@ function rebuildMetaManifest(metaManifest, deletedPublishConfigIds) {
       }
     })
 
+    if (indices.length === 0) {
+      continue
+    }
+
     indices.sort(sortByNumber)
 
     for (let jindex = indices.length - 1; jindex >= 0; jindex -= 1) {
-      newMetaManifest
-        .reports[index]
-        .publishConfigs
-        .splice(indices[jindex], 1)
+      newMetaManifest.reports[index].publishConfigs.splice(indices[jindex], 1)
     }
+
+    newMetaManifest.reports[index].lastModifiedDate = now
   }
 
   return newMetaManifest
 }
 
-function buildRealPublishConfig(publishConfig, metaPublishConfigs, metaChannels) {
+function buildRealPublishConfig(
+  publishConfig,
+  metaPublishConfigs,
+  metaChannels
+) {
   const newPublishConfig = clone(resolvePublishConfig(
       metaPublishConfigs,
       publishConfig,
@@ -273,9 +369,7 @@ export default function useManifestWriter() {
     update = useCallback((report, reportIndex = -1) => {
       if (
         reportIndex >= 0 &&
-        (
-          !metaManifest ||reportIndex >= metaManifest.reports.length
-        )
+        !metaManifest || reportIndex >= metaManifest.reports.length
        ) {
         throw new Error(`Invalid report index ${reportIndex} found during update`)
       }
@@ -294,24 +388,37 @@ export default function useManifestWriter() {
         newMetaChannels = metaChannels ? (
           clone(metaChannels)
         ) : { channels: [] },
-        { newReport, newPublishConfigs, newChannels } = rebuildPublishConfigs(
+        rebuildResult = rebuildPublishConfigs(
           report,
-          newMetaPublishConfigs.publishConfigs,
-          newMetaChannels.channels,
+          newMetaPublishConfigs,
+          newMetaChannels,
         )
 
       newMetaManifest.reports.splice(
         reportIndex >= 0 ? reportIndex : newMetaManifest.reports.length,
         reportIndex >= 0 ? 1 : 0,
-        newReport || report,
+        rebuildResult?.newReport || report,
       )
 
-      if (newPublishConfigs) {
-        newMetaPublishConfigs.publishConfigs = newPublishConfigs
-      }
+      if (rebuildResult) {
+        const {
+          newPublishConfigs,
+          newChannels,
+          updatedConfigIds,
+          updatedChannelIds,
+        } = rebuildResult
 
-      if (newChannels) {
+        newMetaPublishConfigs.publishConfigs = newPublishConfigs
         newMetaChannels.channels = newChannels
+
+        if (updatedConfigIds.length > 0 || updatedChannelIds.length > 0) {
+          touchReferrerReports(
+            newMetaManifest,
+            newMetaPublishConfigs,
+            updatedConfigIds,
+            updatedChannelIds,
+          )
+        }
       }
 
       // Build the real manifest to pickup the new/updated report and replace
@@ -354,10 +461,8 @@ export default function useManifestWriter() {
         newMetaChannels = metaChannels ? (
           clone(metaChannels)
         ) : { channels: [] },
-        newPublishConfig = clone(publishConfig)
-
-      // Rebuild the channels
-      rebuildChannels(newPublishConfig, newMetaChannels.channels)
+        newPublishConfig = clone(publishConfig),
+        updatedChannelIds = rebuildChannels(newPublishConfig, newMetaChannels.channels)
 
       // Insert the new publish config
       newMetaPublishConfigs.publishConfigs.splice(
@@ -365,6 +470,14 @@ export default function useManifestWriter() {
         publishConfigIndex >= 0 ? 1 : 0,
         newPublishConfig,
       )
+
+      // Update the last modified timestamps on any reports that reference this
+      // publish configuration so that the scheduler sees the reports as having
+      // been changed and can update appropriately.
+
+      if (publishConfigIndex >= 0 || (updatedChannelIds && updatedChannelIds.length > 0)) {
+        touchReferrerReports(newMetaManifest, newMetaPublishConfigs, [newPublishConfig.id], updatedChannelIds)
+      }
 
       // Build the real manifest to pickup the new/updated publish configuration
       // and replace all publish config references with their actual publish
@@ -405,13 +518,22 @@ export default function useManifestWriter() {
         ) : { publishConfigs: [] },
         newMetaChannels = metaChannels ? (
           clone(metaChannels)
-        ) : { channels: [] }
+        ) : { channels: [] },
+        updatedConfigIds = []
 
       newMetaChannels.channels.splice(
         channelIndex >= 0 ? channelIndex : newMetaChannels.channels.length,
         channelIndex >= 0 ? 1 : 0,
         channel,
       )
+
+      // If this is an update to an existing channel, collect the IDs of any
+      // publish configs that reference this channel and "touch" the reports
+      // that reference those publish configs.
+
+      if (channelIndex >= 0) {
+        touchReferrerReports(newMetaManifest, newMetaPublishConfigs, [], [channel.id])
+      }
 
       // Build the real manifest to pickup the new/updated channels
       // and replace all references to publish configurations or channels
@@ -597,6 +719,7 @@ export default function useManifestWriter() {
       // doesn't have the non-existing channels either.
 
       const newNewMetaPublishConfigs = rebuildMetaPublishConfigs(
+          newMetaManifest,
           newMetaPublishConfigs,
           channelIds,
         ),
