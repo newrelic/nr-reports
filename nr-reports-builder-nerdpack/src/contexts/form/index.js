@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react'
@@ -53,9 +54,10 @@ export class Validator {
 export function Validation({ name, validation, children }) {
   const { validator } = useContext(FormContext)
 
-  useMemo(() => {
+  useEffect(() => {
     validator.addValidator(name, validation)
-  }, [])
+    return () => validator.removeValidator(name, validation)
+  })
 
   return children
 }
@@ -90,8 +92,6 @@ function FormProvider({ initFormState, children }) {
 
       setFormState({ ...formState, ...result })
     }, [formState, setFormState, validator])
-
-  validator.clear()
 
   return (
     <FormContext.Provider value={{

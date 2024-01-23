@@ -51,8 +51,8 @@ function reportToFormState(report) {
     type: report.query ? (
       SYMBOLS.REPORT_TYPES.QUERY
     ) : SYMBOLS.REPORT_TYPES.DASHBOARD,
-    query: report.query,
-    accountIds: report.accountIds,
+    query: report.query || null,
+    accountIds: report.accountIds || null,
     lastModifiedDate: report.lastModifiedDate,
     publishConfigs: report.publishConfigs ? clone(report.publishConfigs) : [],
     metadata: report.metadata || newReportMetadata(),
