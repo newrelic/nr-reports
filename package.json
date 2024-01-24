@@ -1,6 +1,6 @@
 {
   "name": "nr-reports",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "author": "sdewitt@newrelic.com",
   "description": "New Relic Reports is a report generation and automation framework for New Relic.",
   "license": "Apache-2.0",
