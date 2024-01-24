@@ -21,7 +21,7 @@
     "csv-stringify": "^6.3.0",
     "node-fetch": "^2.6.9",
     "nodemailer": "^6.9.1",
-    "nunjucks": "^3.2.3",
+    "nunjucks": "^3.2.4",
     "pdf-merger-js": "^3.3.2",
     "pino": "^8.11.0",
     "pino-pretty": "^9.4.0",
