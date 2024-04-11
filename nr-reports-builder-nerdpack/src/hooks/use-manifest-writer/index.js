@@ -369,7 +369,10 @@ export default function useManifestWriter() {
     update = useCallback((report, reportIndex = -1) => {
       if (
         reportIndex >= 0 &&
-        !metaManifest || reportIndex >= metaManifest.reports.length
+        (
+          !metaManifest ||
+          reportIndex >= metaManifest.reports.length
+        )
        ) {
         throw new Error(`Invalid report index ${reportIndex} found during update`)
       }
