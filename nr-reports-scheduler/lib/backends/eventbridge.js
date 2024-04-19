@@ -89,7 +89,13 @@ class EventBridgeBackend {
       .map(s => s.Name)
   }
 
-  async createSchedule(scheduleName, report, manifestFile, publishConfigId) {
+  async createSchedule(
+    accountId,
+    scheduleName,
+    report,
+    manifestFile,
+    publishConfigId,
+  ) {
     const publishConfig = getPublishConfig(report, publishConfigId),
       reportName = report.name || report.id,
       publishConfigName = publishConfig.name || publishConfig.id,
@@ -103,6 +109,7 @@ class EventBridgeBackend {
       this.reportsLamdbaRoleArn,
       JSON.stringify({
         options: {
+          accountId,
           manifestFilePath: manifestFile,
           reportIds: report.id,
           publishConfigIds: publishConfigId,

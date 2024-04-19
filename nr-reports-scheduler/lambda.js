@@ -10,6 +10,7 @@ const {
     getEnv,
     getSecretAsJson,
     NerdstorageClient,
+    requireAccountIds,
     trimStringAndLower,
     DEFAULT_LOG_LEVEL,
     CORE_CONSTANTS,
@@ -102,28 +103,68 @@ function lambdaResponse(
   }
 }
 
-// eslint-disable-next-line no-unused-vars
-async function handler(event) {
+async function pollAccount(
+  apiKey,
+  sourceNerdletId,
+  accountId,
+  backend,
+) {
   try {
-    const secretData = await getSecretData(),
-      nerdstorage = new NerdstorageClient(
-        secretData.apiKey,
-        secretData.sourceNerdletId,
-        secretData.accountId,
+    const nerdstorage = new NerdstorageClient(
+        apiKey,
+        sourceNerdletId,
+        accountId,
       ),
-      nerdstorageRepo = new NerdstorageRepository(nerdstorage),
-      eventBridgeBackend = new EventBridgeBackend()
+      nerdstorageRepo = new NerdstorageRepository(nerdstorage)
 
-    await poll(nerdstorageRepo, eventBridgeBackend)
+    await poll(accountId, nerdstorageRepo, backend)
 
     logger.trace('Recording job status...')
 
     newrelic.recordCustomEvent(
       'NrReportsSchedulerStatus',
       {
+        accountId,
         error: false,
       },
     )
+  } catch (err) {
+    logger.error('Uncaught exception:')
+    logger.error(err.message)
+
+    // eslint-disable-next-line no-console
+    console.error(err)
+
+    newrelic.noticeError(err)
+
+    logger.trace('Recording job status...')
+
+    newrelic.recordCustomEvent(
+      'NrReportsSchedulerStatus',
+      {
+        accountId,
+        error: true,
+        message: err.message,
+      },
+    )
+  }
+}
+
+// eslint-disable-next-line no-unused-vars
+async function handler(event) {
+  try {
+    const secretData = await getSecretData(),
+      accountIds = requireAccountIds(secretData),
+      eventBridgeBackend = new EventBridgeBackend()
+
+    for (const accountId of accountIds) {
+      await pollAccount(
+        secretData.apiKey,
+        secretData.sourceNerdletId,
+        accountId,
+        eventBridgeBackend,
+      )
+    }
 
     return lambdaResponse(
       200,
