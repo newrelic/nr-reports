@@ -13,7 +13,7 @@ const {
 const logger = createLogger('scheduler'),
   { DEFAULT_MANIFEST_FILE_NAME } = CORE_CONSTANTS
 
-function getPublishConfigurationItems(reports) {
+function getPublishConfigurationItems(accountId, reports) {
   if (!reports || reports.length <= 0) {
     return null
   }
@@ -38,7 +38,7 @@ function getPublishConfigurationItems(reports) {
 
       return true
     }).forEach(publishConfig => acc.push({
-      scheduleName: `${id}.${publishConfig.id}`,
+      scheduleName: `${accountId}.${id}.${publishConfig.id}`,
       report: r,
       publishConfigId: publishConfig.id,
     }))
@@ -47,7 +47,7 @@ function getPublishConfigurationItems(reports) {
   }, [])
 }
 
-async function createSchedules(backend, schedulesToCreate) {
+async function createSchedules(accountId, backend, schedulesToCreate) {
   for (let index = 0; index < schedulesToCreate.length; index += 1) {
     const {
         scheduleName,
@@ -58,6 +58,7 @@ async function createSchedules(backend, schedulesToCreate) {
 
     try {
       await backend.createSchedule(
+        accountId,
         scheduleName,
         report,
         DEFAULT_MANIFEST_FILE_NAME,
@@ -117,6 +118,7 @@ async function deleteSchedules(backend, schedulesToDelete) {
 }
 
 async function applyChangeSet(
+  accountId,
   backend,
   schedulesToCreate,
   schedulesToUpdate,
@@ -129,7 +131,7 @@ async function applyChangeSet(
   })
 
   if (schedulesToCreate.length > 0) {
-    await createSchedules(backend, schedulesToCreate)
+    await createSchedules(accountId, backend, schedulesToCreate)
   }
 
   if (schedulesToUpdate.length > 0) {
@@ -143,6 +145,7 @@ async function applyChangeSet(
 }
 
 async function calculateAndApplyChangeSet(
+  accountId,
   backend,
   lastPolledDate,
   scheduleNames,
@@ -202,6 +205,7 @@ async function calculateAndApplyChangeSet(
   }
 
   await applyChangeSet(
+    accountId,
     backend,
     schedulesToCreate,
     schedulesToUpdate,
@@ -209,7 +213,7 @@ async function calculateAndApplyChangeSet(
   )
 }
 
-async function poll(repository, backend) {
+async function poll(accountId, repository, backend) {
   logger.debug('Starting poll...')
 
   const manifestFile = DEFAULT_MANIFEST_FILE_NAME,
@@ -228,12 +232,19 @@ async function poll(repository, backend) {
   const manifest = await repository.getManifest(manifestFile)
 
   logger.trace('Retrieving schedule names...')
-  const scheduleNames = await backend.getScheduleNames()
+  const prefix = `${accountId}.`,
+    scheduleNames = (await backend.getScheduleNames()).filter(
+      s => s.startsWith(prefix),
+    )
 
   logger.trace('Building publish configuration list...')
-  const publishConfigItems = getPublishConfigurationItems(manifest.reports)
+  const publishConfigItems = getPublishConfigurationItems(
+    accountId,
+    manifest.reports,
+  )
 
   await calculateAndApplyChangeSet(
+    accountId,
     backend,
     lastPolledDate,
     scheduleNames,

@@ -1,6 +1,6 @@
 {
   "name": "nr-reports-scheduler",
-  "version": "3.0.4",
+  "version": "3.1.2",
   "author": "sdewitt@newrelic.com",
   "description": "Scheduler module for syncing and running scheduled reports.",
   "license": "Apache-2.0",

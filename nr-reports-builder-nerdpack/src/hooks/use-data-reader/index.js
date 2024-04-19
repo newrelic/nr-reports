@@ -7,13 +7,20 @@ export default function useDataReader({
   onError,
   onComplete,
 }) {
-  const [{ loading, done }, setState] = useState({
+  const [{ loading, done, accountId: oldAccountId }, setState] = useState({
       loading: false,
-      done: false
+      done: false,
+      accountId: accountId,
     }),
     updateState = useCallback(
-      (l, d) => { setState({ loading: l, done: d }) },
-      [setState],
+      (l, d, a) => {
+        setState({
+          loading: l,
+          done: d,
+          accountId: a || oldAccountId
+        })
+      },
+      [setState, oldAccountId],
     ),
     manifestReader = useDocumentReader({
       accountId,
@@ -41,6 +48,17 @@ export default function useDataReader({
       publishConfigsReader,
       channelsReader,
     ]), [manifestReader, metadataReader, publishConfigsReader, channelsReader])
+
+  useEffect(() => {
+    if (loading) {
+      return
+    }
+
+    if (oldAccountId !== accountId) {
+      updateState(true, false, accountId)
+      onReading()
+    }
+  }, [oldAccountId, accountId, updateState, onReading])
 
   useEffect(() => {
     if (done) {

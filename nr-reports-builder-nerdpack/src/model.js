@@ -20,7 +20,7 @@ export function newReportMetadata() {
 
 export function newPublishConfig() {
   return {
-    id: generateRandomString(20),
+    id: generateRandomString(14),
     name: '',
     enabled: true,
     schedule: '',
