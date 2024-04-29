@@ -20,7 +20,7 @@
     "aws-sdk": "^2.1340.0",
     "csv-stringify": "^6.3.0",
     "node-fetch": "^2.6.9",
-    "nodemailer": "^6.9.1",
+    "nodemailer": "^6.9.9",
     "nunjucks": "^3.2.3",
     "pdf-merger-js": "^3.3.2",
     "pino": "^8.11.0",
