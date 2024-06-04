@@ -63,8 +63,11 @@ export default function ChannelForm({
     handleChangeEmailFormat = useCallback((_, v) => {
       updateFormState({ emailFormat: v })
     }, [formState] ),
-    handleChangeEmailDeliveryMethod = useCallback((_, v) => {
-      updateFormState({ emailDeliveryMethod: v })
+    handleChangeAttachOutput = useCallback(e => {
+      updateFormState({ emailAttachOutput: e.target.checked })
+    }, [formState] ),
+    handleChangeQueryResultsHtmlMaxRows = useCallback(e => {
+      updateFormState({ emailQueryResultsHtmlMaxRows: e.target.value })
     }, [formState] ),
     handleChangeEmailTo = useCallback(e => {
       updateFormState({ emailTo: e.target.value })
@@ -168,7 +171,8 @@ export default function ChannelForm({
                 <EmailChannelForm
                   onChangeSubject={handleChangeEmailSubject}
                   onChangeFormat={handleChangeEmailFormat}
-                  onChangeDeliveryMethod={handleChangeEmailDeliveryMethod}
+                  onChangeAttachOutput={handleChangeAttachOutput}
+                  onChangeQueryResultsHtmlMaxRows={handleChangeQueryResultsHtmlMaxRows}
                   onChangeTo={handleChangeEmailTo}
                   onChangeCc={handleChangeEmailCc}
                   onChangeTemplate={handleChangeEmailTemplate}

@@ -542,6 +542,27 @@ function buildCsv(columns, rows) {
   })
 }
 
+function buildHtml(columns, rows, maxRows = null) {
+  const r = maxRows === null ? rows : rows.slice(0, maxRows)
+
+  logger.debug(`Generating ${r.length} rows...`)
+
+  return new Promise(resolve => {
+    const thead = `<thead><tr>${
+        columns.map(col => `<th>${col}</th>`).join('')
+      }</tr></thead>`,
+      tbody = `<tbody>${
+        r.map(row => `<tr>${row.map(val => (
+          `<td>${val || ''}</td>`
+        // eslint-disable-next-line quotes
+        )).join('')}</tr>`).join(`\n`)
+      }</tbody>`,
+      tfoot = '<tfoot />'
+
+    resolve(`<table border="1">${thead}${tbody}${tfoot}</table>`)
+  })
+}
+
 function getAccountId(context) {
   let accountId = getOption(context, 'accountId')
 
@@ -687,6 +708,7 @@ module.exports = {
   getFormattedDateTime,
   isUndefined,
   buildCsv,
+  buildHtml,
   requireAccountId,
   requireAccountIds,
   trimStringAndLower,
