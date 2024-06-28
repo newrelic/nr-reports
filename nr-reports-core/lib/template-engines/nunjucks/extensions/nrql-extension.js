@@ -116,7 +116,7 @@ function NrqlExtension() {
           return
         }
 
-        callback(null, src)
+        callback(null, new nunjucks.runtime.SafeString(src))
       })
     } catch (err) {
       handleError(context, err, errorBody, callback)
