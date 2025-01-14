@@ -1,6 +1,6 @@
 'use strict'
 
-const { getOption, buildCsv } = require('../util'),
+const { getOption, buildCsv, buildHtml, toNumber } = require('../util'),
   { renderTemplate } = require('../template-engines'),
   {
     FILE_TEMPLATE_NAME_KEY,
@@ -8,7 +8,11 @@ const { getOption, buildCsv } = require('../util'),
     QUERY_RESULTS_FORMAT_KEY,
     QUERY_RESULTS_FORMAT_VAR,
     QUERY_RESULTS_FORMAT_DEFAULT,
+    QUERY_RESULTS_FORMAT_HTML,
     QUERY_RESULTS_FORMAT_JSON,
+    QUERY_RESULTS_HTML_MAX_ROWS_KEY,
+    QUERY_RESULTS_HTML_MAX_ROWS_VAR,
+    QUERY_RESULTS_HTML_MAX_ROWS_DEFAULT,
   } = require('../constants')
 
 async function render(
@@ -16,6 +20,7 @@ async function render(
   report,
   channelConfig,
   output,
+  preferredOutputFormat,
 ) {
   const template = getOption(
     channelConfig,
@@ -41,18 +46,21 @@ async function render(
     }
 
     /*
-     * Columns and rows were set by the query generator. Use the resultsFormat
-     * channel configuration parameter to determine what to generate.
+     * Columns and rows were set by the query generator. Use the output format
+     * specified in preferredOutputFormat or the channel configuration to
+     * determine what to generate.
      */
 
-    const resultsFormat = getOption(
-      channelConfig,
-      QUERY_RESULTS_FORMAT_KEY,
-      QUERY_RESULTS_FORMAT_VAR,
-      QUERY_RESULTS_FORMAT_DEFAULT,
+    const outputFormat = preferredOutputFormat || (
+      getOption(
+        channelConfig,
+        QUERY_RESULTS_FORMAT_KEY,
+        QUERY_RESULTS_FORMAT_VAR,
+        QUERY_RESULTS_FORMAT_DEFAULT,
+      )
     )
 
-    if (resultsFormat.toLowerCase() === QUERY_RESULTS_FORMAT_JSON) {
+    if (outputFormat.toLowerCase() === QUERY_RESULTS_FORMAT_JSON) {
       return JSON.stringify(
         output.data.rows.map(row => (
           output.data.columns.reduce((accum, col) => {
@@ -60,6 +68,21 @@ async function render(
             return accum
           }, {})
         )),
+      )
+    }
+
+    if (outputFormat.toLowerCase() === QUERY_RESULTS_FORMAT_HTML) {
+      const maxRows = toNumber(getOption(
+        channelConfig,
+        QUERY_RESULTS_HTML_MAX_ROWS_KEY,
+        QUERY_RESULTS_HTML_MAX_ROWS_VAR,
+        QUERY_RESULTS_HTML_MAX_ROWS_DEFAULT,
+      ))
+
+      return buildHtml(
+        output.data.columns,
+        output.data.rows,
+        maxRows,
       )
     }
 

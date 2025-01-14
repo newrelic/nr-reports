@@ -1,11 +1,15 @@
 import { useContext } from 'react'
 import {
   MultilineTextField,
+  Checkbox,
+  CheckboxGroup,
+  HeadingText,
   Radio,
   RadioGroup,
   Stack,
   StackItem,
   TextField,
+  Tile
 } from 'nr1'
 import {
   SYMBOLS,
@@ -15,15 +19,16 @@ import { FormContext, Validation } from '../../contexts/form'
 import {
   emailSubjectNotEmpty,
   emailToNotEmptyValidEmails,
+  emailQueryResultsHtmlMaxRowsIsPositiveNumber,
   emailCcValidEmails,
   emailFormatIsValid,
-  emailDeliveryMethodIsValid,
 } from '../validations'
 
 export default function EmailChannelForm({
   onChangeSubject,
   onChangeFormat,
-  onChangeDeliveryMethod,
+  onChangeAttachOutput,
+  onChangeQueryResultsHtmlMaxRows,
   onChangeTo,
   onChangeCc,
   onChangeTemplate,
@@ -32,10 +37,11 @@ export default function EmailChannelForm({
     {
       emailSubject,
       emailFormat,
-      emailDeliveryMethod,
+      emailAttachOutput,
       emailTo,
       emailCc,
       emailTemplate,
+      emailQueryResultsHtmlMaxRows,
       validations,
     } = formState
 
@@ -75,28 +81,45 @@ export default function EmailChannelForm({
         </Validation>
       </StackItem>
       <StackItem>
-        <Validation
-          name={UI_CONTENT.EMAIL_CHANNEL_FORM.DELIVERY_METHOD_INPUT_NAME}
-          validation={emailDeliveryMethodIsValid}
-        >
-          <RadioGroup
-            label={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_LABEL_DELIVERY_METHOD}
-            name={UI_CONTENT.EMAIL_CHANNEL_FORM.DELIVERY_METHOD_INPUT_NAME}
-            value={emailDeliveryMethod}
-            defaultValue={SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT}
-            onChange={onChangeDeliveryMethod}
-            info={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_INFO_DELIVERY_METHOD}
+        <Tile>
+          <HeadingText type={HeadingText.TYPE.HEADING_6}>
+            {UI_CONTENT.EMAIL_CHANNEL_FORM.QUERY_OPTIONS_HEADING}
+          </HeadingText>
+          <Stack
+            directionType={Stack.DIRECTION_TYPE.VERTICAL}
+            spacingType={[
+              Stack.SPACING_TYPE.LARGE,
+              Stack.SPACING_TYPE.NONE,
+              Stack.SPACING_TYPE.NONE,
+              Stack.SPACING_TYPE.NONE,
+            ]}
+            horizontalType={Stack.HORIZONTAL_TYPE.FILL}
           >
-            <Radio
-              label={UI_CONTENT.EMAIL_CHANNEL_FORM.DELIVERY_METHOD_LABEL_ATTACH}
-              value={SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT}
-            />
-            <Radio
-              label={UI_CONTENT.EMAIL_CHANNEL_FORM.DELIVERY_METHOD_LABEL_PASSTHROUGH}
-              value={SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH}
-            />
-          </RadioGroup>
-        </Validation>
+            <StackItem>
+              <Checkbox
+                label={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_LABEL_ATTACH_OUTPUT}
+                name={UI_CONTENT.EMAIL_CHANNEL_FORM.ATTACH_OUTPUT_INPUT_NAME}
+                onChange={onChangeAttachOutput}
+                checked={emailAttachOutput}
+              />
+            </StackItem>
+            <StackItem>
+              <Validation
+                name='emailQueryResultsHtmlMaxRows'
+                validation={emailQueryResultsHtmlMaxRowsIsPositiveNumber}
+              >
+                <TextField
+                  label={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_LABEL_QUERY_RESULTS_HTML_MAX_ROWS}
+                  name={SYMBOLS.EMAIL_CHANNEL_FIELDS.QUERY_RESULTS_HTML_MAX_ROWS_INPUT_NAME}
+                  placeholder={UI_CONTENT.EMAIL_CHANNEL_FORM.QUERY_RESULTS_HTML_MAX_ROWS_FIELD_PLACEHOLDER}
+                  value={emailQueryResultsHtmlMaxRows}
+                  onChange={onChangeQueryResultsHtmlMaxRows}
+                  invalid={validations?.emailQueryResultsHtmlMaxRows}
+                />
+              </Validation>
+            </StackItem>
+          </Stack>
+        </Tile>
       </StackItem>
       <StackItem>
         <Validation

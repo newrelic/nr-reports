@@ -77,15 +77,20 @@ export const emailFormatIsValid = (() => {
   }
 })()
 
-export const emailDeliveryMethodIsValid = (() => {
-  const schema = z.enum([
-    SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT,
-    SYMBOLS.EMAIL_CHANNEL_FIELDS.PASS_THROUGH,
-  ])
+export const emailQueryResultsHtmlMaxRowsIsPositiveNumber = (() => {
+  const schema = z.number().min(1)
 
   return formState => {
-    const result = schema.safeParse(formState.emailDeliveryMethod)
-    return result.success ? null : `${formState.emailDeliveryMethod} is not a valid delivery method`
+    const num = Number(formState.emailQueryResultsHtmlMaxRows)
+    let ok = false
+
+    if (!Number.isNaN(num)) {
+      const result = schema.safeParse(num)
+
+      ok = result.success
+    }
+
+    return ok ? null : 'Max rows must be a positive number greater than 0'
   }
 })()
 

@@ -12,6 +12,7 @@ async function render(
   report,
   channelConfig,
   output,
+  preferredOutputFormat,
 ) {
   const template = getOption(
     channelConfig,

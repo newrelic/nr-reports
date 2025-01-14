@@ -44,8 +44,14 @@ class Output {
     return getOutputFileName(context, report)
   }
 
-  async render(context, report, channelConfig) {
-    return await this.renderer(context, report, channelConfig, this)
+  async render(context, report, channelConfig, preferredOutputFormat = null) {
+    return await this.renderer(
+      context,
+      report,
+      channelConfig,
+      this,
+      preferredOutputFormat,
+    )
   }
 }
 
@@ -63,8 +69,13 @@ class QueryOutput {
     return getOutputFileName(context, report, this.isProcessed && 'csv')
   }
 
-  async render(context, report, channelConfig) {
-    return await this.output.render(context, report, channelConfig)
+  async render(context, report, channelConfig, preferredOutputFormat = 'csv') {
+    return await this.output.render(
+      context,
+      report,
+      channelConfig,
+      preferredOutputFormat,
+    )
   }
 }
 

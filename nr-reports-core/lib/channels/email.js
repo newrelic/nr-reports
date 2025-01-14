@@ -35,6 +35,7 @@ const fs = require('fs'),
     EMAIL_SUBJECT_KEY,
     EMAIL_TEMPLATE_NAME_KEY,
     EMAIL_TEMPLATE_KEY,
+    OUTPUT_FORMAT_HTML,
   } = require('../constants'),
   { FileOutput } = require('../output'),
   { renderTemplate } = require('../template-engines')
@@ -164,6 +165,7 @@ async function sendMailWithAttachments(
   channelConfig,
   output,
   message,
+  body = null,
 ) {
 
   /*
@@ -172,21 +174,24 @@ async function sendMailWithAttachments(
   message.attachments = output.files.map(file => ({ path: file }))
 
   /*
-   * Render the email body from a template specified in the channel config,
+   * Send the message with the passed body or, if no body is specified,
+   * render the body from the template specified in the channel config,
    * environment variable, or using the default,
-   * `email/message-attachments.html`
+   * `email/message-attachments.html`.
    */
-  const body = await renderEmailTemplate(
+  await sendMailWithBody(
     context,
-    report,
     channelConfig,
-    EMAIL_ATTACHMENTS_TEMPLATE_DEFAULT,
+    message,
+    body || (
+      await renderEmailTemplate(
+        context,
+        report,
+        channelConfig,
+        EMAIL_ATTACHMENTS_TEMPLATE_DEFAULT,
+      )
+    ),
   )
-
-  /*
-   * Send the message with the rendered body.
-   */
-  await sendMailWithBody(context, channelConfig, message, body)
 }
 
 async function renderOutputAndSendMailWithAttachments(
@@ -196,6 +201,7 @@ async function renderOutputAndSendMailWithAttachments(
   output,
   message,
   tempDir,
+  body,
 ) {
   await withTempFile(async tempFile => {
 
@@ -221,6 +227,7 @@ async function renderOutputAndSendMailWithAttachments(
       channelConfig,
       new FileOutput([tempFile]),
       message,
+      body,
     )
   }, tempDir, output.getOutputFileName(context, report))
 }
@@ -248,6 +255,14 @@ async function sendMail(
       output,
       message,
       tempDir,
+      channelConfig.passThrough ? (
+        await output.render(
+          context,
+          report,
+          channelConfig,
+          OUTPUT_FORMAT_HTML,
+        )
+      ) : null,
     )
     return
   }
@@ -256,6 +271,7 @@ async function sendMail(
     context,
     report,
     channelConfig,
+    channelConfig.passThrough ? OUTPUT_FORMAT_HTML : null,
   )
 
   /*

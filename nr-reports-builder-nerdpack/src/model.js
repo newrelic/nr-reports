@@ -38,11 +38,12 @@ export function newChannel() {
     id: generateRandomString(20),
     name: '',
     type: SYMBOLS.CHANNEL_TYPES.EMAIL,
-    emailFormat: SYMBOLS.EMAIL_FORMATS.HTML,
-    emailDeliveryMethod: SYMBOLS.EMAIL_CHANNEL_FIELDS.ATTACH_OUTPUT,
-    emailSubject: '',
-    emailTo: '',
-    emailCc: '',
+    format: SYMBOLS.EMAIL_FORMATS.HTML,
+    attachOutput: true,
+    passThrough: true,
+    subject: '',
+    to: '',
+    cc: '',
     emailTemplate: '',
   }
 }
