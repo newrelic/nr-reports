@@ -78,9 +78,9 @@ details.`)
     }).option('r', {
       alias: 'report-name',
       type: 'string',
-      describe: `Run only the reports with report names listed in <report-names>. Takes precedence over \`-n\`, \`-d\`, and \`-q\` and their corresponding environment variables. Ignored if a manifest file is not specified.
+      describe: `Run only the reports with report IDs listed in <report-ids>. Takes precedence over \`-n\`, \`-d\`, and \`-q\` and their corresponding environment variables. Ignored if a manifest file is not specified.
 
-    The \`REPORT_NAMES\` environment variable may also be used to specify report names. If both are specified, the \`-r\` option takes precedence.
+    The \`REPORT_IDS\` environment variable may also be used to specify report IDs. If both are specified, the \`-r\` option takes precedence.
     `,
     }).option('u', {
       alias: 'publish-config-ids',

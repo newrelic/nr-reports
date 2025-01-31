@@ -1,10 +1,10 @@
 [
     {
-        "ParameterKey": "RunnerImageRepoUri",
+        "ParameterKey": "RunnerECRImageRepo",
         "ParameterValue": "12345.dkr.ecr.aws_region.amazonaws.com/example-repo-name"
     },
     {
-        "ParameterKey": "RunnerImageTag",
+        "ParameterKey": "RunnerECRImageTag",
         "ParameterValue": "1.0.0"
     },
     {
