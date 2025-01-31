@@ -90,7 +90,7 @@ Parameters:
   NRLicenseKeySecret:
     Type: String
     Description: ID (name or ARN) of an AWS Secrets Manager secret containing your New Relic license key.
-    AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]*'
+    AllowedPattern: '(^$)|(^arn:(aws[a-zA-Z-]*)?:secretsmanager:.+:\d{12}:secret:[a-zA-Z0-9/_+=\.@\-]+$)'
     Default: ''
   #
   # Log level for the New Relic AWS lambda extension. Defaults to 'INFO'.
@@ -136,15 +136,15 @@ Parameters:
     AllowedPattern: '[a-zA-Z0-9._\-]*'
     Default: ''
   #
-  # Name of an AWS Secrets Manager secret containing a New Relic User API key
-  # used for GraphQL Nerdstorage queries and mutations. By default, the secret
-  # must contain a 'UserApiKey' property for the API key. A different key can
-  # be specified by the UserApiKeySecretKey parameter.
+  # Name or ARN of an AWS Secrets Manager secret containing a New Relic User API
+  # key used for GraphQL Nerdstorage queries and mutations. By default, the
+  # secret must contain a 'UserApiKey' property for the API key. A different key
+  # can be specified by the UserApiKeySecretKey parameter.
   #
   UserApiKeySecret:
     Type: String
     Description: ID (name or ARN) of a Secret containing the New Relic User API key.
-    AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]*'
+    AllowedPattern: '(^$)|(^arn:(aws[a-zA-Z-]*)?:secretsmanager:.+:\d{12}:secret:[a-zA-Z0-9/_+=\.@\-]+$)'
     Default: ''
   #
   # Key to be used for looking up the User API key in the secret specified by

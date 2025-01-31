@@ -217,6 +217,13 @@ async function invokeWebhook(
   }
 
   /*
+   * Check to ensure we have a Webhook payload.
+   */
+  if (!channelConfig.passThrough && !channelConfig.payload) {
+    throw new Error(`Missing Webhook payload for report ${reportName}.`)
+  }
+
+  /*
    * Post the message to the Slack webhook URL.
    */
   await send(

@@ -19,10 +19,15 @@ async function uploadToS3(
   channelConfig,
   output,
 ) {
-  const bucket = context.getWithEnvNs(
-    S3_DEST_BUCKET_KEY,
-    S3_DEST_BUCKET_VAR,
-  )
+  const reportName = report.name || report.id,
+    bucket = context.getWithEnvNs(
+      S3_DEST_BUCKET_KEY,
+      S3_DEST_BUCKET_VAR,
+    )
+
+  if (!bucket) {
+    throw new Error(`Missing S3 bucket for report ${reportName}.`)
+  }
 
   /*
    * If the output is already a file output, just upload it to the s3 bucket.

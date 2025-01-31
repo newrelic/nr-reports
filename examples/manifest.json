@@ -1,18 +1,87 @@
-[
-  {
-    "name": "hello-world",
-    "templateName": "hello-world.html",
-    "parameters": {
-      "accountId": 1234567,
-      "appName": "Shop Service"
-    },
-    "channels": []
+{
+  "variables": {
+    "subject": "Average transaction duration by application and URI"
   },
-  {
-    "name": "performance-summary-dashboard",
-    "dashboards": [
-      "ABCDEF123456"
-    ],
-    "channels": []
-  }
-]
+  "reports": [
+    {
+      "id": "example-dashboard-report",
+      "name": "Example dashboard report",
+      "dashboards": [
+        "DASHBOARD_GUID_1"
+      ],
+      "publishConfigurations": [
+        {
+          "id": "default",
+          "name": "Copy file",
+          "channels": [
+            {
+              "id": "copy-file-to-tmp",
+              "name": "Copy file to /tmp",
+              "type": "file",
+              "destDir": "/tmp"
+            }
+          ]
+        },
+        {
+          "id": "copy-pdf-to-s3",
+          "name": "Copy dashboard PDF to S3 bucket",
+          "channels": [
+            {
+              "id": "copy-file",
+              "name": "Copy to S3",
+              "type": "s3",
+              "bucket": "Daily Report"
+            }
+          ]
+        },
+        {
+          "id": "email-pdf",
+          "name": "Email dashboard PDF",
+          "channels": [
+            {
+              "id": "send-email",
+              "name": "Email PDF report to leadership",
+              "type": "email",
+              "subject": "Average transaction duration by application and URI",
+              "from": "noreply@numbers.local",
+              "to": "one@numbers.local, two@numbers.local",
+              "cc": "three@numbers.local, four@numbers.local"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "example-query-report",
+      "query": "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri",
+      "accountIds": [1234567],
+      "timeout": 10,
+      "publishConfigurations": [
+        {
+          "id": "slack",
+          "name": "Post to Slack",
+          "channels": [
+            {
+              "id": "post-slack",
+              "name": "Post query results to Slack",
+              "type": "slack"
+            }
+          ]
+        },
+        {
+          "id": "external-webhook",
+          "name": "Post to external webhook",
+          "channels": [
+            {
+              "id": "post-webhook",
+              "name": "Post query results to webhook",
+              "type": "webhook",
+              "webhookHeader1": "X-Foo: bar",
+              "payload": "{\"reportId\": \"{{ REPORT_ID }}\",\"reportName\": \"{{ REPORT_NAME }}\",\"publishConfigId\": \"{{ PUBLISH_CONFIG_ID }}\",\"publishConfigName\": \"{{ PUBLISH_CONFIG_NAME }}\",\"channelId\": \"{{ CHANNEL_ID }}\",\"channelName\": \"{{ CHANNEL_NAME }}\",\"results\": {{ RESULTS }}}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

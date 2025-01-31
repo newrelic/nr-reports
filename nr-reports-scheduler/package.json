@@ -1,6 +1,6 @@
 {
   "name": "nr-reports-scheduler",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "author": "sdewitt@newrelic.com",
   "description": "Scheduler module for syncing and running scheduled reports.",
   "license": "Apache-2.0",
@@ -12,12 +12,11 @@
     "url": "https://github.com/newrelic/nr-reports"
   },
   "scripts": {
-    "build": "../deploy/lambda/build.sh -t $npm_package_name:$npm_package_version",
-    "build-full": "npm run build -- --full",
-    "deploy": "../deploy/lambda/deploy.sh -t $npm_package_name:$npm_package_version",
-    "update": "../deploy/lambda/update.sh -t $npm_package_name:$npm_package_version",
-    "logs": "../deploy/lambda/tail-logs.sh",
+    "build": "../deploy/lambda/build.sh -t $npm_package_name:$npm_package_version -p SCHEDULER",
+    "deploy": "../deploy/lambda/deploy.sh -t $npm_package_name:$npm_package_version -p SCHEDULER",
+    "update": "../deploy/lambda/update.sh -t $npm_package_name:$npm_package_version -p SCHEDULER",
     "delete": "../deploy/lambda/delete.sh",
+    "logs": "../deploy/lambda/tail-logs.sh",
     "test-image": "../deploy/lambda/test-image.sh -t $npm_package_name:$npm_package_version --lambda-handler nr-reports-scheduler/lambda.handler"
   },
   "bugs": {

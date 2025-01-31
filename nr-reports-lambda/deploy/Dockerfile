@@ -1,5 +1,5 @@
 # Build arguments
-ARG AWS_LAMBDA_VER=14
+ARG AWS_LAMBDA_VER=20
 
 # Base image
 FROM public.ecr.aws/lambda/nodejs:${AWS_LAMBDA_VER}
@@ -14,8 +14,10 @@ COPY templates ${LAMBDA_TASK_ROOT}/templates/
 COPY include ${LAMBDA_TASK_ROOT}/include
 
 # Install production dependencies
-RUN cd ${LAMBDA_TASK_ROOT}/nr-reports-lambda && \
-    npm i --only=prod
+RUN cd ${LAMBDA_TASK_ROOT}/nr-reports-core && \
+    npm i --omit=dev && \
+    cd ${LAMBDA_TASK_ROOT}/nr-reports-lambda && \
+    npm i --omit=dev --legacy-peer-deps
 
 # Set the CMD to the New Relic lambda wrapper handler function
 CMD [ "newrelic-lambda-wrapper.handler" ]

@@ -97,4 +97,5 @@ aws lambda update-function-code \
     --output table \
     --no-cli-pager \
     --color on \
-    $AWS_LAMBDA_UPDATE_OPTS
+    $AWS_LAMBDA_UPDATE_OPTS \
+    > /dev/null

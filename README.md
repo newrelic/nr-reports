@@ -1,58 +1,105 @@
-# New Relic Reports
-
 [![New Relic Community header](https://opensource.newrelic.com/static/Community_Project-0c3079a4e4dbe2cbd05edc4f8e169d7b.png)](https://opensource.newrelic.com/oss-category/#new-relic-community)
 
-![GitHub forks](https://img.shields.io/github/forks/newrelic-experimental/nr-reports?style=social)
-![GitHub stars](https://img.shields.io/github/stars/newrelic-experimental/nr-reports?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/newrelic-experimental/nr-reports?style=social)
+![GitHub forks](https://img.shields.io/github/forks/newrelic/nr-reports?style=social)
+![GitHub stars](https://img.shields.io/github/stars/newrelic/nr-reports?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/newrelic/nr-reports?style=social)
 
-![GitHub all releases](https://img.shields.io/github/downloads/newrelic-experimental/nr-reports/total)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/newrelic-experimental/nr-reports)
-![GitHub last commit](https://img.shields.io/github/last-commit/newrelic-experimental/nr-reports)
-![GitHub Release Date](https://img.shields.io/github/release-date/newrelic-experimental/nr-reports)
+![GitHub all releases](https://img.shields.io/github/downloads/newrelic/nr-reports/total)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/newrelic/nr-reports)
+![GitHub last commit](https://img.shields.io/github/last-commit/newrelic/nr-reports)
+![GitHub Release Date](https://img.shields.io/github/release-date/newrelic/nr-reports)
 
-![GitHub issues](https://img.shields.io/github/issues/newrelic-experimental/nr-reports)
-![GitHub issues closed](https://img.shields.io/github/issues-closed/newrelic-experimental/nr-reports)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/newrelic-experimental/nr-reports)
-![GitHub pull requests closed](https://img.shields.io/github/issues-pr-closed/newrelic-experimental/nr-reports)
+![GitHub issues](https://img.shields.io/github/issues/newrelic/nr-reports)
+![GitHub issues closed](https://img.shields.io/github/issues-closed/newrelic/nr-reports)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/newrelic/nr-reports)
+![GitHub pull requests closed](https://img.shields.io/github/issues-pr-closed/newrelic/nr-reports)
+
+# New Relic Reports
+
+New Relic Reports is a full scheduled report solution for use with the New Relic
+One platform.
+
+## Table of Contents
+
+* [Overview](#overview)
+  * [Report Generation](#report-generation)
+  * [Report Delivery](#report-delivery)
+  * [Running Reports](#running-reports)
+* [Prerequisites](#prerequisites)
+* [Getting Started](#getting-started)
+* [Usage](#usage)
+  * [Reports](#reports)
+    * [Template Reports **deprecated**](#template-reports)
+    * [Dashboard Reports](#dashboard-reports)
+    * [Query Reports](#query-reports)
+    * [Report Execution Context](#report-execution-context)
+    * [Report Output](#report-output)
+    * [Publish Configurations](#publish-configurations)
+    * [Channels](#channels)
+    * [Manifest Files](#manifest-file)
+  * [Using the CLI](#using-the-cli)
+  * [Using the CLI image](#using-the-cli-image)
+  * [Using the CRON image](#using-the-cron-image)
+  * [Using the AWS Lambda function](#using-the-aws-lambda-function)
+  * [Using the AWS Scheduler Lambda function](#using-the-aws-scheduler-lambda-function)
+  * [Using the Report Builder](#using-the-report-builder)
+  * [Using the New Relic Reports Stack](#using-the-new-relic-reports-stack)
 
 ## Overview
 
-New Relic Reports is an engine for automating the generation of custom reports
-built using telemetry in the New Relic Telemetry Data Platform and the delivery
-of those reports via a variety of channels.
+New Relic Reports is a scheduled reporting solution for use with New Relic. It
+consists of two separate components: a reporting engine for generating and
+delivering reports and a New Relic One application for building reports.
 
-### Report Types
+The New Relic Reports engine can be run from the command line as a [Node.js](https://nodejs.org/en)
+application, run using a [Docker](https://www.docker.com/) image, or run as an
+[AWS Lambda function](https://aws.amazon.com/lambda/). See the section
+[Running Reports](#running-reports) for more details.
 
-The New Relic Reports engine supports several different report types.
+The New Relic Reports Builder is a [New Relic One application ](https://docs.newrelic.com/docs/new-relic-solutions/build-nr-ui/build-nr-app/)
+that can be run from directly within the New Relic One platform. It provides a
+user interface for defining [dashboard](#dashboard-reports) and [query](#query-reports)
+reports and schedules that specify when reports should be run together with the
+email settings used to send the reports.
+
+When used together with the provided [New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack),
+a scheduling component is also provided that automates the process of running
+and delivering reports on specific schedules, providing a full end-to-end
+reporting solution.
+
+### Report Generation
+
+The New Relic Reports engine provides support for generating reports in several
+ways.
 
 #### Template Reports
 
-Template reports provide a mechanism for building custom reports using
-[templates](#templates). Templates are text-based, user-defined documents that
-can contain both content and logic. Templates are processed when a template
-report is run to produce text-based output. Special bits of logic called
-[extensions](#template-extensions) are provided that make it easy to use New
-Relic data in template reports. By default, the output is rendered in a browser
-to produce PDF output, but it is just as easy to disable rendering and deliver
-the template output in a variety of ways.
+**NOTE:** As of v3.0.0, template reports have been **_deprecated_** due to the
+potential security issues involved with running user defined templates. No
+replacement for this functionality is planned. The documentation for building
+and running template reports has been moved [here](./docs/TEMPLATES.md).
 
 #### Dashboard Reports
 
-Dashboard reports use Nerdgraph to collect snapshot URLs from one or more user
-specified dashboard GUIDs. Snapshot URLs are downloaded as PDFs. When more than
-one dashboard is specified, the PDFs can optionally be concatenated into a
-single PDF.
+Dashboard reports use [Nerdgraph](https://docs.newrelic.com/docs/apis/nerdgraph/get-started/introduction-new-relic-nerdgraph/)
+to collect snapshot URLs from one or more user specified dashboard GUIDs.
+Snapshot URLs are downloaded as PDFs. When more than one dashboard is specified,
+the PDFs can optionally be concatenated into a single PDF.
+
+**NOTE:** Dashboard reports can only be generated for single page dashboards or
+for a single page of a multi-page dashboard.
 
 #### Query Reports
 
 Query reports provide a mechanism to export the results of running a
 NRQL query by simply specifying a query and one or more account IDs to run the
 query against. No additional configuration is required. By default, query
-results are exported to CSV but query results can also be formatted using a
-[Nunjucks](https://mozilla.github.io/nunjucks/) template.
+results are exported to CSV but can also be exported as HTML or JSON.
 
-### Channel Types
+**NOTE:** Formatting results using a [Nunjucks](https://mozilla.github.io/nunjucks/)
+template is deprecated.
+
+### Report Delivery
 
 A variety of mechanisms are supported for delivering report output. These
 mechanisms are referred to as channels. The following types of channels are
@@ -65,80 +112,95 @@ supported.
 * S3: Report output is saved to a file and uploaded to an S3 bucket.
 * Slack: Report output is posted to a Slack channel via a
   [Slack webhook](https://api.slack.com/messaging/webhooks).
+* Webhook: Report output is posted to a custom Webhook.
 
 ### Running Reports
 
 There are three ways to run reports.
 
-1. Using the command line interface (CLI)
+1. As part of the [New Relic Reports AWS Stack](./nr-reports-scheduler/deploy/cf-template.yaml) (recommended)
 
-   Ad-hoc reports can be run directly from a terminal after cloning or
-   downloading the repository and installing dependencies. This is useful
-   primarily for testing and debugging reports.
+   The recommended way to run reports is using the [New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack)
+   along with the New Relic Reports Builder that together provide a full
+   scheduled reporting solution. See the section ["Using the New Relic Reports Stack"](#using-the-new-relic-reports-stack)
+   for more details.
 
 1. Packaged as a Docker image
 
    `Dockerfile`s are provided to package the reporting engine, along with your
-   [templates](#templates) and [manifest files](#manifest-file) as a docker
-   image that runs reports on a schedule using `CRON` or that provides a CLI
-   based `ENTRYPOINT` that can be run via external scheduled task mechanisms
-   such as [AWS ECS Scheduled Tasks](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/scheduled_tasks.html).
+   [manifest files](#manifest-file) as a docker image that runs reports on a
+   schedule using `CRON` or as a docker image with a CLI based `ENTRYPOINT`
+   that can be run via external scheduled task mechanisms such as
+   [AWS ECS Scheduled Tasks](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/scheduled_tasks.html).
+   Both of these can be used in conjuction with the appropriate environment
+   variables to run reports built using the New Relic Reports builder to provide
+   a full scheduled reporting solution.
 
 1. Packaged as an AWS Lambda function
 
    [A Dockerfile](./nr-reports-lambda/Dockerfile) is provided to package the
-   reporting engine, along with your [templates](#templates) and
-   [manifest files](#manifest-file) as an AWS Lambda function. The Lambda can be
-   deployed with[the provided CloudFormation template](./nr-reports-lambda/cf-template.yaml)
+   reporting engine, along with your [manifest files](#manifest-file) as an AWS
+   Lambda function. The Lambda can be deployed with [the provided CloudFormation template](./nr-reports-lambda/cf-template.yaml)
    and [the provided helper scripts](./nr-reports-lambda/scripts).
+
+1. Using the command line interface (CLI)
+
+   Reports can be run directly from a command line after cloning or
+   downloading the repository and installing dependencies. This is useful
+   primarily for testing and debugging reports.
 
 ## Prerequisites
 
-To develop reports and run them locally, you will need the following.
-
-* Node >= 14.0.0
-* A terminal application that supports Bash scripts
-* Your favorite IDE
-* For the email channel, SMTP server settings (for testing locally try [Mailhog](https://github.com/mailhog/MailHog))
-* For the S3 channel, AWS credentials and an S3 bucket
-* For the Slack channel, an [Incoming Webhook](https://api.slack.com/messaging/webhooks)
-  URL.
-
-To build and deploy CRON based images, you will need the following.
-
-* Docker
-* A Docker repository
-
-To build and deploy Lambda based images, you will need the following.
+To build and deploy the [New Relic Reports AWS Stack](./nr-reports-scheduler/deploy/cf-template.yaml)
+or the Lambda based images, you will need the following.
 
 * Docker
 * An ECS repository
 * The AWS CLI
 * AWS credentials
 
-## Installation
+To build and deploy CRON based images, you will need the following.
+
+* Docker
+* A Docker repository
+
+To develop reports and run them locally, you will need the following.
+
+* Node >= 14.0.0
+* A terminal application that supports Bash scripts
+* Your favorite IDE
+* For the [email channel](#email-channel), SMTP server settings (for testing locally try [Mailhog](https://github.com/mailhog/MailHog))
+* For the [S3 channel](#s3-channel), AWS credentials and an S3 bucket
+* For the [Slack channel](#slack-channel), an [Incoming Webhook](https://api.slack.com/messaging/webhooks)
+  URL.
+* For the [webhook channel](#webhook-channel), the Webhook URL, any required
+  custom header details, and the payload format.
+
+## Getting Started
+
+This tutorial will walk you through how to generate a dashboard and query
+report.
+
+**NOTE:** For this simple tutorial, we will be generating reports manually from
+the [command line](#using-the-cli) and the results will be saved to the local
+file system. While this is convenient for development and testing, it is _not_
+the recommended way to generate and deliver reports. It is used below for
+edification purposes only.
+
+### Before you begin
+
+If you haven't already, make sure you have checked [the prerequisites](#prerequisites)
+for running reports locally. You will also need a
+[New Relic User key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#user-api-key)
+to test with.
+
+To install New Relic Reports locally, perform the following commands.
 
 ```bash
 git clone git@github.com:newrelic/nr-reports.git
 cd nr-reports
 npm install
 ```
-
-## Getting Started
-
-Here's how to build a simple "Hello, world!" HTML template that displays a basic
-throughput chart for an application named `Shop Service`.
-
-**NOTE:** For this simple tutorial, we will be generating reports interactively
-from the command line. While this is convenient for testing things out, one of
-the main features of New Relic Reports is the automation support for report
-generation and delivery.
-
-### Before you begin
-
-If you haven't already, make sure you have checked
-[the prerequisites](#prerequisites) and [installed the repo](#installation). You
-will also need [a New Relic User key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#user-api-key).
 
 Then open a terminal that supports Bash scripts and execute the following
 commands, making sure to replace `path/to/nr-reports` with the path to the
@@ -150,127 +212,66 @@ cd path/to/nr-reports
 export NEW_RELIC_API_KEY="[YOUR USER KEY]"
 ```
 
-### Copy the example template
+### Run a template report
 
-Next, make a copy of the example `hello-world.html` template in the `include`
-directory.
-
-```bash
-cp ./examples/hello-world.html ./include/hello-world.html
-```
-
-### Update the example template
-
-Next, edit the new template and replace the string `Shop Service` with an
-appropriate APM service name and the account ID `1234567` with the account ID
-for the service. Then save the template.
-
-Don't worry for now what all the rest of the content in the file means. It looks
-more complicated than it is and will be explained [in the usage section](#usage).
-
-### Run the template report
-
-Now run the report using the following command.
-
-```bash
-./nr-reports-cli/bin/nr-reports.sh -n hello-world.html
-```
-
-That's it!
-
-There should now be a PDF file in the current directory called
-`hello-world.pdf`. Open it up and it should look something like the image below.
-
-![Hello World Report PDF](./screenshots/hello-world.png)
-
-### Add a template parameter
-
-The above template is nice, but it only works for one service because we
-hard-coded the application name in the query and the account ID on the `chart`
-tag. That isn't very "templatish". Let's see how to templatize the example
-above.
-
-First, load `hello-world.html` back into an editor. Now replace the name
-of your application with the string `{{ appName }}` (curly braces and all) and
-completely _remove_ the `accountId` parameter (and the `,` after
-`type="AREA"`). Also, change the `type` from `AREA` to `LINE` just so we are
-sure we are really running a new example.
-
-The `chart` tag should now look something like the following.
-
-```html
-<div>
-    {% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = '{{ appName }}' SINCE last week UNTIL this week TIMESERIES",
-        type="AREA"
-    %}{% endchart %}
-</div>
-```
-
-### Create a template parameter values file
-
-Now we will create a [values file](#values-file). The values file is a
-[JSON](https://www.json.org/json-en.html) or [YAML](https://yaml.org/) file
-with a flat structure that is a set of key/value pairs. It let's us separate out
-specific values from the template so that we can use the same template with
-different values without having to change the template.
-
-Copy the example values file to a new file named `hello-world.json`.
-
-```bash
-cp ./examples/values.json ./include/hello-world.json
-```
-
-### Update the example values file
-
-Next, edit the new file and replace the string `Shop Service` and the account
-ID `1234567` with the values you removed from the template in the previous step.
-Then save the file.
-
-### Re-run the template report
-
-First, delete the previous report so we can be sure this run re-creates a new
-one.
-
-```bash
-rm ./hello-world.pdf
-```
-
-Now, run the report using the following command, noting the addition of the `-v`
-option that is used to specify the path to the values file.
-
-```bash
-./nr-reports-cli/bin/nr-reports.sh -n hello-world.html -v include/hello-world.json
-```
-
-Now there should be a new PDF file in the current directory called
-`hello-world.pdf`. Open it up and it should look exactly the same as before.
-That is because all we've done above is separate out the account ID and
-application name so it isn't hardcoded in the template. We didn't actually
-change the values.
+**NOTE:** As of v3.0.0, template reports have been **_deprecated_** due to the
+potential security issues involved with running user defined templates. No
+replacement for this functionality is planned. The documentation for building
+and running template reports has been moved [here](./docs/TEMPLATES.md). See
+[the following section](./docs/TEMPLATES.md#getting-started) for the content
+from previous versions of this section.
 
 ### Run a dashboard report
 
-So far we have been running template reports, i.e. reports based on a template
-file. New Relic Reports supports another report type called dashboard reports.
-Dashboard reports are much simpler. You specify a list of dashboard GUIDs and
-the reporting engine will use Nerdgraph to download a dashboard snapshot PDF for
-each dashboard and optionally combine multiple snapshots in a single PDF.
+Dashboard reports are generated by specifying one or more dashboard GUIDs. The
+reporting engine will use [Nerdgraph](https://docs.newrelic.com/docs/apis/nerdgraph/get-started/introduction-new-relic-nerdgraph/)
+to download a dashboard snapshot PDF for each dashboard and optionally combine
+multiple snapshots in a single PDF.
 
 Here's how you run a dashboard report.
 
 ### Find your dashboard GUID(s)
 
-The easiest way to find the GUID for a dashboard is via the NR1 UI.
+The easiest way to find the GUID for a single-page dashboard is via the NR1 UI.
 
 1. Navigate to your dashboard
 2. Locate the dashboard name above the filter bar
-3. On one side of the dashboard name, locate the box that contains the account
-   name and a "tag" icon followed by a number. Click anywhere in the box.
+3. On one side of the dashboard name, locate the box that labeled "Metadata".
+   Click anywhere in the box.
 4. In the "drawer" that slides out from the side of the screen, locate the
    label "Entity guid" followed by a long string of numbers and letters (this is
    the dashboard GUID).
 5. Hover over the string of numbers and letters and click on the clipboard icon
    that appears. The dashboard GUID will now be copied in the clipboard.
+
+To find the GUID of a page within a multi-page dashboard, it is necessary to
+use the [Nerdgraph API Explorer](https://api.newrelic.com/graphiql).
+
+1. Navigate to the [Nerdgraph API Explorer](https://api.newrelic.com/graphiql).
+2. In the text box labeled "User key", enter your New Relic User key.
+3. Paste the following text into the GraphQL source editor box. Make sure to
+   replace the text "My dashboard" with the full name of the dashboard that
+   _contains_ the page you want to use (not the name of the page itself).
+
+```graphql
+{
+  actor {
+    entitySearch(queryBuilder: {type: DASHBOARD, name: "My dashboard"}) {
+      results {
+        entities {
+          guid
+          name
+        }
+      }
+    }
+  }
+}
+```
+
+4. Hit the "Play" button or type `Ctrl-Enter` to execute the query.
+5. In the results text box, locate the entity that contains the name of the
+   page you want to use in the `name` property.
+6. Copy the value or the `guid` property shown just above the `name` property.
 
 ### Run the dashboard report
 
@@ -283,16 +284,14 @@ Now run the report using the following command, replacing the string
 
 Now there should be a new PDF file in the current directory called
 `dashboard-[DASHBOARD_GUID].pdf` where `[DASHBOARD_GUID]` is the GUID of your
-dashboard. Open it up and it should look like a snapshot of dashboard for the
-last 60 minutes.
+dashboard. Open it up and you should see a snapshot of your dashboard.
 
 ### Run a query report
 
-Now let's see how to run another report type called a query report. Query
-reports let you export the results of running a NRQL query without all the
-complexity of creating a template, using the `nrql` tag, and running the
-report. Instead, you just specify an NRQL query and the reporting engine will
-automatically run the query and, by default, write the results to a CSV file.
+Now let's see how to run a query report. Query reports are generated by
+specifying a single [NRQL](https://docs.newrelic.com/docs/nrql/get-started/introduction-nrql-new-relics-query-language/)
+query. The reporting engine will automatically run the query and, by default,
+write the results to a CSV file.
 
 Let's see how that works by running a simple query report to show the average
 latency of all APM services in your account grouped by application name and URL
@@ -320,86 +319,14 @@ Shop Service,/api/v1/products,1.5092493357575756
 Shop Service,/api/v1/products/1234,1.4948035056074764
 ```
 
-### Run a report using a manifest file
-
-Now let's see how we can run multiple reports at once using a
-[manifest file](#manifest-file). A manifest file is a [JSON](https://www.json.org/json-en.html)
-or [YAML](https://yaml.org/) file containing an array of report definitions.
-We will use a manifest file to run the template report and dashboard report
-from above all at once.
-
-### Cleanup previous reports
-
-First, delete the previous report so we can be sure this run re-creates a new
-one.
-
-```bash
-rm hello-world.pdf dashboard-[DASHBOARD_GUID].pdf query-report.csv
-```
-
-Make sure to replace `[DASHBOARD_GUID]` with the GUID of your dashboard.
-
-### Copy the example manifest file
-
-Copy the example manifest file to a new manifest file named `manifest.json`.
-
-```bash
-cp ./examples/manifest.json ./include/manifest.json
-```
-
-### Update the example manifest file
-
-Next, edit the new file and replace the string `Shop Service` and the account
-ID `1234567` and the string `ABCDEF123456` with the values you used in the
-previous steps. Then save the file.
-
-Again, don't worry for now what all that means. It looks more complicated than
-it is and will be explained in the section [manifest file](#manifest-file).
-
-### Run the report using the manifest file
-
-Now run the report using the following command.
-
-```bash
-./nr-reports-cli/bin/nr-reports.sh
-```
-
-Now there should be both a `hello-world.pdf` file in the current directory
-_and_ a PDF file called `dashboard-[DASHBOARD_GUID].pdf` in the current
-directory. Using the manifest file we were able to generate both reports at
-once!
-
-Notice that we did not specify any arguments to the command! That is because the
-reporting engine will load the [manifest file](#manifest-file) located at
-`include/manifest.json` by default.
-
 ### Summary
 
 Here's what we just did.
 
-1. Created a basic HTML template using the [Nunjucks](https://mozilla.github.io/nunjucks/)
-   templating syntax that displays a header, a paragraph, and a New Relic
-   timeseries chart for the given NRQL query.
-2. Modifed the template to use template parameters as placeholders for the
-   values that we hardcoded in step 1 by creating a values file.
-3. Used the CLI script to run a report at the command line using the template
-   and the values file from steps 1 and 2.
-4. Without knowing it, used the `file` channel to store the resulting PDF
-   report in the current directory.
-5. Used the CLI script to run a report at the command line using a dashboard
-   entity GUID.
-6. Without knowing it, used the `file` channel to store the resulting PDF
-   report in the current directory.
-7. Used the CLI script to run a query report at the command line using a simple
-   NRQL query.
-8. Without knowing it, used the `file` channel to store the query results as a
-   CSV file in the current directory.
-9. Created a [manifest file](#manifest-file) with report definitions for the
-   HTML template report and dashboard report from the previous steps.
-10. Used the CLI script to run a report at the command line using the default
-   manifest file located at `include/manifest.json`.
-11. Without knowing it, used the `file` channel to store the resulting PDF
-   reports in the current directory.
+1. Used the CLI script to run a report at the command line using a dashboard
+   entity GUID. This generated a PDF file in the current directory.
+1. Used the CLI script to run a query report at the command line using a simple
+   NRQL query. This generated a CSV file in the current directory.
 
 Though useful during template development, in most cases, you won't be
 generating reports by running the CLI directly. Instead, you will use one of the
@@ -408,544 +335,84 @@ provided mechanisms for automating the generation and delivery of reports. See
 
 ## Usage
 
-### Template Reports
-
-Template reports are created from [templates](#templates). Templates are stored
-in template files. Template files are text files that contain text mixed
-with template "instructions". Template "instructions" are written using a
-special syntax that is understood by the [the Nunjucks template "engine"](https://mozilla.github.io/nunjucks/).
-Reports are produced from a template file by passing the content of the file
-through the template engine. The template engine evaluates the "instructions" to
-transform the original content into the raw report output. By default, the raw
-output is rendered using a headless Chrome instance and saved as a PDF. But you
-can also tell the New Relic Reports engine not to do so. You might do this if
-you are producing a CSV file or you want to deliver raw HTML instead of rendered
-HTML.
-
-The following JSON shows an example of a template report definition in a
-[manifest file](#manifest-file). You might recognize this from the
-section [Update the example manifest file](#update-the-example-manifest-file)
-in the [Getting Started](#getting-started) tutorial.
-
-```json
-  {
-    "name": "hello-world",
-    "templateName": "hello-world.html",
-    "parameters": {
-      "accountId": 1234567,
-      "appName": "Shop Service"
-    },
-    "channels": []
-  }
-```
-
-When the reporting engine runs this report, it will invoke the templating
-engine with the template name `hello-world.html` and the parameters `accountId`
-set to `1234567` and `appName` set to `Shop Service`. The template output will
-be rendered to a PDF file named `hello-world.pdf` using a headless Chrome
-instance and this file will be copied to the current working directory since the
-default channel is the [`file`](#file-channel) channel and no `destDir`
-channel parameter is set.
-
-See the section [Template Report Properties](#template-report-properties) for
-more information on the available dashboard report properties.
-
-![User-Defined Template Warning](https://img.shields.io/badge/User_Defined_Template_Warning-Never_run_untrusted_templates!-critical?style=for-the-badge&labelColor=orange)
-
-Nunjucks does not sandbox execution so **it is not safe to run untrusted
-templates or inject user-defined content into template definitions**. Doing so
-can expose attack vectors for accessing sensitive data and remote code
-execution.
-
-See [this issue](https://github.com/mozilla/nunjucks-docs/issues/17)
-for more information.
-
-#### Templates
-
-Here is a very basic template.
-
-```text
-{% for fruit in ['banana', 'orange'] -%}
-I want a {{ fruit }}.
-{% endfor -%}
-```
-
-This template contains three instructions.
-
-1. The text in between the first `{%` and `%}` pair is an example of a
-   [tag](http://mozilla.github.io/nunjucks/templating.html#tags). In particular,
-   this is the opening of the [for tag](http://mozilla.github.io/nunjucks/templating.html#for).
-1. The text `{{ fruit }}` is an example of a [variable lookup](http://mozilla.github.io/nunjucks/templating.html#variables).
-1. The text in between the second `{%` and `%}` pair signals the closing of the
-   `for` tag.
-
-The `for` tag defines a loop. Any content (including other instructions) in
-between the text `for` and the text `endfor` will be evaluated for each item
-of the loop. In this case, the loop will be executed twice. Once for each value
-of the list specified by the expression `['banana', 'orange']`. Because the
-string `I want a {{ fruit }}.` is placed in between the opening and closing of
-the `for` tag, the following output will be produced when this template is
-passed through the Nunjucks template engine.
-
-```text
-I want a banana.
-I want a orange.
-
-```
-
-Notice that the final output does _not_ include any Nunjucks "instructions". All
-instructions have been replaced with the content produced as a result of
-evaluating each instruction.
-
-See the section [Templating](http://mozilla.github.io/nunjucks/templating.html)
-of the Nunjucks documentation for detailed information on how to build
-templates.
-
-#### Template Content
-
-Template reports are built out of text. The template engine does not care about
-the semantics of the text that it processes. In other words, the template engine
-does not care if the text represents CSV data or HTML data. Just that it is
-text.
-
-There is one special case which applies to the default behavior of the reporting
-engine. In this case, the output of the template engine will be loaded into a
-headless Chrome instance and the rendered page will be saved as a PDF file.
-While just about any text-based document can be rendered by Chrome in one way or
-another, the reporting engine applies special handling if, and only if, the
-[`isMarkdown` flag](#template-report-properties) is present and set to `true` in
-the report definition or if the template name has a `.md` extension.
-
-In either of these conditions are met, the reporting engine assumes that the
-template contains [GitHub Flavored Markdown](https://github.github.com/gfm/).
-This will result in _two_ passes through the template engine. The first pass is
-the standard pass the templating engine makes over any template. The additional
-_second_ pass renders the [`report.md.html`](./templates//base/report.md.html)
-template and inserts the output from the first pass into the `content` section
-after converting the output to HTML using
-[the showdown Markdown converter](https://github.com/showdownjs/showdown).
-
-##### HTML Template Example
-
-Following is an example of an HTML template. You might recognize this from the
-section [Update the example template](#update-the-example-template) in the
-[Getting Started](#getting-started) tutorial.
-
-```html
-{% extends "base/report.html" %}
-
-{% block content %}
-<h1>My Application Throughput</h1>
-<p>
-    This is our application throughput for last week.
-</p>
-<div>
-    {% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
-        type="AREA",
-        accountId=1234567
-    %}{% endchart %}
-</div>
-{% endblock %}
-```
-
-##### Markdown Template Example
-
-Following is an example of a Markdown template that will produce something very
-similar to the example HTML template above.
-
-```markdown
-# My Application Throughput
-
-This is our application throughput for last week.
-
-{% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
-   type="AREA",
-   accountId=1234567
-%}{% endchart %}
-```
-
-##### CSV Template Example
-
-As mentioned, template reports can be built from any text-based content and
-produce any text-based output. A report could produce CSV, XML, or JSON output.
-For example, following is a template that produces a CSV file from the result of
-running a NRQL query using [the `nrql` tag](#the-nrql-tag).
-
-```nunjucks
-App Name,Duration
-{%- nrql "SELECT average(duration) AS 'duration' FROM Transaction FACET appName",
-  accountId=1234567
--%}
-   {%- for item in result %}
-{{ item.facet[0] }},{{ item.duration }}
-   {%- endfor -%}
-{%- endnrql -%}
-```
-
-In the above case, the output from the template engine is probably not meant to
-be rendered in a browser. The `render` report parameter is provided to allow you
-to inform the reporting engine to skip the rendering step. In some cases, this
-may even be desirable for HTML-based templates. For example, if the output is
-meant to be included inline in an email or sent as a Slack message.
-
-#### Template Resolution
-
-When processing a template, the template engine uses
-[the Nunjucks FileSystemLoader](https://mozilla.github.io/nunjucks/api.html#filesystemloader)
-to load template files from the local filesystem. The `FileSystemLoader`
-resolves the _template name_ passed to the engine into the _template file_ very
-much like a shell resolves executables using the `PATH` environment variable.
-That is, given a template name and a template "path", the `FileSystemLoader`
-resolves the template name to a template file to load by searching each
-directory on the template path for the a file matching the template name. For
-example, consider the following directory structure.
-
-```text
-/app/my-reports
-  |- templates
-    |- hello-world.html
-```
-
-Given the template name `hello-world.html` and the template path
-`/app/my-reports/templates`, the `FileSystemLoader` would load the template
-from the file `/app/my-reports/templates/hello-world.html`. However, if the
-template path were `/app/my-reports`, the `FileSystemLoader` would fail to
-find a matching template and the engine would throw an exception.
-
-The template name _may_ include segments separated by the system path separator,
-in which case, the `FileSystemLoader` will treat the template name like a
-relative path and match it against each directory in the path. For example,
-specifying the template name `templates/hello-world.html` would make the failing
-case above work fine.
-
-The default template path will always include the current working directory and
-the directories `include` and `templates` relative to the current working
-directory. In addition, the `TEMPLATE_PATH` environment variable may be set to
-a list of additional directories separated by the system path separator. These
-directories will also be added to the template path. Finally, the `templatePath`
-[engine option](#engine-options), may also be used to specify additional
-directories separated by the system path separator.
-
-When building _any_ of the docker images, all templates (and all other files)
-in the [`include`](./include) directory are copied into the `include` directory
-of the image (`/app/nr-reports-cli/include`). Note that files in the `include`
-directory are `git` ignored. To include files in this directory in `git`, either
-remove the line `include/*` from the [`gitignore`](./gitignore) file or add
-negation patterns for the files to be committed.
-
-#### Template Extensions
-
-New Relic Reports provides several [custom tags](http://mozilla.github.io/nunjucks/api.html#custom-tags)
-that make it easy to integrate New Relic charts and data in your reports.
-
-##### The `chart` Tag
-
-The `chart` tag is used to include a [New Relic chart](https://docs.newrelic.com/docs/query-your-data/explore-query-data/use-charts/use-your-charts/)
-in a report. It should only be used with HTML or markdown based templates that
-will be rendered in Chrome to produce a PDF. For an HTML based template, the
-`chart` tag will inject an HTML `<img />` tag into the generated output. For a
-markdown based template, the `chart` tag will inject
-[the markdown to create an image](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#images)
-into the generated output.
-
-For example, recall [the snippet from the example template](#update-the-example-template)
-in the [Getting Started](#getting-started) tutorial.
-
-```nunjucks
-{% chart "FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
-   type="AREA",
-   accountId=1234567
-%}{% endchart %}
-```
-
-When the template engine evaluates this tag, it will invoke [the `chart`
-extension](./nr-reports-core/lib/extensions/chart-extension.js). The `chart`
-extension retrieves a static chart URL for the given account ID, NRQL, and chart
-options using the following GraphQL query.
-
-```graphql
-{
-   actor {
-      account(id: $accountId) {
-         nrql(query: $query, timeout: $timeout) {
-            staticChartUrl(chartType: $chartType, format: $chartFormat, width: $chartWidth, height: $chartHeigh)
-         }
-      }
-   }
-}
-```
-
-The `chart` extension takes the returned URL and injects the appropriate markup
-to display the chart image in the report.
-
-Unless the template contains markdown, the `chart` tag is replaced with an
-HTML `img` tag with the `src` value set to the static chart URL, like the one
-below.
-
-```html
-<img src="STATIC_CHART_URL" ... />
-```
-
-For markdown, the `chart` tag is replaced with the markdown to show an image,
-like below.
-
-```markdown
-![](STATIC_CHART_URL)
-```
-
-###### `chart` Tag Options
-
-The `chart` tag supports the following options.
-
-| Option Name | Description | Type | Required | Default |
-| --- | --- | --- | --- | --- |
-| accountId | An account ID to run the query with | Y | |
-| query or first argument | The NRQL query to run | string | Y | |
-| type | The chart type. A valid value for the `chartType` argument of the `staticChartUrl` field of the `NrdbResultContainer` GraphQL type, e.g. `AREA`, `LINE`, etc. | string | N | LINE |
-| format | The chart format. A valid value for the `format` argument of the `staticChartUrl` field of the `NrdbResultContainer` GraphQL type, e.g. `PNG` or `PDF`. | string | N | PNG |
-| width | The width of the image | number | N | 640 |
-| height | The height of the image | number | N | 480 |
-| class | CSS class name(s) to add to the HTML `img` tag. Unused for markdown templates. | string | N | '' |
-
-**NOTE:** The NRQL query can either be specified as the first argument after the
-opening of the `chart` tag as shown in the example above or using the `query`
-keyword argument as shown below.
-
-```nunjucks
-{% chart
-   accountId=1234567,
-   query="FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
-   type="AREA"
-%}{% endchart %}
-```
-
-##### The `nrql` Tag
-
-The `nrql` tag is used to run a NRQL query. The results of the query are stored
-in a template variable for further processing by your templates. We saw
-[an example of this in the Template Content section](#template-content) section.
-It is repeated below for convenience.
-
-```nunjucks
-App Name,Duration
-{%- nrql "SELECT average(duration) AS 'duration' FROM Transaction FACET appName",
-  accountId=1234567
--%}
-   {%- for item in result %}
-{{ item.facet[0] }},{{ item.duration }}
-   {%- endfor -%}
-{%- endnrql -%}
-
-```
-
-When the template engine evaluates the `nrql` tag, it will invoke [the `nrql`
-extension](./nr-reports-core/lib/extensions/nrql-extension.js). The `nrql`
-extension runs the given NRQL query using the given account ID(s) using the
-following GraphQL query.
-
-```graphql
-{
-   actor {
-      nrql(accounts: $accountIds, query: $query, timeout: $timeout) {
-         results
-         metadata {
-            facets
-            eventTypes
-         }
-      }
-   }
-}
-```
-
-The extension stores an object containing the `results` and `metadata` fields
-into the variable with the name specified by the `var` option on the `nrql`
-tag or into a variable named `result`. The `results` field is an array of
-objects whose structure matches the query submitted. The `facets` field is an
-array containing the names of the facets in the query submitted and the
-`eventTypes` field is an array of the names of the event types in the query
-submitted. Following is an example JSON object that would be returned as the
-result of running the query
-`SELECT average(cpuPercent) FROM SystemSample FACET hostname`.
-
-```json
-{
-   "metadata": {
-      "eventTypes": [
-         "SystemSample"
-      ],
-      "facets": [
-         "hostname"
-      ]
-   },
-   "results": [
-      {
-         "facet": "my.local.test",
-         "average.cpuPercent": 1.5432042784889708,
-         "hostname": "my.local.test"
-      }
-   ]
-}
-```
-
-For more information on the structure of these fields, see the type definition
-for the `CrossResultsNrdbResultContainer` type at `https://api.newrelic.com/graphiql`.
-
-###### `nrql` Tag Options
-
-The `nrql` tag supports the following options.
-
-| Option Name | Description | Type | Required | Default |
-| --- | --- | --- | --- | --- |
-| accountId | Account ID to run the query with. Multiple account IDs an be specified separated by commas. One of the this option or the `accountIds` option must be specified. | Y | |
-| accountIds | A list of account IDs to run the query with. A maximum of 5 account IDs is allowed. One of the this option or the `accountId` option must be specified. | array | Y | |
-| query or first argument | The NRQL query to run. This option supports [template parameter](#template-parameters) interpolation. That is, the query string is interpolated using the template engine prior to being run. | string | Y | |
-| var | The name of the variable to hold the query result | string | N | result |
-
-**NOTE:** The NRQL query can either be specified as the first argument after the
-opening of the `chart` tag as shown in the example above or using the `query`
-keyword argument as shown below.
-
-```nunjucks
-{% nrql
-   accountId=1234567,
-   query="FROM Transaction SELECT rate(count(*), 1 minute) as 'Requests Per Minute' where appName = 'Shop Service' SINCE last week UNTIL this week TIMESERIES",
-%}
-<h2>{{ result.facet[0] }}<h2>
-{% endnrql %}
-```
-
-#### Template Parameters
-
-Template parameters are key-value pairs that are passed to the template engine
-when processing a template. Template parameters are used to customize the
-processing of a template file and in turn, customize the output from the
-template engine.
-
-During processing, a template "variable" is created for each template parameter
-using the key of the parameter as the variable name and the value of the
-parameter as the value of the variable. Within a template file, template
-parameters are referenced by key, just like any other template variable. Here is
-a simple example of a template file that references two template variables: one
-that is set directly in the template and another that is populated from a
-template parameter. Note how the same syntax is used to reference both.
-
-```text
-{% set my_name = "Taylor" -%}
-{# Output the my_name variable set from this template -#}
-Hello, my name is {{ my_name }}.
-{#- Output the your_name variable set from a template parameter #}
-Nice to meet you, {{ your_name }}.
-```
-
-When the above template is processed by the template engine without _any_
-template parameters, it will produce the following output.
-
-```text
-Hello, my name is Taylor.
-Nice to meet you, .
-
-```
-
-Since no template parameters were specified, no variable existed with the
-key `your_name` and so there was no one to meet. However, if the above
-template is processed with the template parameter `your_name` set to `Jan`,
-it will produce the following output.
-
-```text
-Hello, my name is Taylor.
-Nice to meet you, Jan.
-
-```
-
-To output nothing when no `your_name` parameter is passed, the template can
-be modified as follows.
-
-```text
-{% set my_name = "Taylor" -%}
-{# Output the my_name variable set from this template -#}
-Hello, my name is {{ my_name }}.
-{#- Output the your_name variable set from a template parameter #}
-{% if your_name -%}
-Nice to meet you, {{ your_name }}.
-{%- endif %}
-```
-
-##### Specifying template parameters
-
-Template parameters are specified as a [JSON](https://www.json.org/json-en.html)
-or [YAML](https://yaml.org/) object. For example, the following JSON specifies
-3 template parameters: 1 string, 1 number, and 1 array of strings.
-
-```json
-{
-   "accountId": 123456,
-   "title": "New Relic Weekly Report",
-   "appNames": [ "app1", "app2" ],
-}
-```
-
-When processing a template, the reporting engine makes all properties in the
-[report execution context](#report-execution-context) available as template
-parameters.
-
-### Dashboard Reports
+### Reports
+
+The New Relic Reports reporting engine generates reports using report
+generators. There are three types of report generators: the
+[template report (**deprecated**)](#template-reports-1) generator, the
+[dashboard report](#dashboard-reports-1) generator, and the [query report generator](#query-reports-1).
+
+Each report generator interacts with one or more New Relic APIs to generate
+[report output](#report-output). Report output is distributed to destinations by
+[selecting](#publish-configuration-selection) a [publish configuration](#publish-configurations)
+which specifies a set of [channels](#channels) that are used to route the
+report output to the destination.
+
+The entire process is governed by a set of configuration parameters that can be
+specified at the [command line](#cli-usage), in environment variables, or in a
+[manifest file](#manifest-file).
+
+#### Template Reports
+
+**NOTE:** As of v3.0.0, template reports have been **_deprecated_** due to the
+potential security issues involved with running user defined templates. No
+replacement for this functionality is planned. The documentation for building
+and running template reports has been moved [here](./docs/TEMPLATES.md).
+
+#### Dashboard Reports
 
 Dashboard reports provide a way to easily capture PDFs of one or more
-dashboards. When more than one dashboard GUIDs is specified, each dashboard is
+dashboards. When more than one dashboard GUID is specified, each dashboard is
 captured as a separate PDF file. These files can optionally be combined into a
 single file.
 
-The following JSON shows an example of a dashboard report definition in a
-[manifest file](#manifest-file). You might recognize this from the
-section [Update the example manifest file](#update-the-example-manifest-file)
-in the [Getting Started](#getting-started) tutorial.
+The following YAML shows an example of a basic dashboard report definition in a
+[manifest file](#manifest-file).
 
-```json
-  {
-    "name": "performance-summary-dashboard",
-    "dashboards": [
-      "ABCDEF123456"
-    ],
-    "channels": []
-  }
+```yaml
+reports:
+- id: example-dashboard-report
+  name: Example dashboard report
+  dashboards:
+  - DASHBOARD_GUID_1
 ```
 
 When the reporting engine runs this report, it will execute the
-`dashboardCreateSnapshotUrl` GraphQL mutation with the GUID `ABCDEF123456` in
-order to create a URL to download a PDF snapshot of the dashboard with the given
-GUID. It will then download the PDF to a file named `dashboard-ABCDEF123456.pdf`
-since no `outputFileName` is specified. The PDF file will be copied to the
-current working directory since the default channel is the
-[`file`](#file-channel) channel and no `destDir` channel parameter is set.
+`dashboardCreateSnapshotUrl` [Nerdgraph](https://docs.newrelic.com/docs/apis/nerdgraph/get-started/introduction-new-relic-nerdgraph/)
+mutation with the GUID `DASHBOARD_GUID_1` in order to create a URL to download a
+PDF snapshot of the dashboard with the given GUID. It will then download the PDF
+to a file named `dashboard-DASHBOARD_GUID_1.pdf` since no [`outputFileName`](#output-file-name)
+is specified. The PDF file will be copied to the current working directory since
+the default channel is the [`file`](#file-channel) channel and no `destDir`
+channel parameter is set.
 
 See the section [Dashboard Report Properties](#dashboard-report-properties) for
 more information on the available dashboard report properties.
 
-### Query Reports
+#### Query Reports
 
 Query reports provide a simple way to run a NRQL query and export the results of
 the query to a file. By default, the results are exported to a CSV file.
 
-The following JSON shows an example of a query report definition in a
+The following YAML shows an example of a query report definition in a
 [manifest file](#manifest-file) that will run the example query from the
 section [Run a query report](#run-a-query-report) in the
 [Getting Started](#getting-started) tutorial.
 
 ```yaml
-{
-   "name": "transactions"
-   "accountIds":
-     - 1234567
-   "query": "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri AS 'URL'"
-   "timeout": 10
-   "channels": []
-}
+reports:
+- id: example-query-report
+  query: "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri"
+  accountIds:
+  - 1234567
+  timeout: 10
 ```
 
 When the reporting engine runs this report, it will execute the following
-GraphQL query using the given NRQL query for the `$query` argument, the given
-account ID (in a 1 member array) for the `$accountIds` argument, and the given
-timeout for the `$timeout` argument.
+[Nerdgraph](https://docs.newrelic.com/docs/apis/nerdgraph/get-started/introduction-new-relic-nerdgraph/)
+query using the given [NRQL](https://docs.newrelic.com/docs/nrql/get-started/introduction-nrql-new-relics-query-language/)
+query for the `$query` argument, the given account ID (in a 1 member array) for
+the `$accountIds` argument, and the given timeout for the `$timeout` argument.
 
 ```graphql
 {
@@ -975,7 +442,11 @@ Shop Service,/api/v1/products,1.5092493357575756
 Shop Service,/api/v1/products/1234,1.4948035056074764
 ```
 
-#### Multi-account Queries
+**NOTE:** Queries for [query reports](#query-reports) are always run
+synchronously. [Asynchronous queries](https://docs.newrelic.com/docs/apis/nerdgraph/examples/async-queries-nrql-tutorial/)
+are not supported.
+
+##### Multi-account Queries
 
 Multiple account IDs can be specified for a query report. The reporting engine
 supports three different modes for executing queries against multiple accounts.
@@ -1014,9 +485,9 @@ to `cross-account` or leave it out entirely, as `cross-account` is the default.
 
 ##### Per-account Queries
 
-Sometimes you really want to run a query individually against multiple accounts
+Sometimes you may want to run a query individually against multiple accounts
 and get each set of results individually rather than aggregating the set of
-results across all account. For example, if you want to find the top 5
+results across all accounts. For example, if you want to find the top 5
 transactions of each of 5 different accounts and export them to a CSV file with
 each row including the account ID, using a cross-account query won't suffice. To
 account for this, the reporting engine provides two multi-account modes that
@@ -1032,9 +503,9 @@ GraphQL queries in a single GraphQL call, as in the following example.
    NrqlQuery1: {
       actor {
          nrql(
-            accounts: [ACCOUNT_ID_1, ACCOUNT_ID_2, ACCOUNT_ID_3]
+            accounts: [ACCOUNT_ID_1]
             options: {}
-            query: "NRQL_QUERY_1"
+            query: "NRQL_QUERY"
             timeout: 70
          ) {
             results
@@ -1044,9 +515,9 @@ GraphQL queries in a single GraphQL call, as in the following example.
    NrqlQuery2: {
       actor {
          nrql(
-            accounts: [ACCOUNT_ID_1, ACCOUNT_ID_2, ACCOUNT_ID_3]
+            accounts: [ACCOUNT_ID_2]
             options: {}
-            query: "NRQL_QUERY_2"
+            query: "NRQL_QUERY"
             timeout: 70
          ) {
             results
@@ -1064,7 +535,7 @@ The `per-account` and `per-account-concurrent` modes are not "native" query
 types like `cross-account`. Rather, they are implemented in the reporting
 engine.
 
-### Report Execution Context
+#### Report Execution Context
 
 The reporting engine creates an "execution context" each time it runs a report.
 The execution context is a collection of properties that can be used by the
@@ -1074,92 +545,381 @@ reporting engine populates it as follows.
 * If a [manifest file](#manifest-file) is specified:
    * Add all properties from the `variables` section at the top-level
    * Add properties from the `report` definition
-   * If the report is a [template report](#template-reports):
-      * Add all properties from the `parameters` property from the report definition
-      * If the report is being run [from a Lambda](#using-the-aws-lambda-function)
-        function:
-        * If a `body` property is present in the `event` object passed to the
-          handler function, add all properties from the `body` property
-        * If a `body` property is _not_ present in the `event` object passed to
-          the handler function, add all properties from the `event` object
 * If no [manifest file](#manifest-file) is specified:
-   * Add report name and the [`outputFileName`](#output-file-name) if one
-     is specified
-   * If the report is a [template report](#template-reports):
-      * Add the template name
-      * If a [values file](#values-file) is specified, add all properties from
-        the top-level object
-      * If the report is being run [from a Lambda](#using-the-aws-lambda-function)
-        function:
-        * If a `body` property is present in the `event` object passed to the
-          handler function, add all properties from the `body` property
-        * If a `body` property is _not_ present in the `event` object passed to
-          the handler function, add all properties from the `event` object
+   * Add the report id and the [`outputFileName`](#output-file-name) if one is
+     specified
+   * If the report is a [template report](#template-reports) (**deprecated**),
+     add a property named `templateName` containing the specified template
+     name
    * If the report is a [dashboard report](#dashboard-reports), add an array
      property named `dashboards` containing all dashboard GUIDs
-   * If the report is a [query report](#query-reports), add the query and the
-     account ID
-     property named `dashboards` containing all dashboard GUIDs
+   * If the report is a [query report](#query-reports) add a property named
+     `query` containing the specified NRQL query
+
+In addition, prior to being passed to any [channel](#channels) implementation,
+the [publish configuration](#publish-configurations) ID and the [channel](#channels)
+ID are added to the execution context. If a [manifest file](#manifest-file) is
+specified, all properties from the [selected](#publish-configuration-selection)
+[publish configuration](#publish-configurations) and all
+[channel configuration parameters](#channel-parameters) are also added.
 
 **NOTE:**
 When populating the context, if two properties with the same name are added by
 different steps, the later property will overwrite the earlier property.
 
-### Report Output
+#### Report Output
 
-Every report produces output. The output can either be a text buffer stored in
-local memory or a file stored in the temporary work directory created when the
-reporting engine starts.
+Every report produces output. The output can either be a file stored in the
+temporary work directory created when the reporting engine starts or data that
+can be rendered to produce text-based content.
 
 The type of output depends on the type of report.
 
 | Report Type | Output Type |
 | --- | --- |
-| [Template Report](#template-reports) (default / `render` == `true`) | File |
-| [Template Report](#template-reports) (`render` == `false`) | Text |
-| [Dashboard Report](#dashboard-reports) | File |
-| [Query Report](#query-reports) | Text |
+| [Template Report](#template-reports-1) (default / `render` == `true`) (**deprecated**)| File |
+| [Template Report](#template-reports-1) (`render` == `false`) (**deprecated**)| template engine output |
+| [Dashboard Report](#dashboard-reports-1) | File |
+| [Query Report](#query-reports-1) | query results |
 
-Note that the type of output generated for a given report type is not always the
-same as the format used to send the output via a particular channel.
-For example, the default output of a [query report](#query-reports) is a string
-of text that contains CSV data. But this data can be sent via the
-[email channel](#email-channel) as the body of the email _or_ in a file
-attached to the email.
+The report output, whether file or renderable data, is passed to the [channel](#channels)
+implementations for delivery. When the report output is provided as renderable
+data, a renderer is also sent to the [channel](#channels) implementations that
+can be used to render the data into text-based content.
 
-### Channels
+There are two types of renderers. The [template report renderer](#template-report-output)
+renderer is used to render [template reports](#template-reports-1) (**deprecated**).
+The [query report renderer](#query-report-output) is used to render [query reports](#query-reports-1).
+[Dashboard reports](#dashboard-reports-1) do not have an associated renderer
+since they only produce file output.
 
-After a report has been run, the generated outputs are distributed via channels.
-A channel provides an implementation that sends report outputs to one or more
-destinations. The following channels are supported:
+**NOTE:** The type of output generated for a given report type is not always the
+same as the format used to send the output via a particular [channel](#channels).
+For example, the default output of a [query report](#query-reports) is a set of
+NRQL row data. But this data can be sent via the [email channel](#email-channel)
+as an HTML table in the body of the email _or_ in a file attached to the email.
+
+##### Template Report Output
+
+**NOTE:** As of v3.0.0, template reports have been **_deprecated_** due to the
+potential security issues involved with running user defined templates. No
+replacement for this functionality is planned. The documentation for building
+and running template reports has been moved [here](./docs/TEMPLATES.md). See
+[the following section](./docs/TEMPLATES.md#template-report-output) for more
+details on template report output.
+
+##### Dashboard Report Output
+
+[Dashboard reports](#dashboard-reports-1) always produce one or more PDF files.
+
+##### Query Report Output
+
+By default, a [query report](#query-reports-1) produces a set of rows, one for
+each row returned in the NRQL query result. The results are passed along to the
+[channel](#channels) implementations along with a renderer that, by default,
+generates CSV content from the rows.
+
+The output format may be changed using the `queryResultsFormat`
+[channel configuration parameter](#channel-parameters) or the
+`QUERY_RESULTS_FORMAT` environment variable. When set to `html`, the query
+renderer will generate an HTML `<table>` element instead of CSV. When set to
+`json`, the query renderer will generate a JSON string for an array of objects,
+where each row of the query results is mapped to an object which contains a
+property for each column in the query results where the value of the property
+is the value of the corresponding row and column in the query results.
+
+Additionally, when the output format is set to `html`, the
+`queryResultsHtmlMaxRows` [channel configuration parameter](#channel-parameters)
+or the `QUERY_RESULTS_HTML_MAX_ROWS` environment variable can be used to control
+the number of rows to include in the generated HTML. By default, 25 rows will be
+included.
+
+The following shows an example of the same set of results formatted using each
+output format.
+
+**CSV:**
+
+```csv
+Application Name,URL,Duration
+Shop Service,/api/v1/checkout,1.5191369267857142
+Shop Service,/api/v1/products,1.5092493357575756
+```
+
+**HTML (formatted for display purposes only):**
+```html
+<table border="1">
+  <thead>
+    <tr>
+      <th>Application Name</th>
+      <th>URL</th>
+      <th>Duration</th>
+    </tr>
+    <tr>
+      <td>Shop Service</td>
+      <td>/api/v1/checkout</td>
+      <td>1.5191369267857142</td>
+    </tr>
+    <tr>
+      <td>Shop Service</td>
+      <td>/api/v1/products</td>
+      <td>1.5092493357575756</td>
+    </tr>
+</table>
+```
+
+**JSON (formatted for display purposes only):**
+
+```json
+[
+  {
+    "Application Name": "Shop Service",
+    "URL": "/api/v1/checkout",
+    "Duration": 1.5191369267857142,
+  },
+  {
+    "Application Name": "Shop Service",
+    "URL": "/api/v1/products",
+    "Duration": 1.5092493357575756,
+  }
+]
+```
+
+#### Publish Configurations
+
+Each report can have one or more publish configurations. Publish configurations
+tie a report to a set of [channels](#channels) that are used to distribute
+[report output](#report-output). After a report has been run, the reporting
+engine [selects a publish configuration](#publish-configuration-selection) to
+use and distributes the [report output](#report-output) via the [channels](#channels)
+specified in the selected publish configuration.
+
+Publish configurations are defined in a [manifest file](#manifest-file) and
+consist of a required `id`, a `name`, an `enabled` flag, a set of [channels](#channels)
+and an optional [`schedule` expression](#publish-configuration-schedule-expression).
+For example, the following [report definition](#report-definitions) defines
+three publish configurations. The `default` publish configuration uses a
+[`file` channel](#file-channel) to copy the [report output](#report-output) to
+the `/tmp` directory on the local machine. The `copy-to-s3` publish
+configuration uses an [`s3` channel](#s3-channel) to copy the [report output](#report-output)
+to an S3 bucket named `Daily Report`.  The `send-email` publish configuration
+uses an [`email` channel](#email-channel) to send the [report output](#report-output)
+to the set of recipients specified in the `to` and `cc` [channel parameters](#channel-parameters).
+
+```yaml
+reports:
+- id: example-dashboard-report
+  name: Example dashboard report
+  dashboards:
+  - DASHBOARD_GUID_1
+  publishConfigurations:
+  - id: default
+    name: Copy file
+    channels:
+    - id: copy-file-to-tmp
+      name: Copy file to /tmp
+      type: file
+      destDir: "/tmp"
+  - id: copy-pdf-to-s3
+    name: Copy dashboard PDF to S3 bucket
+    channels:
+    - id: copy-file
+      name: Copy to S3
+      type: s3
+      bucket: "Daily Report"
+  - id: email-pdf
+    name: Email dashboard PDF
+    channels:
+    - id: send-email
+      name: Email PDF report to leadership
+      type: email
+      subject: Average transaction duration by application and URI
+      from: noreply@numbers.local
+      to: one@numbers.local, two@numbers.local
+      cc: three@numbers.local, four@numbers.local
+```
+
+**NOTE:** In the absence of a [manifest file](#manifest-file) or if the current
+[report definition](#report-definitions) does not include any publish
+configurations, a default publish configuration with the id `default` is always
+created with the list of channels constructed by the engine or with the default
+channel. For example, if no channel IDs are specified at all when [using the CLI](#using-the-cli),
+a publish configuration named `default` will automatically be added with the
+default [`file` channel](#file-channel). Similarly, if no channel IDs are
+specified when [using the AWS Lambda](#using-the-aws-lambda-function), a publish
+configuration named `default` will automatically be added with the default
+[`s3` channel](#s3-channel).
+
+##### Publish configuration selection
+
+The reporting engine chooses the publish configuration to use via the following
+process.
+
+1. Inspect the following sources in the following order for a comma-delimited
+   string specifying a list of candidate publish configuration IDs.
+  1. When [using the CLI](#using-the-cli), the `-u` option.
+  1. When [using the AWS Lambda function](#using-the-aws-lambda-function), the
+    `publishConfigIds` parameter specified in the `options` element of the
+    [AWS Lambda event](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-concepts.html#gettingstarted-concepts-event).
+  1. The `PUBLISH_CONFIG_IDS` environment variable
+1. Add the default publish configuration ID `default` to the end of the list of
+   candidate publish configuration IDs.
+1. For each candidate publish configuration ID, search the [report definition](#report-definitions)
+   for a publish configuration with a matching ID. The first publish
+   configuration with a matching ID will be used.
+
+##### Publish configuration schedule expression
+
+Each publish configuration can have an optional schedule expression. The
+schedule expression is a [CRON](https://manpages.debian.org/unstable/cron/cron.8.en.html)
+expression. The schedule expression is meant for use by components which can
+manage (create, update, delete) schedules in an external scheduling system like
+[AWS EventBridge](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html).
+Currently, the [New Relic Reports Scheduler Lambda](#using-the-aws-scheduler-lambda-function)
+provided with the [New Relic Reports Stack](#using-the-new-relic-reports-stack)
+is the only such component. To develop custom components which integrate with
+other scheduling mechanisms, see the [New Relic Reports Scheduler Lambda source](./nr-reports-scheduler/lambda.js)
+as an example.
+
+**NOTE:** The schedule expression is _ignored_ by the engine itself. That is,
+the engine has no built-in scheduling capabilities on it's own.
+
+#### Channels
+
+Channels are used to specify how [report output](#report-output) should be
+distributed. Each [publish configuration](#publish-configurations) can specify
+one or more channels to use when the [publish configuration](#publish-configurations)
+is [selected](#publish-configuration-selection). Channels are defined together
+with the [publish configuration](#publish-configurations) in a [manifest file](#manifest-file)
+and consist of a required `id`, a name, a type, and a set of [channel parameters](#channel-parameters)
+that are specific to the channel type.
+
+The following channel types are supported:
 
 * [File](#file-channel) (the default when running [from the CLI](#using-the-cli))
 * [Email](#email-channel)
-* [S3](#s3-channel) (the default when running [from a Lambda](#using-the-aws-lambda-function))
+* [S3](#s3-channel) (the default when running [from the AWS Lambda](#using-the-aws-lambda-function))
 * [Slack](#slack-channel)
+* [Webhook](#webhook-channel)
 
-#### Channel parameters
+**NOTE:** In the absence of a [manifest file](#manifest-file) or if a
+[publish configuration](#publish-configuration) does not include any channels,
+a default channel with the id `${report.id}.${publishConfig.id}.${channelType}`
+is always created using the default channel type appropriate to the execution
+environment used to invoke the engine. For example, when [using the CLI](#using-the-cli),
+if no channel is specified for a given [publish configuration](#publish-configurations),
+the default [`file` channel](#file-channel) will be used automatically.
+Similarly, when [using the AWS Lambda](#using-the-aws-lambda-function), if no
+channel is specified for a given [publish configuration](#publish-configurations)
+the default [`s3` channel](#s3-channel) will be used automatically.
 
-All channels support configuration parameters that are used by the channel
-implementation to distribute reports via that channel. For example, the file
-channel supports a `destDir` configuration parameter that specifies the
-destination directory that the report outputs should be copied into. The email
-channel supports configuration parameters that specify the SMTP information to
-be used to connect to the SMTP server.
+##### Channel parameters
 
-Channel configuration parameters can be specified via [a manifest file](#manifest-file),
-via environment variables, or using a combination of both. The recommended way
-is to use a manifest file as it makes it very clear what values will be used and
-it allows for multiple channels of the same type to use different values.
-Additionally, all channel configuration parameters specified via a manifest file
-are automatically added to the [report execution context](#report-execution-context).
+All channel types support configuration parameters that govern how reports are
+distributed when using that channel type. For example, the [file channel](#file-channel)
+type supports a `destDir` configuration parameter that specifies the destination
+directory that the report outputs should be copied into. The [email channel](#email-channel)
+type supports configuration parameters that specify the subject of the email,
+the list of recipients, and so on.
 
-For more details on the supported channel configuration parameters see the
-specific sections below.
+Channel configuration parameters are specified via [a manifest file](#manifest-file),
+or using environment variables. Most parameters can be specified using either
+method. For example, when using the [email channel](#email-channel) type, the
+subject can be specified using the `EMAIL_SUBJECT` environment variable or using
+the `subject` channel configuration parameter in the channel definition of
+[a manifest file](#manifest-file) as shown below.
 
-#### Channel parameter interpolation
+```yaml
+reports:
+- id: example-dashboard-report
+  name: Example dashboard report
+  dashboards:
+  - DASHBOARD_GUID_1
+  publishConfigurations:
+  - id: default
+    name: Email dashboard PDF
+    channels:
+    - id: send-email
+      name: Email PDF report to leadership
+      type: email
+      subject: Average transaction duration by application and URI
+      from: noreply@numbers.local
+      to: one@numbers.local, two@numbers.local
+      cc: three@numbers.local, four@numbers.local
+```
 
-Some channel parameters support [template parameter](#template-parameters)
+Except for a few cases, channel configuration parameters defined in a manifest
+file can be specified directly at the `channel` level or at the enclosing
+[`publishConfiguration`](#publish-configurations) level or [`report`](#report-definitions)
+level or in the global `variables` element. This is possible because the channel
+implementations lookup most channel configuration parameters via the
+[report execution context](#report-execution-context). This behavior makes it
+possible to "share" channel configuration parameters between channels. For
+instance, in the example below, the email `subject` configuration parameter is
+defined at the [`report`](#report-definitions) level and the email `from`
+configuration parameter is defined in the global `variables` element. In this
+case, both the `send-email-1` channel and the `send-email-2` channel will use
+the same `subject` value and the same `from` value.
+
+```yaml
+variables:
+  from: noreply@numbers.local
+reports:
+- id: example-dashboard-report
+  name: Example dashboard report
+  dashboards:
+  - DASHBOARD_GUID_1
+  subject: Average transaction duration by application and URI
+  publishConfigurations:
+  - id: default
+    name: Email dashboard PDF
+    channels:
+    - id: send-email-1
+      name: Email PDF report to leadership
+      type: email
+      to: one@numbers.local
+    - id: send-email-2
+      name: Email PDF report to team
+      type: email
+      to: two@numbers.local
+```
+
+Some channel configuration parameters can _only_ be specified via environment
+variables as they hold sensitive information. For example, to specify the SMTP
+user password when using the [email channel](#email-channel) type, the
+environment variable `EMAIL_SMTP_PASS` must be used.
+
+##### Channel parameter scoping
+
+When using a manifest file to specify channel parameters, parameters are
+implicitly scoped to the channel where they are defined. In contrast, most
+environment variables apply "globally" to all channels. Except in
+a few cases, they can not be scoped to a specific channel. For example, there is
+no way to specify different email subjects for different channels using the
+`EMAIL_SUBJECT` environment variable. For this reason, it is recommended to use
+a [manifest file](#manifest-file) for those channel parameters that support it.
+
+For channel configuration parameters that can _only_ be specified via
+environment variables, a "namespacing" mechanism is supported for scoping these
+parameters to a specific channel. Using this mechanism, a channel configuration
+parameter can be scoped to a specific channel, [publish configuration](#publish-configurations)
+or [report](#reports) by prefixing the configuration parameter environment
+variable name with the ID of the corresponding channel, [publish configuration](#publish-configurations),
+or [report](#reports), in upper-case, with all non-alphanumeric characters
+replaced with the `_` character.
+
+For example, to scope the `EMAIL_SMTP_PASS` to a channel with the ID
+`send-mail`, use an environment variable with the name
+`SEND_MAIL_EMAIL_SMTP_PASS`.
+
+##### Channel parameter interpolation
+
+**NOTE:** Channel parameter interpolation uses the templating engine. As of
+v3.0.0, template reports and components which use the templating engine have
+been **_deprecated_** due to the potential security issues involved with running
+user defined templates. Channel parameter interpolation will be replaced with
+a more secure mechanism in future releases.
+
+Some channel parameters support [template parameter](./docs/TEMPLATES.md#template-parameters)
 interpolation. That is, the value of the channel parameter is interpolated
 using the template engine prior to being used by the channel implementation.
 The interpolated string may reference any channel configuration parameter as
@@ -1168,38 +928,43 @@ well as any report parameter. For example, the "Subject" property of the
 [Nodemailer](https://nodemailer.com/about/) transport. Consequently, the `from`
 channel parameter could be included in the "Subject" property by setting the
 `subject` channel parameter to `Report generated for {{ from }}`. If the value
-of the `from` channel parameter was `alice@newrelic.com`, the resulting subject
-would be `Report generated for alice@newrelic.com`.
+of the `from` channel parameter was `one@numbers.local`, the resulting subject
+would be `Report generated for one@numbers.local`.
 
-#### Specifying channels
+##### Specifying channels
 
 When the reporting engine is run using a [manifest file](#manifest-file), the
-channels to use for a given report are part of the channel definition for the
-report as specified in the manifest file.
+channels to use for a given report are part of the channel definition of the
+[selected](#publish-configuration-selection) [publish configuration](#publish-configurations)
+for the report as specified in the manifest file.
 
 If the reporting engine is run without a [manifest file](#manifest-file), the
-reporting engine will use the value of the `CHANNEL_IDS` environment variable.
-If a non-empty value is specified, it is interpreted as a comma-separated list
-of channel IDs. For example, the value `s3,email` specifies that the report
-output(s) should be published to the [S3](#s3-channel) and
-[Email](#email-channel) channels.
+channels to use are determined as follows.
 
-If no value is specified for the `CHANNEL_IDS` environment variable _and_ the
-reporting engine was run [from the CLI](#using-the-cli), the value of the `-c`
-option will be used. It will be interpreted in the same way as the value of the
-`CHANNEL_IDS` environment variable.
+* If the reporting engine was run [from the CLI](#using-the-cli), the value of
+  the `-c` option will be used.
+* If the reporting engine was run [using the AWS Lambda](#using-the-aws-lambda-function),
+  the value of the `channelIds` parameter specified in the `options` element of
+  the [AWS Lambda event](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-concepts.html#gettingstarted-concepts-event)
+  will be used.
+* In either case, if no channel IDs are found, the reporting engine will use the
+  value of the `CHANNEL_IDS` environment variable.
+
+In all cases, if a non-empty value is found, it is interpreted as a
+comma-separated list of channel IDs. For example, the value `s3,email` specifies
+that the [report output(s)](#report-output) should be published to the [S3](#s3-channel)
+and [Email](#email-channel) channels.
 
 If no channel is specified using any of the above mechanisms, report output(s)
 will be published to the [file channel](#file-channel) when running
 [from the CLI](#using-the-cli) or the [s3 channel](#s3-channel) when running
-[from a Lambda](#using-the-aws-lambda-function)
+[using the AWS Lambda](#using-the-aws-lambda-function)
 
-As an example, the CLI command used in the
-[Run the template report](#run-the-template-report) section could have
-explicitly specified the file channel as follows.
+As an example, the CLI command used in the [run a query report](#run-a-query-report)
+section could have explicitly specified the file channel as follows.
 
 ```bash
-./nr-reports-cli/bin/nr-reports.sh -n hello-world.html -c file
+./nr-reports-cli/bin/nr-reports.sh -a 1234567 -q "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri AS 'URL'" -c file
 ```
 
 This is not necessary since the [file channel](#file-channel) is the default.
@@ -1207,32 +972,34 @@ However, to use the [email channel](#email-channel) instead, it would be
 specified as follows.
 
 ```bash
-./nr-reports-cli/bin/nr-reports.sh -n hello-world.html -c email
+./nr-reports-cli/bin/nr-reports.sh -a 1234567 -q "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri AS 'URL'" -c email
 ```
 
-**NOTE:**
-[Channel parameters](#channel-parameters) can not be specified when using the
-`CHANNEL_IDS` environment variable or the `-c` CLI option, or when using the
-default `file` channel. In these cases, the respective channel implementation
-will attempt to locate the configuration parameters it needs in the environment
-(where supported) and will default any optional parameters.
+**NOTE:** [Channel parameters](#channel-parameters) can not be specified when
+using the `CHANNEL_IDS` environment variable, the `-c` CLI option, or the
+`channelIds` option to the [AWS Lambda function](#using-the-aws-lambda-function),
+or when using the default `file` or `s3` channels. In these cases, the
+respective channel implementation will attempt to locate the configuration
+parameters it needs in the environment (where supported) and will default any
+optional parameters.
 
-#### Output File Name
+##### Output File Name
 
 For report types that produce file output, file names are calculated as follows.
 
-* For [template reports](#template-reports) where the `render` parameter is not
-  set or is set to `true`, the rendered page will be saved to a file named
-  `<REPORTNAME>.pdf`. If a [manifest file](#manifest-file) is used to run the
-  report, `<REPORTNAME>` will be the value of the `name` attribute of the
-  [report definition](#report-definitions). Otherwise, `<REPORTNAME>` will be
+* For [template reports](#template-reports) (**deprecated**) where the `render`
+  parameter is not set or is set to `true`, the rendered page will be saved to a
+  file named `<REPORTID>.pdf`. If a [manifest file](#manifest-file) is used to
+  run the report, `<REPORTID>` will be the value of the `id` attribute of
+  the [report definition](#report-definitions). Otherwise, `<REPORTID>` will be
   the same as the name of the template minus any extension, i.e. if the template
-  name is `hello-world.html`, `<REPORTNAME>` will be `hello-world.`.
+  name is `hello-world.html`, `<REPORTID>` will be `hello-world`.
 * For [dashboard reports](#dashboard-reports) where the `combinePdfs` is not set
   or set to `false`, the snapshot for each dashboard GUID specified in the
-  report definition will be saved to a file named `dashboard-<GUID>.pdf`.
+  [report definition](#report-definitions) will be saved to a file named
+  `dashboard-<GUID>.pdf`.
 * For [dashboard reports](#dashboard-reports) where the `combinePdfs` is set to
-  `true`, the snapshots for all dashboards will be saved in a file called
+  `true`, the snapshots for all dashboards will be saved in a file named
   `consolidated_dashboards.pdf`.
 
 For report types that produce text output, most of the channel implementations
@@ -1248,75 +1015,85 @@ determined as follows.
 * If a property named `outputFileName` exists in the
   [report execution context](#report-execution-context), it will be used as the
   file name.
-* Otherwise, the file name will be set to `<REPORTNAME>.<EXT>`, calculated as
+* Otherwise, the file name will be set to `<REPORTID>.<EXT>`, calculated as
   follows:
    * If a [manifest file](#manifest-file) is used to run the
-     report, `<REPORTNAME>` will be the value of the `name` attribute of the
+     report, `<REPORTID>` will be the value of the `id` attribute of the
      [report definition](#report-definitions). Otherwise, for
-     [template reports](#template-reports) `<REPORTNAME>` will be the same as
-     the name of the template minus any extension. For
-     [query reports](#query-reports), `<REPORTNAME>` will be `query-report`.
+     [template reports](#template-reports) (**deprecated**), `<REPORTID>` will
+     be the same as the name of the template minus any extension. For
+     [query reports](#query-reports), `<REPORTID>` will be `query-report`.
    * `<EXT>` will be set to the value of the property named `fileExtension` in
      the [report execution context](#report-execution-context). If no such
      property exists, it will be set to the value of the `FILE_EXTENSION`
      environment variable. If no value is specified for the `FILE_EXTENSION`
-     environment variable, the extension `txt` will be used.
+     environment variable, the extension `csv` will be used for [query reports](#query-reports)
+     without the `passThrough` option set on the [report definition](#report-definitions)
+     and the extension `txt` will be used in all other cases.
 
-#### File Channel
+##### File Channel
 
-The `file` channel writes generated report outputs to a destination directory on
-the local filesystem. It is mostly meant for development and testing although it
-could be used to copy reports to volumes locally attached to a docker container.
+The `file` channel type writes generated [report output](#report-output) to a
+destination directory on the local filesystem. It is mostly meant for
+development and testing although it could be used to copy reports to volumes
+locally attached to a Docker container.
 
 For report types that produce file output, all generated files are moved from
 the temporary work directory created when the reporting engine starts into the
 destination directory.
 
 For report types that produce text, the text will be written to a file. The file
-name will be calculated as specified in the section
-[Output File Name](#output-file-name). If the calculated file name is absolute,
-the file will be written at the specified location. Otherwise, the file will
-be written to the destination directory.
+name will be calculated as specified in the section [Output File Name](#output-file-name).
+If the calculated file name is absolute, the file will be written at the
+specified location. Otherwise, the file will be written to the destination
+directory. Any intermediate directories along the path to the destination
+directory will be automatically created if they do not exist.
 
-The destination directory to use will be determined as follows, listed in order
-of decreasing precedence.
+The following [channel parameters](#channel-parameters) are supported for the
+`file` channel type.
 
-* The `destDir` property in the [report execution context](#report-execution-context)
-* The `FILE_DEST_DIR` environment variable
-* The current working directory
+| Name | Environment Variable | Description | Required | Default |
+| --- | --- | --- | --- | --- |
+| `destDir` | `FILE_DEST_DIR` | Output destination directory | N | `.` (current working directory) |
 
 Here is an example of specifying a file channel configuration in a
 [manifest file](#manifest-file).
 
-```json
-[
-   {
-      "template": "template.html",
-      ...
-      "channels": [
-         {
-            "type": "file",
-            "destDir": "/tmp"
-         }
-      ]
-   }
-]
+```yaml
+reports:
+- id: example-dashboard-report
+  name: Example dashboard report
+  dashboards:
+  - DASHBOARD_GUID_1
+  publishConfigurations:
+  - id: default
+    name: Copy file
+    channels:
+    - id: copy-file-to-tmp
+      name: Copy file to /tmp
+      type: file
+      destDir: "/tmp"
 ```
 
-The `file` channel is the default channel when running [from the CLI](#using-the-cli).
+**NOTE:** The `file` channel type is the default channel when running
+[from the CLI](#using-the-cli).
 
 #### Email Channel
 
-The `email` channel delivers report outputs via email.
+The `email` channel type delivers [report output](#report-output) via email.
 
-Messages are constructed based on [output type](#report-output) and
+Messages are sent over SMTP using the [Nodemailer](https://nodemailer.com/about/)
+module.
+
+Messages are constructed based on the [report output type](#report-output) and
 [channel configuration parameters](#channel-parameters) using the following
 process.
 
-* A new message is created using the Recipient(s), Sender, and Subject values
-  specified in the channel configuration or the corresponding environment
-  variables. Prior to being set, the Subject is also run through the template
-  engine using the current [report execution context](#report-execution-context).
+* A new message is created using the Recipient(s), Sender, Cc, and Subject
+  values specified in the current [report execution context](#report-execution-context)
+  or the corresponding environment variables. Prior to being set,
+  [channel parameter interpolation](#channel-parameter-interpolation) is applied
+  to the Subject using the current [report execution context](#report-execution-context).
 * If the report type produces file output:
    * All generated files are added to the message as attachments.
    * The body of the message is generated by processing a template with the
@@ -1329,23 +1106,42 @@ process.
      is used.
 * If the report type produces text:
    * If the `attachOutput` channel configuration parameter is set to `true`,
-     the text will be written to a file. The file name will be calculated as
-     specified in the section [Output File Name](#output-file-name). The file
-     name must *NOT* be absolute. Message construction will continue as if the
-     report type produces file output with the generated file as the output.
+     the text will be rendered using the format determined by the report type.
+     For example, by default the text output from a query report will be
+     rendered as CSV. The resulting output is written to a file. The file name
+     will be calculated as specified in the section [Output File Name](#output-file-name).
+     The file name must *NOT* be absolute. Message construction will continue as
+     if the report type produces file output with the generated file as the
+     output, with _one exception_. If the `passThrough` parameter in the channel
+     configuration is set to `true`, the message body will be generated by
+     re-rendering the text as HTML regardless of the format determined by the
+     report type.
    * If the `passThrough` parameter in the channel configuration is set to
-     `true`, the body of the message is set to the raw text output.
-   * Otherwise, the body of the message is generated using the same method
-     specified above, except that the [default message template](./templates/email/message.html)
-     will be used if not template was specified.
+     `true`, the message body will be generated by rendering the text as HTML
+     regardless of the format determined by the report type.
+   * Otherwise, the text will be rendered using the format determined by the
+     report type and added to the [report execution context](#report-execution-context)
+     with the property name `result`. The body of the message is then generated
+     by processing a template with the template engine using the current
+     [report execution context](#report-execution-context). The template used to
+     generate the message body may either be specified _inline_ in the
+     `emailTemplate` parameter in the channel configuration or via a template
+     file using the `emailTemplateName` parameter in the channel configuration
+     or the `EMAIL_TEMPLATE` environment variable. If no template was specified,
+     the [default message template](./templates/email/message.html) is used.
 * The content type for the message is set using the `format` parameter in the
   channel configuration. If no format was specified, the content type is set to
   `html` by default. If the `format` parameter is set but is anything other
   than `html` or `text`, an error is raised.
 
-The following configuration parameters are supported for the email channel.
-These options can be specified both via channel configuration in a
-[manifest file](#manifest-file) and as environment variables.
+**NOTE:** Email templates are currently processed using the templating engine.
+As of v3.0.0, template reports and components which use the templating engine
+have been **_deprecated_** due to the potential security issues involved with
+running user defined templates. Email template processing will be replaced with
+a more secure mechanism in future releases.
+
+The following [channel parameters](#channel-parameters) are supported for the
+`email` channel type.
 
 | Name | Environment Variable | Description | Required | Default |
 | --- | --- | --- | --- | --- |
@@ -1353,39 +1149,46 @@ These options can be specified both via channel configuration in a
 | `cc` | `EMAIL_CC` | CC recipient emails; Multiple email addresses can be specified separated by commas. | N | |
 | `from` | `EMAIL_FROM` | Sender email | Y | |
 | `subject` | `EMAIL_SUBJECT` | Subject line | N | `''` |
-| `emailTemplate` | | Inline email template for generating body | N | |
-| `emailTemplateName` | `EMAIL_TEMPLATE` | Template name for generating body; [Resolved](#template-resolution) against the template path at run time. | N | `''` |
+| `emailSmtpServer` | `EMAIL_SMTP_SERVER` | SMTP server hostname | Y | |
+| `emailSmtpPort` | `EMAIL_SMTP_PORT` | SMTP server port | N | `587` |
+| `emailSmtpSecure` | `EMAIL_SMTP_SECURE` | SMTP TLS option; `true`/`yes`/`on`/`1` forces TLS, anything else defaults to no TLS unless the server upgrades with `STARTTLS` | N | `true` |
+| `emailTemplate` | N/a | Inline email template for generating body | N | |
+| `emailTemplateName` | `EMAIL_TEMPLATE` | Template name for generating body; [Resolved](./docs/TEMPLATES.md#template-resolution) against the template path at run time. | N | [default message template](./templates/email/message.html) if report type produces text, [default attachments template](./templates/email/message-attachments.html) if the report type produces file output |
+| N/a | `EMAIL_SMTP_USER` | Username for SMTP authentication | N | |
+| N/a | `EMAIL_SMTP_PASS` | Password for SMTP authentication; only used if `EMAIL_SMTP_USER` is also specified | N | |
+| `format` | N/a | Email format; `html`/`text` | N | `html` |
+| `passThrough` | N/a | Flag to enable rendering text report output as HTML (see above for more details) | N | |
+| `attachOutput` | N/a | Flag to enable attaching rendered text report output as a file | N | |
 
-Messages are sent using the [Nodemailer](https://nodemailer.com/about/) module.
-SMTP is the only protocol currently supported. The SMTP server configuration can
-be set only via environment variables for security purposes. The following
-parameters are supported.
+**NOTE:** When using a [manifest file](#manifest-file) to specify the inline
+email template or the template name, the `emailTemplate` and `emailTemplateName`
+parameters can _only_ be specified in the `channel` element and not at the
+enclosing `publishConfiguration` or `report` level or in the global `variables`
+element. Likewise, the `format`, `passThrough`, and `attachOutput` parameters
+can _only_ be specified in the `channel` element.
 
-| Environment Variable | Description | Required | Default |
-| --- | --- | --- | --- |
-| `EMAIL_SMTP_SERVER` | SMTP server hostname | Y | |
-| `EMAIL_SMTP_PORT` | SMTP server port | N | `587` |
-| `EMAIL_SMTP_SECURE` | SMTP TLS option; `true`/`yes`/`on`/`1` forces TLS, anything else defaults to no TLS unless the server upgrades with `STARTTLS` | N | `true` |
-| `EMAIL_SMTP_USER` | Username for SMTP authentication | N | |
-| `EMAIL_SMTP_PASS` | Password for SMTP authentication; only used if `EMAIL_SMTP_USER` is also specified | N | |
+**NOTE:** All `EMAIL_SMTP_*` environment variables support [channel parameter scoping](#channel-parameter-scoping).
 
 Here is an example of specifying an email channel configuration in a
 [manifest file](#manifest-file).
 
 ```yaml
 reports:
-- name: chart
-  templateName: hello-world.html
-  parameters:
-    accountId: 1234567
-    appName: Shop Service
-  channels:
-  - type: email
-    from: "me@nowhere.local"
-    to: "you@nowhere.local"
-    cc: "them@nowhere.local,them-too@nowhere.local"
-    subject: "{{ title }}"
-    emailTemplateName: "email-template.html"
+- id: example-dashboard-report
+  name: Example dashboard report
+  dashboards:
+  - DASHBOARD_GUID_1
+  publishConfigurations:
+  - id: default
+    name: Email dashboard PDF
+    channels:
+    - id: send-email
+      name: Email PDF report to leadership
+      type: email
+      subject: Average transaction duration by application and URI
+      from: noreply@numbers.local
+      to: one@numbers.local, two@numbers.local
+      cc: three@numbers.local, four@numbers.local
 ```
 
 Here is an example of specifying an email channel configuration in a
@@ -1393,88 +1196,92 @@ Here is an example of specifying an email channel configuration in a
 
 ```yaml
 reports:
-- name: chart
-  templateName: hello-world.html
-  parameters:
-    accountId: 1234567
-    appName: Shop Service
-  channels:
-  - type: email
-    from: "me@nowhere.local"
-    to: "you@nowhere.local"
-    cc: "them@nowhere.local,them-too@nowhere.local"
-    subject: "{{ title }}"
-    format: text
-    emailTemplate: |
-      {{ title }}
+- id: example-dashboard-report
+  name: Example dashboard report
+  dashboards:
+  - DASHBOARD_GUID_1
+  publishConfigurations:
+  - id: default
+    name: Email dashboard PDF
+    channels:
+    - id: send-email
+      name: Email PDF report to leadership
+      type: email
+      subject: Average transaction duration by application and URI
+      from: noreply@numbers.local
+      to: one@numbers.local, two@numbers.local
+      cc: three@numbers.local, four@numbers.local
+      emailTemplate: |
+        {{ subject }}
 
-      Please find the attached report which shows average transaction duration
-      by application.
+        Please find the attached report which shows average transaction duration
+        by application.
 ```
 
 Because why not? Everyone needs more email.
 
 #### S3 Channel
 
-The `s3` channel uploads generated report outputs to an S3 bucket.
+The `s3` channel type uploads generated [report output](#report-output) to an S3
+bucket.
 
 For report types that produce file output, all generated files are uploaded from
 the temporary work directory created when the reporting engine starts into the
 S3 bucket.
 
-For report types that produce text, the text will be uploaded to the S3 bucket.
-The key for the object will be calculated as specified in the section
-[Output File Name](#output-file-name). The calculated file name must be a valid
-key name.
+For report types that produce text, the text will be rendered using the format
+determined by the report type. The resulting output will be uploaded to the S3
+bucket as an S3 object. The key for the object will be calculated as specified
+in the section [Output File Name](#output-file-name). **NOTE:** The calculated
+file name _must_ be a valid S3 key name.
 
-The destination bucket to use will be determined as follows, listed in order
-of decreasing precedence.
+The following [channel parameters](#channel-parameters) are supported for the
+`s3` channel type.
 
-* The `bucket` property in the [report execution context](#report-execution-context)
-* The value of the `S3_DEST_BUCKET` environment variable
-* If the report is being run [from a Lambda](#using-the-aws-lambda-function)
-  function:
-   * The `sourceBucket` property of the [engine options](#engine-options)
-   * The value of the `S3_SOURCE_BUCKET` environment variable
-* If the report is being run [from the CLI](#using-the-cli):
-   * The value of the `S3_SOURCE_BUCKET` environment variable
+| Name | Environment Variable | Description | Required | Default |
+| --- | --- | --- | --- | --- |
+| `bucket` | `S3_DEST_BUCKET` | Destination S3 bucket | Y | |
+
+**NOTE:** The `S3_DEST_BUCKET` environment variable supports [channel parameter scoping](#channel-parameter-scoping).
 
 Here is an example of specifying an s3 channel configuration in a
 [manifest file](#manifest-file).
 
-```json
-[
-   {
-      "template": "template.html",
-      ...
-      "channels": [
-         {
-            "type": "s3",
-            "bucket": "my-bucket"
-         }
-      ]
-   }
-]
+```yaml
+reports:
+- id: example-dashboard-report
+  name: Example dashboard report
+  dashboards:
+  - DASHBOARD_GUID_1
+  publishConfigurations:
+  - id: default
+    name: Copy dashboard PDF to S3 bucket
+    channels:
+    - id: copy-file
+      name: Copy to S3
+      type: s3
+      bucket: "Daily Report"
 ```
 
-The `s3` channel is the default channel when running [from a Lambda](#using-the-aws-lambda-function).
+The `s3` channel type is the default channel when running [from a Lambda](#using-the-aws-lambda-function).
 
 #### Slack Channel
 
-The `slack` channel posts report output to a Slack channel via a
-[Slack webhook](https://api.slack.com/messaging/webhooks). A Slack webhook URL
-must be specified using the `SLACK_WEBHOOK_URL` environment variable.
+The `slack` channel type posts [report output](#report-output) to a Slack channel
+via a [Slack webhook](https://api.slack.com/messaging/webhooks). A Slack webhook
+URL _must_ be specified using the `SLACK_WEBHOOK_URL` environment variable.
 
 Because Slack webhooks do not support transferring files, the `slack` channel
-only supports report types that produce text. Specifying a `slack` channel for a
-report type that produces file output will cause a warning message to be logged.
+type only supports report types that produce text. Specifying a `slack` channel
+type for a report type that produces file output will cause a warning message to
+be logged.
 
-Messages are constructed based using the following process.
+Messages are constructed using the following process.
 
 * If the `passThrough` parameter in the channel configuration is set to
-  `true`, the body of the message is set to the raw text output. In this case,
-  the text output *must* be a JSON string that conforms to the
-  [Incoming Webhook JSON payload format](https://api.slack.com/messaging/webhooks#posting_with_webhooks).
+  `true`, the body of the message is set to the raw [report output](#report-output).
+  In this case, the [report output](#report-output) _must_ be a JSON string that
+  conforms to the [Incoming Webhook JSON payload format](https://api.slack.com/messaging/webhooks#posting_with_webhooks).
   This method can be used to send messages containing [BlockKit](https://api.slack.com/block-kit)
   visual components.
 * Otherwise, the body of the message is set to a JSON object with a single
@@ -1482,77 +1289,296 @@ Messages are constructed based using the following process.
   automatically escaped so that it may safely include
   [all mrkdwn formatting options](https://api.slack.com/reference/surfaces/formatting).
 
+The following [channel parameters](#channel-parameters) are supported for the
+`slack` channel type.
+
+| Name | Environment Variable | Description | Required | Default |
+| --- | --- | --- | --- | --- |
+| N/a | `SLACK_WEBHOOK_URL` | Slack Webhook URL | Y | |
+| `passThrough` | N/a | Flag to enable sending raw [report output](#report-output) | N | `false` |
+
+**NOTE:** When using a [manifest file](#manifest-file) the `passThrough`
+parameter can _only_ be specified in the `channel` element.
+
+**NOTE:** The `SLACK_WEBHOOK_URL` environment variable supports
+[channel parameter scoping](#channel-parameter-scoping).
+
+Here is an example of specifying a Slack channel configuration in a
+[manifest file](#manifest-file).
+
+```yaml
+reports:
+- id: example-query-report
+  query: "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri"
+  accountIds:
+  - 1234567
+  timeout: 10
+  publishConfigurations:
+  - id: slack
+    name: Post to Slack
+    channels:
+    - id: post-slack
+      name: Post query results to Slack
+      type: slack
+```
+
+#### Webhook Channel
+
+The `webhook` channel type sends [report output](#report-output) to any Webhook
+endpoint by including the [report output](#report-output) in a Webhook `payload`
+or using the [report output](#report-output) as the payload itself. A webhookURL
+must be specified using the `WEBHOOK_URL` environment variable. The `webhook`
+channel type supports specifying the HTTP method, custom HTTP headers, and HTTP
+basic user-password authentication. In addition, the `webhook` channel type
+supports a mechanism for customizing the webhook payload using [substitution variables](#webhook-substitution-variables)
+that can be specified both as [channel parameters](#channel-parameters) or
+environment variables.
+
+The `webhook` channel type only supports report types that produce text.
+Specifying a `webhook` channel type for a report type that produces file output
+will cause a warning message to be logged.
+
+Webhook payloads are constructed using the following process.
+
+* If the `passThrough` parameter in the channel configuration is set to
+  `true`, the body of the message is set to the raw [report output](#report-output)
+  The [report output](#report-output) _must_ be in a valid format that the
+  Webhook endpoint will accept (often JSON).
+* Otherwise, the body of the message is set to the value of the `payload`
+  [channel parameter](#channel-parameters) after applying [substitutions](#webhook-substitution-variables).
+  The value of the `payload` [channel parameter](#channel-parameters) with the
+  applied substitutions _must_ be in a valid format that the Webhook endpoint
+  will accept (often JSON).
+
+Webhook payloads are sent using the following process.
+
+* Build the webhook payload per the process above.
+* Build the request headers using the following process.
+  * If an HTTP Basic username and password are set, compute the HTTP Basic
+    credentials string and add an `Authorization` header with the computed
+    value.
+  * Given the parameter names `webhookHeaderN` or environment variable names
+    `WEBHOOK_HEADER_N` where N is the number 1-5, if a parameter or environment
+    environment variable exists with the given name with a value of the form
+    `header-name: value`, add a header with the name `header-name` and the value
+    `value` after applying [substitutions](#webhook-substitution-variables).
+* Make an HTTP request with the HTTP method specified in the parameter
+  `webhookHttpMethod`, the environment variable `WEBHOOK_HTTP_METHOD`, or using
+  the value `POST` to the URL specified in the parameter `webhookUrl` or the
+  environment variable `WEBHOOK_URL` using the set of headers and payload built
+  in the previous steps.
+
+The following [channel parameters](#channel-parameters) are supported for the
+`webhook` channel type.
+
+| Name | Environment Variable | Description | Required | Default |
+| --- | --- | --- | --- | --- |
+| `webhookUrl` | `WEBHOOK_URL` | Webhook URL endpoint | Y | |
+| `webhookHttpMethod` | `WEBHOOK_HTTP_METHOD` | Webhook HTTP Method; `GET`/`POST`/`PUT` | N | `POST` |
+| N/a | `WEBHOOK_HTTP_BASIC_USER` | Webhook HTTP Basic authentication username | N | |
+| N/a | `WEBHOOK_HTTP_BASIC_PASS` | Webhook HTTP Basic authentication password | N | |
+| `webhookHeaderN` | `WEBHOOK_HEADER_N` | [Custom webhook HTTP header](#custom-webhook-http-headers) where N is the number 1-5 and the value is of the form `header-name: value` | N |
+| `payload` | N/a | Webhook payload | N | |
+| `passThrough` | N/a | Flag to enable sending raw [report output](#report-output) | N | `false` |
+| `contextVars` | N/a | List of context variables to expose as [substitution variables](#webhook-substitution-variables) | N | |
+| `envVars` | N/a | List of environment variables to expose as [substitution variables](#webhook-substitution-variables) | N | |
+
+**NOTE:** When using a [manifest file](#manifest-file) the `payload`,
+`passThrough`, `contextVars`, and `envVars` parameters can _only_ be specified
+in the `channel` element.
+
+**NOTE:** All `WEBHOOK_*` environment variables support [channel parameter scoping](#channel-parameter-scoping).
+
+Here is an example of specifying a webhook channel configuration in a
+[manifest file](#manifest-file).
+
+```yaml
+reports:
+- id: example-query-report
+  query: "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri"
+  accountIds:
+  - 1234567
+  timeout: 10
+  publishConfigurations:
+  - id: external-webhook
+    name: Post to external webhook
+    channels:
+    - id: post-webhook
+      name: Post query results to webhook
+      type: webhook
+      webhookHeader1: "X-Foo: bar"
+      payload: |
+        {
+          "reportId": "{{ REPORT_ID }}",
+          "reportName": "{{ REPORT_NAME }}",
+          "publishConfigId": "{{ PUBLISH_CONFIG_ID }}",
+          "publishConfigName": "{{ PUBLISH_CONFIG_NAME }}",
+          "channelId": "{{ CHANNEL_ID }}",
+          "channelName": "{{ CHANNEL_NAME }}",
+          "results": {{ RESULTS }}
+        }
+```
+
+##### Custom webhook HTTP headers
+
+The webhook channel type supports sending custom HTTP headers on the Webhook
+HTTP request. Up to 5 custom HTTP headers may be specified. Headers may be
+specified as [channel parameters](#channel-parameters) in the [manifest file](#manifest-file)
+or as environment variables. To specify the custom HTTP headers in the [manifest file](#manifest-file),
+use the parameter name `webhookHeaderN`, where the `N` is the number 1-5. For
+example, `webhookHeader1`, `webhookHeader2`, etc. To specify custom HTTP headers
+as environment variables, use the environment variable name `WEBHOOK_HEADER_N`,
+where `N` is the number 1-5. For example, `WEBHOOK_HEADER_1`,
+`WEBHOOK_HEADER_2`, etc.
+
+The value of each custom header must be specified using the format
+`header-name: value` where `header-name` is the name of the custom HTTP header
+to add and `value` is the value to send for the custom HTTP header. For example,
+to specify a header named `X-Foo` with the value `bar`, the value for the
+[channel parameter](#channel-parameters) would be `X-Foo: bar`.
+
+##### Webhook substitution variables
+
+The webhook payload and custom HTTP header values can contain substitution
+variable references of the form `{{ variableName }}`. At publish time, these
+references will be replaced by substituting the reference with the value of the
+substitution variable named `variableName` from the list of substitution
+variables. If no variable exists with the name `variableName`, the reference
+will be replaced with the name of the variable itself. For example, to include
+the report ID in the payload, use the value `{{ REPORT_ID }}`.
+
+The following variables are predefined.
+
+| Name | Description |
+| --- | --- |
+| `REPORT_ID` | The ID of the report being run |
+| `REPORT_NAME` | The name of the report being run |
+| `PUBLISH_CONFIG_ID` | The ID of the publish configuration containing the webhook channel where this reference occurs |
+| `PUBLISH_CONFIG_NAME` | The name of the publish configuration containing the webhook channel where this reference occurs |
+| `CHANNEL_ID` | The ID of the webhook channel where this reference occurs |
+| `CHANNEL_NAME` | The name of the webhook channel where this reference occurs |
+| `TIMESTAMP` | The current time in milliseconds since the epoch |
+| `DATETIME` | A string containing the current date and time in the form `${year}-${month}-${day}_${hour}${minutes}${seconds}` |
+| `RESULTS` | When used in the payload, the [report output](#report-output) as a JSON string |
+
+In addition to the predefined variables, the `contextVars` and `envVars`
+[channel parameters](#channel-parameters) may be used to add substitution
+variables from the current [report execution context](#report-execution-context)
+or from environment variables. For example, in the following channel definition,
+the property named `foo` from the [report execution context](#report-execution-context)
+and the environment variable named `BEEP` would be added as substitution
+variables.
+
+```yaml
+    - id: post-webhook
+      name: Post query results to webhook
+      type: webhook
+      contextVars:
+      - foo
+      envVars:
+      - BEEP
+      payload: "{ ... }"
+```
+
+The additional substitution variables would be referenced as `{{ foo }}` and
+`{{ BEEP }}` in the webhook payload or in a custom HTTP header.
+
 ### Manifest File
 
-The recommended way to specify reports to run when invoking the engine is via a
-manifest file. A manifest file is a [JSON](https://www.json.org/json-en.html) or
-[YAML](https://yaml.org/) file with the one of the following formats.
+A manifest file is a [JSON](https://www.json.org/json-en.html) or
+[YAML](https://yaml.org/) file with the following format.
 
-#### Standard Manifest File
+#### Manifest File Format
 
-A standard manifest file contains a single top-level object with the following
+A manifest file contains a single top-level object with the following
 properties.
 
 | Property Name | Description | Type | Required | Default |
 | --- | --- | --- | --- | --- |
-| config | A map of well defined configuration properties with specific meaning to the reporting engine. | object | N | {} |
-| variables | A map of "global" properties that are added to the execution context of all reports. | object | N | {} |
-| reports | An array of report definitions. | array | N | [] |
+| variables | A map of "global" properties that are added to the [report execution context](#report-execution-context) of all reports. | object | N | {} |
+| reports | An array of [report definitions](#report-definitions). | array | N | [] |
 
-A YAML example is shown below.
+A full YAML example is shown below.
 
 ```yaml
-config:
-  email:
-    from: me@nowhere.local
 variables:
-  accountId: 9999999
-  accountName: NEWRELIC_ACCOUNT_NAME
-  appName: NEWRELIC_APPLICATION_NAME
+  subject: Average transaction duration by application and URI
 reports:
-  - name: golden-signals
-    templateName: golden-signals.html
-    parameters:
-      title: New Relic Golden Signals Weekly Report
-      author: Alice Reli
-      authorTitle: SRE
+- id: example-dashboard-report
+  name: Example dashboard report
+  dashboards:
+  - DASHBOARD_GUID_1
+  publishConfigurations:
+  - id: default
+    name: Copy file
     channels:
-      - type: email
-        to: you@nowhere.local
-        subject: "{{ title }}"
+    - id: copy-file-to-tmp
+      name: Copy file to /tmp
+      type: file
+      destDir: "/tmp"
+  - id: copy-pdf-to-s3
+    name: Copy dashboard PDF to S3 bucket
+    channels:
+    - id: copy-file
+      name: Copy to S3
+      type: s3
+      bucket: "Daily Report"
+  - id: email-pdf
+    name: Email dashboard PDF
+    channels:
+    - id: send-email
+      name: Email PDF report to leadership
+      type: email
+      subject: Average transaction duration by application and URI
+      from: noreply@numbers.local
+      to: one@numbers.local, two@numbers.local
+      cc: three@numbers.local, four@numbers.local
+- id: example-query-report
+  query: "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri"
+  accountIds:
+  - 1234567
+  timeout: 10
+  publishConfigurations:
+  - id: slack
+    name: Post to Slack
+    channels:
+    - id: post-slack
+      name: Post query results to Slack
+      type: slack
+  - id: external-webhook
+    name: Post to external webhook
+    channels:
+    - id: post-webhook
+      name: Post query results to webhook
+      type: webhook
+      webhookHeader1: "X-Foo: bar"
+      payload: |
+        {
+          "reportId": "{{ REPORT_ID }}",
+          "reportName": "{{ REPORT_NAME }}",
+          "publishConfigId": "{{ PUBLISH_CONFIG_ID }}",
+          "publishConfigName": "{{ PUBLISH_CONFIG_NAME }}",
+          "channelId": "{{ CHANNEL_ID }}",
+          "channelName": "{{ CHANNEL_NAME }}",
+          "results": {{ RESULTS }}
+        }
 ```
 
-The `config` map contains a set of properties that can be used to configure
-certain aspects of the reporting engine. The following properties are
-recognized. All other properties are ignored.
+The `variables` map can contain any properties. These properties are added to
+the [report execution context](#report-execution-context) for all reports.
 
-| Property Name | Description | Type | Required | Default |
-| --- | --- | --- | --- | --- |
-| email | Default [email channel](#email-channel) configuration properties. Excludes those that can only be set via environment variables.  | object | N | {} |
-| file | Default [email channel](#email-channel) configuration properties. Excludes those that can only be set via environment variables. | object | N | {} |
-| s3 | An array of report definitions. Excludes those that can only be set via environment variables. | array | N | [] |
-
-The `variable` map can contain any properties. These properties are added to the
-execution context of all reports. This means they are available during the
-processing of any [templates](#templates), including the processing of email
-templates.
-
-#### Simplified Manifest File
-
-A simplified manifest file simply contains an array of report definitions. It is
-the equivalent of the value of the `reports` property in a
-[standard manifest file](#standard-manifest-file).
+The `reports` array contains a list of [report definitions](#report-definitions).
 
 #### Report Definitions
 
 A report definition is an object with a set of common properties and one or more
-additional properties that are particular to the report type. The following
-sections show the supported common properties and the properties supported by
-each report type.
+additional properties that are particular to the [report type](#reports). The
+following sections show the supported common properties and the properties
+supported by each [report type](#reports).
 
-An [example manifest file](./examples/manifest.json) is provided in the
-`examples` directory that shows how to define both a template report and a
-dashboard report.
+An example manifest file is provided in the [`examples` directory](./examples)
+in both [JSON](./examples/manifest.json) and [YAML](.//examples/manifest.yaml)
+format.
 
 ##### Common Properties
 
@@ -1560,52 +1586,55 @@ The following properties are common to all report types.
 
 | Property Name | Description | Type | Required | Default |
 | --- | --- | --- | --- | --- |
-| name | The report name/identifier | string | Y | |
-| channels | The list of channel configurations to use to distribute report outputs. See the individual sections above for supported configuration values for each channel. | object | N | `[ { "type": "file" }]` |
+| id | The report identifier | string | Y | |
+| name | The report name | string | N | |
+| publishConfigurations | The list of [publish configurations](#publish-configurations) for the report | array | N | (see [publish configurations](#publish-configurations)) |
 
 ##### Template Report Properties
 
-| Property Name | Description | Type | Required | Default |
-| --- | --- | --- | --- | --- |
-| templateName | The template _name_. Must be available on the [template path](#template-resolution) | string | Y | |
-| parameters | The [template parameters](#template-parameters) to use for this report | object | N | `{}` |
-| isMarkdown | `true` if the template is written in Markdown, `false` if the template is any other content type, or omit for "auto" detection by file extension of the template name | boolean | N | undefined (auto detect) |
-| render | `true` if the report output should be rendered using headless chrome, otherwise `false` | boolean | true |
+**NOTE:** As of v3.0.0, template reports have been **_deprecated_** due to the
+potential security issues involved with running user defined templates. No
+replacement for this functionality is planned. The documentation for building
+and running template reports has been moved [here](./docs/TEMPLATES.md). See
+[the following section](./docs/TEMPLATES.md#template-report-properties) for the
+content from the previous version of this section.
 
 ##### Dashboard Report Properties
 
 | Property Name | Description | Type | Required | Default |
 | --- | --- | --- | --- | --- |
 | dashboards | An array of dashboard entity GUIDs | array | Y | |
-| combinePdfs | `true` to combine all PDFs whan more than one dashboard is specified or `false` to use separate PDFs. | boolean | N | undefined |
+| combinePdfs | `true` to combine all PDFs whan more than one dashboard is specified or `false` to use separate PDFs. | boolean | N | `false` |
 
 ##### Query Report Properties
 
 | Property Name | Description | Type | Required | Default |
 | --- | --- | --- | --- | --- |
-| accountId | An account ID to run the query with. One of the this property or the `accountIds` property must be specified. | number | Y | |
-| accountIds | A list of account IDs to run the query with. A maximum of 5 account IDs is allowed if `multiAccountMode` is set to `cross-account`. One of the this property or the `accountId` property must be specified. | array | Y | |
+| accountId | An account ID to run the query with. One of the this property or the `accountIds` property must be specified. | number | Y if `accountIds` is not specified | |
+| accountIds | A list of account IDs to run the query with. A maximum of 5 account IDs is allowed if `multiAccountMode` is set to `cross-account`. One of the this property or the `accountId` property must be specified. | array | Y if `accountId` is not specified | |
 | query | The NRQL query to run. | string | Y | |
-| multiAccountMode | The method used to query multiple accounts when multiple account IDs are specified. Valid values are `cross-account`, `per-account`, and `per-account-concurrent` | string | N | cross-account |
+| multiAccountMode | The method used to query multiple accounts when multiple account IDs are specified. Valid values are `cross-account`, `per-account`, and `per-account-concurrent`. | string | N | `cross-account` |
+| timeout | The query timeout in seconds. Must be between 5 and 120 seconds. | number | N | `5` |
 
 ### Values File
 
-A values file is a [JSON](https://www.json.org/json-en.html) or
-[YAML](https://yaml.org/) file containing [template parameters](#template-parameters)
-to use when processing a template report. Values files are only used when a
-manifest file is not specified. If both a values file and manifest file are
-specified, the values file is ignored.
+**NOTE:** Values files are used with [template reports](#template-reports). As
+of v3.0.0, template reports have been **_deprecated_** due to the potential
+security issues involved with running user defined templates. No replacement for
+this functionality is planned. The documentation for building and running
+template reports has been moved [here](./docs/TEMPLATES.md). See
+[the following section](./docs/TEMPLATES.md#values-file) for the content from
+the previous version of this section.
 
 ### Engine Options
 
 The reporting engine supports several options which control various aspects of
 it's behavior. When running [from the CLI](#using-the-cli), these options can be
-specified using the CLI options. When running
-[from a Lambda](#using-the-aws-lambda-function), these options can
-be specified in the `options` object in the `event` object (or `event.body`
-object) passed to the handler function. In both cases, these options can also
-be specified via environment variables. Options specified via CLI options or the
-event payload take precedence over environment variables.
+specified using the CLI options. When running [from a Lambda](#using-the-aws-lambda-function),
+these options can be specified in the `options` object in the `event` object
+(or `event.body` object) passed to the handler function. In both cases, these
+options can also be specified via environment variables. Options specified via
+CLI options or the event payload take precedence over environment variables.
 
 The following options are supported. For more information on the CLI options,
 see the section [Using the CLI](#using-the-cli). For more information on the
@@ -1613,23 +1642,27 @@ Lambda options, see the section [Using the AWS Lambda Function](#using-the-aws-l
 
 | Option | Description | CLI Option | Lambda Option | Environment Variable |
 | --- | --- | --- | --- | --- |
-| Log Level | Engine log verbosity | `-v` / `-d` | `logLevel` | `LOG_LEVEL` |
-| Manifest file | Path to a manifest file | `-f` | `manifestFilePath` | `MANIFEST_FILE` |
-| Report names | List of report names to run | `-r` | `reportNames` | `REPORT_NAMES` |
-| Template name | A template name | `-n` | `templateName` | `TEMPLATE_NAME` |
-| Values file | Path to a manifest file | `-v` | `valuesFilePath` | `VALUES_FILE` |
-| Template path | Additional paths to search during [template resolution](#template-resolution)  | `-p` | `templatePath` | `TEMPLATE_PATH` |
-| Dashboard IDs | List of dashboard entity GUIDs  | `-d` | `dashboardIds` | `DASHBOARD_IDS` |
-| NRQL Query | An NRQL query | `-q` | `nrqlQuery` | `NRQL_QUERY` |
-| Account ID | The account ID to use with a query report. Multiple account IDs can be specified separated by commas (see note below).  | `-a` | `accountId` | `NEW_RELIC_ACCOUNT_ID` |
-| Channel IDs | List of channel IDs | `-c` | `channelIds` | `CHANNEL_IDS` |
-| S3 Source Bucket | Name of S3 bucket to read manifest file/template from. _Unsupported in CLI._ | Unsupported | `sourceBucket` | `SOURCE_BUCKET` |
+| Manifest file | Path to a manifest file | `-f` | `manifestFilePath` | `MANIFEST_FILE_PATH` |
+| Report IDs | List of report IDs to run. Multiple report IDs can be specified separated by commas. Ignored if a manifest file is not specified. | `-r` | `reportIds` | `REPORT_IDS` |
+| Publish Configuration IDs | List of [publish configuration](#publish-configurations) IDs used during [publish configuration selection](#publish-configuration-selection). Ignored if a manifest file is not specified. | `-u` | `publishConfigIds` | `PUBLISH_CONFIG_IDS` |
+| Template name | A [template](#template-reports) name. Ignored if a manifest file is specified. **deprecated** | `-n` | `templateName` | `TEMPLATE_NAME` |
+| Values file | Path to a [values file](#values-file). Ignored if a manifest file is specified. **deprecated** | `-v` | `valuesFilePath` | `VALUES_FILE_PATH` |
+| Template path | Additional paths to search during [template resolution](./docs/TEMPLATES.md#template-resolution) **deprecated**  | `-p` | `templatePath` | `TEMPLATE_PATH` |
+| Skip render | Skip rendering when running a [template report](#template-reports). Ignored if a manifest file is specified. **deprecated** | `--skip-render` | `noRender` | n/a |
+| Dashboard IDs | List of dashboard entity GUIDs.  Multiple dashboard entity GUIDs can be specified separated by commas. Ignored if a manifest file or template name is specified. | `-d` | `dashboardIds` | `DASHBOARD_IDS` |
+| NRQL Query | An NRQL query. Ignored if a manifest file, template name, or dashboard IDs are specified. | `-q` | `nrqlQuery` | `NRQL_QUERY` |
+| Account IDs | List of account IDs to use with a query report. Multiple account IDs can be specified separated by commas (see note below). Required if a NRQL query is specified. | `-a` | `accountId` | `NEW_RELIC_ACCOUNT_ID` |
+| Channel IDs | List of channel IDs. Multiple channel IDs can be specified separated by commas. Ignored if a manifest file is specified. | `-c` | `channelIds` | `CHANNEL_IDS` |
+| Output file name | [Output file name](#output-file-name) to use for the output file when running a template report or CSV file when running a query report with the [`file`](#file-channel) or [`s3`](#s3-channel) channels.  Ignored if a manifest file is specified. | `-o` | `outputFileName` | n/a |
+| Verbose mode | Enable verbose logging mode | `--verbose` | n/a | Set `LOG_LEVEL` to `verbose` |
+| Debug mode | Enable debug (very verbose) logging mode | `--debug` | n/a | Set `LOG_LEVEL` to `debug` |
+| S3 Source Bucket | Name of S3 bucket to read manifest file/template from. | _Not supported_ | `sourceBucket` | `SOURCE_BUCKET` |
 
 **NOTE:** As mentioned above, multiple account IDs can be specified via the `-a`
 CLI option and the `accountId` Lambda option by separating each ID with a `,`.
 You should _not_ do this with the `NEW_RELIC_ACCOUNT_ID` environment variable
 when running [using the AWS Lambda function](#using-the-aws-lambda-function)
-as this value is used by the New Relic Lambda extension.
+as this value is also used by the New Relic Lambda extension.
 
 ### Using the CLI
 
@@ -1650,7 +1683,7 @@ following order of precedence.
 * The `-q` option or `NRQL_QUERY` environment variable
 
 If none of the options or environment variables are specified, the engine will
-attempt to load a manifest file at the path "include/manifest.json".
+attempt to load a manifest file at the path `include/manifest.json`.
 
 Refer to [the Options section](#cli-options) or for additional options and
 details.
@@ -1658,10 +1691,10 @@ details.
 #### CLI Usage
 
 ```
-index.js -f <manifest-file>
-index.js -n <name> [-v <values-file>] [-p <template-path>] [--skip-render] [-c <channel-ids>] [-o <output-file>] [--full-chrome]
-index.js -d <dashboard-ids> [-c <channel-ids>]
-index.js -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
+nr-reports-cli/bin/nr-reports.sh -f <manifest-file>
+nr-reports-cli/bin/nr-reports.sh -n <name> [-v <values-file>] [-p <template-path>] [--skip-render] [-c <channel-ids>] [-o <output-file>]
+nr-reports-cli/bin/nr-reports.sh -d <dashboard-ids> [-c <channel-ids>]
+nr-reports-cli/bin/nr-reports.sh -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
 ```
 
 #### CLI Options
@@ -1674,70 +1707,104 @@ index.js -q <nrql-query> -a <account-id> [-c <channel-ids>] [-o <output-file>]
   Show version number
 * `-f, --manifest`
 
-  Run all reports defined in the manifest file `<manifest-file>`. Takes
-  precedence over `-n`, `-d`, and `-q` and their corresponding environment
-  variables.
+  Run all reports defined in the [manifest file](#manifest-file)
+  `<manifest-file>`. Takes precedence over `-n`, `-d`, and `-q` and their
+  corresponding environment variables.
 
   The `MANIFEST_FILE_PATH` environment variable may also be used to specify a
-  manifest file. If both are specified, the `-f` option takes precedence.
+  [manifest file](#manifest-file). If both are specified, the `-f` option takes
+  precedence.
+* `-r, --report-name`
+
+  Run only the reports with report _IDs_ listed in `<report-ids>`. Report IDs
+  are separated by commas. Ignored if a [manifest file](#manifest-file) is not
+  specified.
+
+  The `REPORT_IDS` environment variable may also be used to specify report
+  _IDs_. If both are specified, the `-r` option takes precedence.
+
+  **NOTE:** This option refers to report _names_ for historical reasons.
+  However, as of v3.0 this option takes report _IDs_.
+* `-u, --publish-config-ids`
+
+  Publish report outputs using the first [publish configuration](#publish-configurations)
+  with an ID that matches an ID in the list `<publish-config-ids>` for each
+  report. Publish configuration IDs are separated by commas. If no match is
+  found the [publish configuration](#publish-configurations) with the ID
+  `default` is used. Ignored if a [manifest file](#manifest-file) is not
+  specified.
+
+  The `PUBLISH_CONFIG_IDS` environment variable may also be used to specify
+  [publish configuration](#publish-configurations) IDs. If both are specified,
+  the `-u` option takes precedence.
 * `-n, --template-name`
 
-  Run a template report using the template named `<name>`. Takes precedence over
-  `-d` and `-a` and their corresponding environment variables. Ignored if a
-  manifest file is specified.
+  **deprecated**
+
+  Run a [template report](#template-reports) using the template named `<name>`.
+  Takes precedence over `-d` and `-a` and their corresponding environment
+  variables. Ignored if a [manifest file](#manifest-file) is specified.
 
   The `TEMPLATE_NAME` environment variable may also be used to specify a
   template name. If both are specified, the `-n` option takes precedence.
 * `-v, --values-file`
 
-  Use the template parameters defined in `<values-file>` when running a template
-  report. The `VALUES_FILE_PATH` environment variable may also be used to
-  specify a values file.
+  **deprecated**
+
+  Use the [template parameters](./docs/TEMPLATES.md#template-parameters) defined
+  in `<values-file>` when running a [template report](#template-reports). The
+  `VALUES_FILE_PATH` environment variable may also be used to specify a
+  [values file](#values-file).
 * `-p, --template-path`
 
+  **deprecated**
+
   Include paths in `<template-path>` on the template search path when running a
-  template report. Multiple paths are separated by the OS path separator
-  character.
+  [template report](#template-reports). Multiple paths are separated by the OS
+  path separator character.
 
   The `TEMPLATE_PATH` environment variable may also be used to specify the
   template search path.
 * `--skip-render`
 
-  Skip template rendering when running a template report.
+  **deprecated**
 
-  When specified, the raw output of the template report will be passed through
-  to the channels. The engine will not launch a headless Chrome instance and
-  will not render a PDF using the browser.
+  Skip template rendering when running a [template report](#template-reports).
 
+  When specified, the raw [report output](#report-output) of the [template report](#template-reports)
+  will be passed through to the channels. The engine will not launch a headless
+  Chrome instance and will not render a PDF using the browser.
 * `-d, --dashboard-ids`
-  Run a dashboard report with the dashboard GUIDs listed in `<dashboard-ids>`.
-  Dashboard GUIDs are separated by commas. Takes precedence over `-q`. Ignored
-  if a manifest file or a template name is specified.
+
+  Run a [dashboard report](#dashboard-reports) with the dashboard GUIDs listed
+  in `<dashboard-ids>`. Dashboard GUIDs are separated by commas. Takes
+  precedence over `-q`. Ignored if a [manifest file](#manifest-file) or a
+  template name is specified.
 
   The `DASHBOARD_IDS` environment variable may also be used to specify the
   dashboard GUIDs. If both are specified, the `-d` option takes precedence.
-
 * `-q, --nrql-query`
 
-  Run a query report with the NRQL query `<nrql-query>`. Requires `-a`. Ignored
-  if a manifest file, template name, or a dashboard GUID string is specified.
+  Run a [query report](#query-reports) with the NRQL query `<nrql-query>`.
+  Requires `-a`. Ignored if a [manifest file](#manifest-file), template name, or
+  a dashboard GUID string is specified.
 
   The `NRQL_QUERY` environment variable may also be used to specify the a NRQL
   query. If both are specified, the `-q` option takes precedence.
 * `-a, --account-id`
 
-  Use the account `<account-id>` when running a query report with `-q`. Multiple
-  account IDs can be specified separated by commas. Required with `-q`.
+  Use the account `<account-id>` when running a [query report](#query-reports)
+  with `-q`. Multiple account IDs are separated by commas. Required with `-q`.
 * `-c, --channel-ids`
 
-  Publish report output to the channels listed in `<channel-ids>`. Channel IDs
-  are separated by commas. Ignored if a manifest file is specified.
+  Publish report output to the [channels](#channels) listed in `<channel-ids>`.
+  Channel IDs are separated by commas. Ignored if a manifest file is specified.
 * `-o, --output-file`
 
-  Use `<output-file>` as the name of the PDF file when running a template report
+  Use `<output-file>` as the name of the PDF file when running a [template report](#template-reports)
   and `--skip-render` is not specified or when saving output to a file when
-  using the `file` or `s3` channels. Ignored if a manifest file or dashbuard
-  GUID string is specified.
+  using the [`file`](#file-channel) or [`s3`](#s3-channel) [channels](#channels).
+  Ignored if a manifest file or dashboard GUID string is specified.
 * `--verbose`
 
   Enable verbose mode.
@@ -1767,7 +1834,7 @@ The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
   named `chart.pdf`.
 
 * Run a [template report](#template-reports) using the template named
-  `chart.html` and the template parameters specified in the values file
+  `chart.html` and the template parameters specified in the [values file](#values-file)
   `chart-values.json` and save it to a file.
 
   ```bash
@@ -1776,7 +1843,7 @@ The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
 
   In this example the reporting engine proceeds the same as the above except
   that the template engine will pass the template parameters defined in the
-  `chart-values.json` file as template variables when it processes the template.
+  `chart-values.json` file when it processes the template.
 
 * Run a [template report](#template-reports) using the template named
   `chart.html` and the template path `/tmp/templates` and save it to a file.
@@ -1790,7 +1857,7 @@ The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
   the default directories.
 
 * Run a [template report](#template-reports) using the template named
-  `errors.csv` and the template parameters specified in the values file
+  `errors.csv` and the template parameters specified in the [values file](#values-file)
   `apps.json` and save the raw template output to a file.
 
   ```bash
@@ -1799,7 +1866,7 @@ The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
 
   In this example, the reporting engine will process the template using the
   template engine passing in the template parameters defined in the `apps.json`
-  file and then publish the raw template output directly to the to the default
+  file and then publish the raw template output directly to the default
   [file channel](#file-channel). The file channel will save the output in a file
   named `errors-by-app.csv` in the current working directory.
 
@@ -1811,9 +1878,9 @@ The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
   ```
 
   In this example, the reporting engine will export the dashboard snapshot as a
-  PDF and publish the PDF to the default [file channel](#file-channel).
-  The file channel will copy the PDF to the current working directory as a file
-  named `dashboard-ABCDEF123456.pdf`.
+  PDF and publish the PDF to the default [file channel](#file-channel). The file
+  channel will copy the PDF to the current working directory as a file named
+  `dashboard-ABCDEF123456.pdf`.
 
 * Run a [query report](#query-reports) that executes the specified NRQL query
   against account `12345` and saves the query result in a CSV file.
@@ -1832,7 +1899,7 @@ The examples shown below use the `./nr-reports-cli/bin/nr-reports.sh` wrapper.
 * Run all reports specified in the given [manifest file](#manifest-file).
 
   ```bash
-  ./nr-reports-cli/bin/nr-reports.sh -f include/tests/manifest/manifest.yaml
+  ./nr-reports-cli/bin/nr-reports.sh -f /tmp/manifest.yaml
   ```
 
   In this example, the reporting engine will read all
@@ -1855,9 +1922,9 @@ the local machnine. This can be more inconvenient than running the CLI directly
 on the local machine but has the benefit that it will produce reports in the
 exact environment they will be run when the image is deployed.
 
-As mentioned in the section [template-resolution](#template-resolution), all
+As mentioned in the section [template-resolution](./docs/TEMPLATES.md#template-resolution), all
 files in the[`include`](./include) directory are copied into the application
-root of the image (`/app/nr-reports-cli`).
+root of the image (`/app/nr-reports-cli/include`).
 
 #### Building the CLI image
 
@@ -1901,24 +1968,26 @@ environment which may not be consistent with the deployed image.
 
 **NOTE:** The Docker option `--cap-add=SYS_ADMIN` is used in the examples below
 to work around [the `Error: Failed to launch the browser process!` message](#error-failed-to-launch-the-browser-process).
-This option would only be necessary if you are running template reports and you
-encounter this error message. The option should be used _carefully_ as it
-provides **_`root`_** access to the underlying host OS. In general it should
-only be used locally when testing and developing templates.
+This option would only be necessary if you are running [template reports](#template-reports)
+(**deprecated**) and you encounter this error message. The option should be used
+_carefully_ as it provides **_`root`_** access to the underlying host OS. In
+general it should only be used locally when testing and developing templates.
 
 **NOTE:** In the examples below, the [AWS configuration and credential files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
 in the local `.aws` directory are mounted into the home directory of the
 `pptruser` in the container so that the [AWS SDK for Node.js](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started-nodejs.html)
 has access to the AWS configuration and credentials without having to pass those
-via arguments on the command line.
+via arguments on the command line. This is only done for example purposes and
+in general should only be used locally when testing and developing reports.
 
 ##### Running a report using a template name with the CLI image
 
 The example below uses the [`email`](#email-channel) and [`s3`](#s3-channel)
 channels. The example specifies the channel IDs [engine option](#engine-options)
 and the [channel parmeters](#channel-parameters) via environment variables and
-runs a simple template report that does not use a manifest file and assumes the
-template `hello-world.html` is available on [the template path](#template-resolution).
+runs a simple [template report](#template-reports) that does not use a
+[manifest file](#manifest-file) and assumes the template `hello-world.html` is
+available on [the template path](./docs/TEMPLATES.md#template-resolution).
 
 ```bash
 docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
@@ -1926,7 +1995,7 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     --name nr-reports \
     -e CHANNEL_IDS='email,s3' \
     -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
-    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_PORT=[YOUR_SMTP_SERVER_PORT] \
     -e EMAIL_SMTP_SECURE='true or false' \
     -e EMAIL_FROM='[YOUR_FROM_EMAIL]' \
     -e EMAIL_TO='[YOUR_TO_EMAIL]' \
@@ -1938,16 +2007,16 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
 ##### Running a report using the default manifest file with the CLI image
 
 The example below uses the default [manifest file](#manifest-file) located at
-`include/manifest.json`. The channels and the channel configuration parameters
-are specified in the manifest file, except for the ones that are only supported
-via environment variables.
+`include/manifest.json`. The [channels](#channels) and the [channel parameters](#channel-parameters)
+are specified in the [manifest file](#manifest-file), except for those
+specified with the `-e` option.
 
 ```bash
 docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     --cap-add=SYS_ADMIN \
     --name nr-reports \
     -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
-    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_PORT=[YOUR_SMTP_SERVER_PORT] \
     -e EMAIL_SMTP_SECURE='true or false' \
     -v /path/to/.aws:/home/pptruser/.aws \
     nr-reports
@@ -1956,16 +2025,17 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
 ##### Running a report using a custom manifest file with the CLI image
 
 The example below uses a custom [manifest file](#manifest-file) located at
-`include/custom-manifest.json`. The channels and the channel configuration
-parameters are specified in the manifest file, except for the ones that are only
-supported via environment variables.
+`include/custom-manifest.json`. The [channels](#channels) and the
+[channel parameters](#channel-parameters) are specified in the
+[manifest file](#manifest-file), except for those specified with the `-e`
+option.
 
 ```bash
 docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     --cap-add=SYS_ADMIN \
     --name nr-reports \
     -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
-    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_PORT=[YOUR_SMTP_SERVER_PORT] \
     -e EMAIL_SMTP_SECURE='true or false' \
     -v /path/to/.aws:/home/pptruser/.aws \
     nr-reports -f include/custom-manifest.json
@@ -1977,16 +2047,16 @@ The Dockerfile [`Dockerfile-cron`](./nr-reports-cli/Dockerfile-cron) is
 provided to build a Docker image that runs [the CLI](#using-the-cli) on a
 schedule using `cron`. The containers `CMD` runs `crond` with the `-f` flag to
 keep it in the foreground, which keeps the container up and running. Because
-of this, arguments can _only_ be passed to the the CLI when
+of this, arguments can _only_ be passed to the CLI when
 [the container is built](#building-the-cron-image). Arguments are specified
-by invoking the [`build-cron.sh` script (or `npm run build-cron`)](./nr-reports-cli/scripts/build-cron.sh)
-with the `--cli-args` option. If the `--cli-args` option is not specified, the
-default [Engine options](#engine-options) are used when running the container
-unless overriden by [Engine options](#engine-options) specified as environment
-variables.
+by invoking the [`build-cron.sh` script](./nr-reports-cli/scripts/build-cron.sh)
+(or `npm run build-cron`) with the `--cli-args` option. If the `--cli-args`
+option is not specified, the default [Engine options](#engine-options) are used
+when running the container unless overriden by [Engine options](#engine-options)
+specified as environment variables.
 
-As mentioned in the section [template-resolution](#template-resolution), all
-files in the[`include`](./include) directory are copied into the application
+As mentioned in the section [template-resolution](./docs/TEMPLATES.md#template-resolution),
+all files in the[`include`](./include) directory are copied into the application
 root of the image (`/app/nr-reports-cli`).
 
 #### Building the CRON image
@@ -1997,7 +2067,7 @@ provided to simplify building a CRON image. It supports the following options.
 | Option | Description | Example |
 | --- | --- | --- |
 | `--cli-args 'arguments'` | Arguments to pass to the CLI on each invocation by `crond`. Make sure to quote the arguments string.  | `--cli-args '-n hello-world.html'` |
-| `--cron-entry crontab-entry` | A crontab instruction specifying the cron schedule. Defaults to `0 * * * *`. Make sure to quote the entry string. | `--cron-entry "*     *     *     *     *"` |
+| `--cron-entry crontab-entry` | A cron expression. Defaults to `0 * * * *`. Make sure to quote the entry string. | `--cron-entry "*     *     *     *     *"` |
 | `--image-repo image-repository` | The repository to use when tagging the image. Defaults to `nr-reports-cron`. | `--image-repo nr-reports-cron` |
 | `--image-tag image-tag` | The tag to use when tagging the image. Defaults to `latest`. | `--image-tag 1.0` |
 
@@ -2038,27 +2108,28 @@ containers are built are called out.
 
 **NOTE:** The Docker option `--cap-add=SYS_ADMIN` is used in the examples below
 to work around [the `Error: Failed to launch the browser process!` message](#error-failed-to-launch-the-browser-process).
-This option would only be necessary if you are running template reports and you
-encounter this error message. The option should be used _carefully_ as it
-provides **_`root`_** access to the underlying host OS. In general it should
-only be used locally when testing and developing templates.
+This option would only be necessary if you are running [template reports](#template-reports)
+(**deprecated**) and you encounter this error message. The option should be used
+_carefully_ as it provides **_`root`_** access to the underlying host OS. In
+general it should only be used locally when testing and developing templates.
 
 **NOTE:** In the examples below, the [AWS configuration and credential files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
 in the local `.aws` directory are mounted into the home directory of the
 `pptruser` in the container so that the [AWS SDK for Node.js](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started-nodejs.html)
 has access to the AWS configuration and credentials without having to pass those
-via arguments on the command line.
+via arguments on the command line. This is only done for example purposes and
+in general should only be used locally when testing and developing reports.
 
 ##### Running a report using a template name with the CRON image - Variation 1
 
-This example runs a simple template report that does not use a manifest
-file. The report is run using an image built with all defaults. The template
-name and channel IDs [engine options](#engine-options) are specified via
-**environment variables**. The [channel parmeters](#channel-parameters) for both
-channels are also specified via **environment variables**.  The generated report
-is published to the [`email`](#email-channel) and [`s3`](#s3-channel) channels.
-Finally, it assumes that the template `hello-world.html` is available on
-[the template path](#template-resolution).
+This example runs a simple [template report](#template-reports) that does not
+use a [manifest file](#manifest-file). The report is run using an image built
+with all defaults. The template name and [channel](#channels) IDs [engine options](#engine-options)
+are specified via **environment variables**. The [channel parameters](#channel-parameters)
+for both [channel](#channels) are also specified via **environment variables**.
+The generated report is published to the [`email`](#email-channel) and [`s3`](#s3-channel)
+[channels](#channels). Finally, it assumes that the template `hello-world.html`
+is available on [the template path](./docs/TEMPLATES.md#template-resolution).
 
 _Build command:_
 
@@ -2075,7 +2146,7 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     -e TEMPLATE_NAME='hello-world.html' \
     -e CHANNEL_IDS='email,s3' \
     -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
-    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_PORT=[YOUR_SMTP_SERVER_PORT] \
     -e EMAIL_SMTP_SECURE='true or false' \
     -e EMAIL_FROM='[YOUR_FROM_EMAIL]' \
     -e EMAIL_TO='[YOUR_TO_EMAIL]' \
@@ -2086,14 +2157,14 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
 
 ##### Running a report using a template name with the CRON image - Variation 2
 
-This example runs a simple template report that does not use a manifest
-file. The report is run using an image built with CLI arguments for the template
-name and channels specified via the `--cli-args` option. The generated report
-is published to the [`email`](#email-channel) and [`s3`](#s3-channel) channels.
-The [channel parmeters](#channel-parameters) for both channels are specified via
-**environment variables** since these cannot be specified at the command line.
-Finally, it assumes that the template `hello-world.html` is available on
-[the template path](#template-resolution).
+This example runs a simple [template report](#template-reports) that does not
+use a [manifest file](#manifest-file). The report is run using an image built
+with CLI arguments for the template name and [channel](#channels) IDs specified
+via the `--cli-args` option. The generated report is published to the [`email`](#email-channel)
+and [`s3`](#s3-channel) [channels](#channels). The [channel parmeters](#channel-parameters)
+for both [channels](#channels) are specified via **environment variables** since
+these cannot be specified at the command line. Finally, it assumes that the
+template `hello-world.html` is available on [the template path](./docs/TEMPLATES.md#template-resolution).
 
 _Build command:_
 
@@ -2108,7 +2179,7 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     --cap-add=SYS_ADMIN \
     --name nr-reports \
     -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
-    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_PORT=[YOUR_SMTP_SERVER_PORT] \
     -e EMAIL_SMTP_SECURE='true or false' \
     -e EMAIL_FROM='[YOUR_FROM_EMAIL]' \
     -e EMAIL_TO='[YOUR_TO_EMAIL]' \
@@ -2119,17 +2190,18 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
 
 ##### Running a report using a default manifest file with the CRON image
 
-There are no major differences between CRON images built to run reports
-using the default manifest file. This is because no option or environment
-variable is needed to run the CLI with the default manifest file.
+There are no major differences between CRON images and CLI images built to run
+reports using the default manifest file. This is because no option or
+environment variable is needed to run the CLI with the default manifest file.
 
 ##### Running a report using a custom manifest file with the CRON image - Variation 1
 
 This example runs reports using a custom [manifest file](#manifest-file) located
 at `include/custom-manifest.json`. Reports are run using an image built with all
-defaults. The manifest file is specified via an **environment variables**. All
-other values are specified in the manifest file, except for the ones that are
-only supported via **environment variables**.
+defaults. The [manifest file](#manifest-file) is specified via an
+**environment variables**. All other values are specified in the [manifest file](#manifest-file),
+except for those specified with the `-e` option.
+
 
 _Build command:_
 
@@ -2145,7 +2217,7 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     --name nr-reports \
     -e MANIFEST_FILE='include/custom-manifest.json' \
     -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
-    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_PORT=[YOUR_SMTP_SERVER_PORT] \
     -e EMAIL_SMTP_SECURE='true or false' \
     -v /path/to/.aws:/home/pptruser/.aws \
     nr-reports-cron
@@ -2155,9 +2227,9 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
 
 This example runs reports using a custom [manifest file](#manifest-file) located
 at `include/custom-manifest.json`. Reports are run using an image that is built
-using the `--cli-args` option to specify the manifest file. All other values are
-specified in the manifest file, except for the ones that are only supported via
-**environment variables**.
+using the `--cli-args` option to specify the [manifest file](#manifest-file).
+All other values are specified in the [manifest file](#manifest-file), except
+for those specified with the `-e` option.
 
 _Build command:_
 
@@ -2172,7 +2244,7 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     --cap-add=SYS_ADMIN \
     --name nr-reports \
     -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
-    -e EMAIL_SMTP_PORT=YOUR_SMTP_SERVER_PORT \
+    -e EMAIL_SMTP_PORT=[YOUR_SMTP_SERVER_PORT] \
     -e EMAIL_SMTP_SECURE='true or false' \
     -v /path/to/.aws:/home/pptruser/.aws \
     nr-reports-cron
@@ -2180,212 +2252,568 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
 
 ### Using the AWS Lambda function
 
-The reporting engine can be also be deployed as an AWS Lambda function.
-The Lambda function can be combined with other AWS services to trigger report
-generation in a variety of ways. For example, an AWS EventBridge trigger can be
-used to run reports on a schedule. Or, an Application Load Balancer trigger can
-be used to expose an HTTP endpoint for generating reports on demand by making a
-request to the endpoint.
+The reporting engine can be also be deployed as an [AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html)
+function. The Lambda function can be combined with other AWS services to trigger
+report generation in a variety of ways. For example, an [AWS EventBridge](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html)
+trigger can be used to run reports on a schedule. Or, an [Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html)
+trigger can be used to expose an HTTP endpoint for generating reports on demand
+by making a request to the endpoint.
 
-The AWS Lambda function is deployed and managed as a
-[CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html).
-using the scripts provided in [the scripts directory](./nr-reports-lambda/scripts).
-These scripts require the AWS CLI to be installed as it is used to create and
-manage the CloudFormation stack.
-
-#### The AWS Lambda function "package name"
-
-Each of the scripts in in [the scripts directory](./nr-reports-lambda/scripts)
-require the `--package-name` argument to be specified. The "package name" serves
-a dual purpose. First, it is used as the name of the CloudFormation stack that
-includes the AWS Lambda function and associated resources. Second, it is used
-as the name for the AWS Lambda function Docker image in your _local_ Docker
-registry.
-
-**NOTE:** The image version used as the image _tag_ in your local Docker
-registry is taken from the `ImageTag` parameter specified in your
-`cf-params.json` file. This value is also used to tag the image when it is
-pushed to the ECR container registry during deployment of the Lambda function.
+**NOTE:** While the reporting engine can be deployed as a Lambda function
+individually, the recommended way to deploy and run the reporting engine is
+[using the New Relic Reports Stack](#using-the-new-relic-reports-stack) along
+with the [New Relic Reports Builder](#using-the-report-builder) for a complete
+end-to-end scheduled reporting solution.
 
 #### The AWS Lambda function and S3
 
-The AWS Lambda function supports reading manifest, template, and values files
-from Amazon S3 if the `sourceBucket` [engine option](#engine-options) is set.
-For example, if the `sourceBucket` option is set to `my-in-bucket` and the
-`manifestFile` option is set to `my-manifest.json`, the AWS Lambda function will
-load the object with the key `my-manifest.json` in the S3 bucket `my-in-bucket`.
+The Lambda function supports reading [manifest](#manifest-file), [template](./docs/TEMPLATES.md#templates),
+and [values files](#values-file) from [Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html)
+if the `sourceBucket` [engine option](#engine-options) is set. For example, if
+the `sourceBucket` option is set to `my-in-bucket` and the `manifestFile` option
+is set to `my-manifest.json`, the AWS Lambda function will load the object with
+the key `my-manifest.json` in the S3 bucket `my-in-bucket`.
 
 In addition, if a source bucket is specified and no channel is specified for a
 report, the default being `s3`, or `s3` is specified as a channel without a
 destination bucket, the AWS Lambda function will default the destination bucket
 to the source bucket.
 
-#### Building the AWS Lambda image
+#### Preparing to work with the AWS Lambda function
 
-A Dockerfile [`Dockerfile`](./nr-reports-cli/Dockerfile-cron) is
+Prior to working with the Lambda function you will need to perform the following
+steps.
+
+1. Create an [Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)
+   repository to host the [Lambda container image](#build-the-lambda-container-image).
+1. Install the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+   on the build machine.
+1. Configure the AWS region used by the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+   in the [AWS CLI configuration file](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html#cli-configure-files-where)
+   or using the `AWS_REGION` [environment variable](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html).
+1. Configure [AWS credentials for programmatic access](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-authentication.html)
+   by the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+   appropriately.
+1. Copy the file [`cf-params-sample.json`](./nr-reports-lambda/deploy/cf-params-sample.json)
+   to a file named `cf-params.deploy.json` in the [`./nr-reports-lambda/deploy`](./nr-reports-lambda/deploy)
+   directory.
+1. Replace the `ParameterValue` for the `RunnerECRImageRepo` parameter with the
+   URI of the [Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)
+   repository.
+1. Replace the `ParameterValue` for the `RunnerECRImageTag` parameter with a
+   value to use to tag the image in the [Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)
+   repository.
+
+#### Build the Lambda container image
+
+When deploying the reporting engine as a Lambda function, the engine is designed
+to be packaged as a [Lambda container image](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html)
+and pushed to a repository hosted in [Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html).
+Whether deploying the Lambda function individually or deploying it as part of
+the [New Relic Reports Stack](#using-the-new-relic-reports-stack), the process
+to build and push the Lambda container image is the same.
+
+##### Building and pushing the Lambda container image
+
+A Dockerfile [`Dockerfile`](./nr-reports-lambda/deploy/Dockerfile) is
 provided to build a Docker image that can be
 [deployed as a Lambda container image](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html).
 The image is built from an [AWS base image for Node.js](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html#nodejs-image-base).
-By default, [version 14](https://github.com/aws/aws-lambda-base-images/blob/nodejs14.x/Dockerfile.nodejs14.x)
-is used but this can be customized by specifying the `AWS_LAMBDA_VER` argument
-when building the image. The image automatically includes the
-[New Relic Lambda Extension Layer](https://github.com/newrelic/newrelic-lambda-extension)
+By default, [version 20](public.ecr.aws/lambda/nodejs:20) is used but this can
+be customized by specifying the `AWS_LAMBDA_VER` argument when building the
+image. The image automatically includes the [New Relic AWS Lambda Extension Layer](https://github.com/newrelic/newrelic-lambda-extension)
 corresponding to the version of the base image that is specified. Like the
 [CLI image](#using-the-cli-image) and the [CRON image](#using-the-cron-image),
 all files in the[`include`](./include) directory are also included in the Lambda
 container image.
 
-The [`build.sh`](./nr-reports-labda/scripts/build.sh) script is
-provided to simplify building the AWS Lambda image image. It supports the
-following options.
+The [`build.sh`](./deploy/lambda/build.sh) script is provided to simplify
+building the Lambda container image. It supports the following options.
 
 | Option | Description | Example |
 | --- | --- | --- |
-| `--package-name package-name` | The name used as the stack name as well as the name used to tag the image in your local Docker registry. | `--package-name nr-reports-lambda` |
+| `-t image-name` | The image name used to tag the image in your local Docker registry. Defaults to `nr-reports-lambda` when the [`build.sh`](./deploy/lambda/build.sh) is run directly or `nr-reports-lambda:$package_json_version` when run using `npm run build`. | `-t nr-reports-lambda-test:3.2.0` |
+| `--full` | Download and include the latest [New Relic AWS Lambda Extension Layer](https://github.com/newrelic/newrelic-lambda-extension). Defaults to `false`. | `--full` |
+| `--push` | Push the image to the [ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html) repository specified in the `RunnerECRImageRepo` parameter defined in the `deploy/cf-params.deploy.json` file. Defaults to `false`. | `--push` |
+| `-p prefix` | The prefix to use when looking up environment variables. This option should _always_ be specified with the value `RUNNER` when using the [`build.sh`](./deploy/lambda/build.sh) script directly. | `-p RUNNER` |
 
 You can either run the script directly or use the `npm run build` command
-while in the `./nr-reports-lambda` directory. For example, to build the image
-using the NPM script, you would run the following command.
+while in the `./nr-reports-lambda` directory. For example, once you have met the
+[prerequisites](#preparing-to-work-with-the-aws-lambda-function) to build and
+push the Lambda container image, to perform a full build of the image using the
+default image name and version number and automatically push it to the
+[ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)
+repository specified in the `./deploy/cf-params.deploy.json` using the NPM
+script, run the following command.
 
 ```bash
-npm run build -- --package-name nr-reports-lambda
+npm run build -- --full --push
 ```
 
-**NOTE:** While the [`build.sh`](./nr-reports-labda/scripts/build.sh) _can_ be
-invoked on it's own, the [`deploy.sh`](./nr-reports-labda/scripts/deploy.sh) and
-the [`update.sh`](./nr-reports-labda/scripts/update.sh) scripts invoke it for
-you prior to deployment.
+**NOTE:** While the build step _can_ be run individually, it can automatically
+be run when the Lambda function is [deployed](#deploy-the-lambda-function)
+or [updated](#update-the-lambda-function).
 
-#### Preparing to deploy or update the AWS Lambda function
+#### Deploy the Lambda function
 
-Prior to working with the Lambda function, you will need to ensure that you have
-the following.
+The Lambda function is deployed and managed as a
+[CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html)
+using the provided [CloudFormation template](./nr-reports-lambda/deploy/cf-template.yaml)
+and the CloudFormation parameters file `./nr-reports-lambda/deploy/cf-params.deploy.yml`
+created when [preparing to work with the AWS Lambda function](#preparing-to-work-with-the-aws-lambda-function).
 
-1. An ECR container registry to host the container image built with
-   [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile)
-2. A [function execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)
-   that the Lambda function will assume when the function is invoked
-3. Optionally, a Secrets Manager secret in which to store the New Relic User
-   API key used by the Lambda
+##### Preparing to deploy or update the AWS Lambda function
 
-#### Deploying the AWS Lambda function
+Prior to deploying or updating the Lambda function, you will need to perform the
+following steps.
 
-The Lambda function is deployed using [a CloudFormation template](./nr-reports-lambda/cf-template.yaml).
-The CloudFormation template accepts a number of parameters which must be
-specified when deploying. Parameters are specified using a JSON file with the
-following format.
+1. Perform all steps required to [work with the AWS Lambda function](#preparing-to-work-with-the-aws-lambda-function).
+1. Identify or create a [function execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)
+   that the Lambda service will assume to invoke the function.
+1. Optionally create an [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html)
+   secret in which to store the New Relic license key used by the
+   [New Relic AWS Lambda Extension](https://github.com/newrelic/newrelic-lambda-extension).
 
-```json
-[
-   {
-      "ParameterKey": "Key1",
-      "ParameterValue": "Value1"
-   },
-   {
-      "ParameterKey": "Key2",
-      "ParameterValue": "Value2"
-   }
-]
-```
+   This secret should have a single key-value pair with the key `LicenseKey` and
+   your [New Relic License Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+   as the value. Replace the `ParameterValue` for the `NRLicenseKeySecret`
+   parameter in the `cf-params.deploy.json` file with the ARN of the secret.
 
-A [sample template parameter file](./nr-reports-lambda/cf-params.sample.json)
-is provided the shows an example of using each of the parameters supported by
-the template. Documentation for each parameter is provided inline in
-[the CloudFormation template](./nr-reports-lambda/cf-template.yaml) as
-comments. For example, here is the documentation for the `UserApiKey` parameter.
+   **NOTE:** You may also choose to specify the [New Relic License Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+   as a Lambda environment variable by replacing the `ParameterValue` for the
+   `NRLicenseKey` parameter in the `cf-params.deploy.json` file with your
+   [New Relic License Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys).
+   However, this is not recommended for security purposes.
+1. Optionally create an [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html)
+   secret in which to store the New Relic User API key used by the Lambda
+   function.
+
+   If you do not intend to use the Lambda function with the
+   [New Relic AWS Scheduler Lambda](#using-the-aws-scheduler-lambda-function),
+   this secret should have a single key-value pair with the key `UserApiKey` and
+   your [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+   as the value. Replace the `ParameterValue` for the `UserApiKeySecret`
+   parameter in the `cf-params.deploy.json` file with the ARN of the secret.
+
+   If you intend to use the Lambda function with the
+   [New Relic AWS Scheduler Lambda](#using-the-aws-scheduler-lambda-function),
+   see [the scheduler Lambda Secret](#the-scheduler-lambda-secret) section for
+   details needed to create the appropriate secret and replace the
+   `ParameterValue` for the `SecretName` parameter in the
+   `cf-params.deploy.json` file with the ARN of the secret.
+
+   **NOTE:** If you do not intend to use the Lambda function with the
+   [New Relic AWS Scheduler Lambda](#using-the-aws-scheduler-lambda-function),
+   you may also choose to specify the [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+   as a Lambda environment variable by replacing the `ParameterValue` for the
+   `UserApiKey` parameter in the `cf-params.deploy.json` file with your
+   [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys).
+   However, this is not recommended for security purposes.
+
+Additionally, update the CloudFormation parameters file `./nr-reports-lambda/deploy/cf-params.deploy.yml`
+created when [preparing to work with the AWS Lambda function](#preparing-to-work-with-the-aws-lambda-function).
+Documentation for each parameter in the CloudFormation parameters file is
+provided inline in [the CloudFormation template](./nr-reports-lambda/deploy/cf-template.yaml)
+as comments. For example, below is the documentation for the `UserApiKeySecret`
+parameter.
 
 ```yaml
   #
-  # New Relic User API key used for GraphQL Nerdstorage queries and mutations.
+  # Name or ARN of an AWS Secrets Manager secret containing a New Relic User API
+  # key used for GraphQL Nerdstorage queries and mutations. By default, the
+  # secret must contain a 'UserApiKey' property for the API key. A different key
+  # can be specified by the UserApiKeySecretKey parameter.
   #
-  # NOTE: It is not recommended to use this. Instead, specify a secret ARN via
-  # the UserApiKeySecret parameter.
-  #
-  UserApiKey:
+  UserApiKeySecret:
     Type: String
-    Description: The New Relic User API key to use.
-    AllowedPattern: '[a-zA-Z0-9._\-]*'
+    Description: ID (name or ARN) of a Secret containing the New Relic User API key.
+    AllowedPattern: '(^$)|(^arn:(aws[a-zA-Z-]*)?:secretsmanager:.+:\d{12}:secret:[a-zA-Z0-9/_+=\.@\-]+$)'
     Default: ''
 ```
 
-[The `deploy.sh` script](./nr-reports-lambda/scripts/deploy.sh) is used
-to deploy the Lambda function. This script will first invoke [the `build.sh` script](./nr-reports-lambda/scripts/build.sh)
-to build the Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
-The script will then push the image from the local Docker registry to the
-registry defined in the `./nr-reports-lambda/cf-params.json` file and use the
+##### Deploying the Lambda function
+
+[The `deploy.sh` script](./deploy/lambda/deploy.sh) is used to deploy the
+[CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html)
+for the Lambda function. It supports the following options.
+
+| Option | Description | Example |
+| --- | --- | --- |
+| `-n stack-name` | The name to use for the [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html). Defaults to `nr-reports-lambda`. | `-n nr-reports-lambda-stack` |
+| `-t image-name` | The image name used to tag the image in your local Docker registry. Defaults to `nr-reports-lambda` when the [`deploy.sh`](./deploy/lambda/deploy.sh) is run directly or `nr-reports-lambda:$package_json_version` when run using `npm run deploy`. | `-t nr-reports-lambda-test:3.2.0` |
+| `-p prefix` | The prefix to use when looking up environment variables. This option should _always_ be specified with the value `RUNNER` when using the [`deploy.sh`](./deploy/lambda/deploy.sh) script directly. | `-p RUNNER` |
+| `--no-build` | Do not invoke [the `build.sh` script](./deploy/lambda/build.sh) script before deploying. Defaults to `false`. | `--no-build` |
+
+[The `deploy.sh` script](./deploy/lambda/deploy.sh) will first invoke [the `build.sh` script](./deploy/lambda/build.sh)
+to build and push the Lambda container image as outlined in the section
+[Building and pushing the Lambda container image](#building-and-pushing-the-lambda-container-image).
+[The `build.sh` script](./deploy/lambda/build.sh) will be invoked with the
+`--full` and `--push` flags. The `-t` option specified when the [`deploy.sh` script](./deploy/lambda/deploy.sh)
+was invoked will be passed through as well as the `-p` option.
+
+[The `deploy.sh` script](./deploy/lambda/deploy.sh) will then use the
 `aws cloudformation deploy` command to create the stack using
-[the CloudFormation template](./nr-reports-lambda/cf-template.yaml).
+[the CloudFormation template](./nr-reports-lambda/deploy/cf-template.yaml) and the
+CloudFormation parameters file `./nr-reports-lambda/deploy/cf-params.deploy.yml`.
 
 You can either run the script directly or use the `npm run deploy` command
-while in the `./nr-reports-lambda` directory. For example, to deploy the AWS
-Lambda function using the NPM script, you would run the following command.
+while in the `./nr-reports-lambda` directory. For example, to build, push, and
+deploy the Lambda function using the NPM script using the default image name and
+version number and the default stack name, run the following command.
 
 ```bash
-npm run deploy -- --package-name nr-reports-lambda
+npm run deploy
 ```
-
-To deploy the AWS Lambda function, perform the following steps.
-
-1. Ensure you are logged into AWS ECR using `aws ecr get-login-password`.
-2. Copy the [./nr-reports-lambda/cf-params.sample.json](./nr-reports-lambda/cf-params.sample.json)
-   file to `./nr-reports-lambda/cf-params.json`
-
-   `cp ./nr-reports-lambda/cf-params.sample.json ./nr-reports-lambda/cf-params.json`
-
-   _Note:_ This file does not exist by default, so make sure to do this step.
-
-3. Update the values in the file `./nr-reports-lambda/cf-params.json` as
-   appropriate for your environment.
-4. Run the `deploy` script.
-
-   `npm run deploy -- --package-name nr-reports-lambda`
-
-You should now have a Lambda function named `RunNewRelicReport` (unless you
-customized it in the `cf-params.json` file). You can confirm this by looking
-in the AWS Lambda console or running the following command in your terminal.
-
-```bash
- aws lambda get-function --function-name RunNewRelicReport \
-   --output table \
-   --no-cli-pager \
-   --color on
- ```
 
 #### Update the Lambda function
 
-[The `update.sh` script](./nr-reports-lambda/scripts/deploy.sh) is used
-to update the Lambda function. This script first invokes [the `build.sh` script](./nr-reports-lambda/scripts/build.sh)
-to build the Lambda Docker image using [the Lambda Dockerfile](./nr-reports-lambda/Dockerfile).
-The script will then push the image from the local Docker registry to the
-registry defined in the `./nr-reports-lambda/cf-params.json` file and use the
-`aws lambda update-function-code` command to update the Lambda to point to the
-new image. Note that you _must_ increment the value of the `ImageTag` parameter
-specified in your `./nr-reports-lambda/cf-params.json` file.
+[The `update.sh` script](./deploy/lambda/update.sh) is used to update the
+Lambda function to a new version of the [container image](#build-the-lambda-container-image).
+It supports the following options.
 
-This script can be used to update the Lambda function image to include new
-or updated [manifest files](#manifest-file), [template files](#templates),
-and/or [values files](#values-file).
+| Option | Description | Example |
+| --- | --- | --- |
+| `-n function-name` | The name of the function that was specified for the `RunnerFunctionName` parameter in the CloudFormation parameters file when the Lambda function was [deployed](#deploy-the-lambda-function). | `-n RunNewRelicReport` |
+| `-t image-name` | The image name used to tag the image in your local Docker registry. Defaults to `nr-reports-lambda` when the [`update.sh`](./deploy/lambda/update.sh) is run directly or `nr-reports-lambda:$package_json_version` when run using `npm run update`. Only used then the `--build` option is specified. | `-t nr-reports-lambda-test:3.2.0` |
+| `-p prefix` | The prefix to use when looking up environment variables. This option should _always_ be specified with the value `RUNNER` when using the [`update.sh`](./deploy/lambda/update.sh) directly. | `-p RUNNER` |
+| `--build` | Invoke [the `build.sh` script](./deploy/lambda/build.sh) script before updating. Defaults to `false`. | `--build` |
+
+[The `update.sh` script](./deploy/lambda/update.sh) uses the
+`aws lambda update-function-code` command to notify the Lambda function with the
+name specified using the `-n` option that its image has been updated and that it
+needs to be refreshed. The `function-name` specified using the `-n` option
+should be the name of the function that was specified for the
+`RunnerFunctionName` parameter in the CloudFormation parameters file when the
+Lambda function was [deployed](#deploy-the-lambda-function).
+
+Additionally if the `--build` option is specified, [the `update.sh` script](./deploy/lambda/update.sh)
+will first invoke [the `build.sh` script](./deploy/lambda/build.sh) to build and
+push the Lambda container image as outlined in the section
+[Building and pushing the Lambda container image](#building-and-pushing-the-lambda-container-image).
+[The `build.sh` script](./deploy/lambda/build.sh) will be invoked with the
+`--full` and `--push` flags. The `-t` option specified when the [`update.sh` script](./deploy/lambda/update.sh)
+was invoked will be passed through as well as the `-p` option.
 
 You can either run the script directly or use the `npm run update` command
-while in the `./nr-reports-lambda` directory. For example, to update the AWS
-Lambda function using the NPM script, you would run the following command.
+while in the `./nr-reports-lambda` directory. For example, if the name of the
+function specified in the `RunnerFunctionName` parameter when the Lambda
+function was [deployed](#deploy-the-lambda-function) was `RunNewRelicReport`, to
+build, push, and update the Lambda function using the NPM script using the
+default image name and version number, run the following command.
 
 ```bash
-npm run update -- --package-name nr-reports-lambda
+npm run update -- -n RunNewRelicReport --build
 ```
 
-#### Deleting the Lambda function
+**NOTE:** As some of the environment variables used by the Lambda function may
+contain secrets (license key, user API key, etc) and since the output from the
+`aws lambda update-function-code` command displays the value of all environment
+variables, the output of the command is intentionally not displayed.
 
-[The `delete.sh` script](./nr-reports-lambda/scripts/delete.sh) is used
-to delete the Reports Lambda function and the associated CloudFormation stack.
+**NOTE:** When updating the Lambda function, you may need to increment the value
+of the `RunnerECRImageTag` parameter specified in the
+`./nr-reports-lambda/deploy/cf-params.deploy.json` file.
+
+#### Delete the Lambda function
+
+[The `delete.sh` script](./deploy/lambda/delete.sh) is used to delete the
+[CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html)
+for the Lambda function. It supports the following options.
+
+| Option | Description | Example |
+| --- | --- | --- |
+| `-n stack-name` | The name of the [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html). Defaults to `nr-reports-lambda`. | `-n nr-reports-lambda-stack` |
 
 You can either run the script directly or use the `npm run delete` command
-while in the `./nr-reports-lambda` directory. For example, to delete the AWS
-Lambda function using the NPM script, you would run the following command.
+while in the `./nr-reports-lambda` directory. For example, to delete the Lambda
+function using the NPM script using the default stack name, run the following
+command.
 
 ```bash
-npm run delete -- --package-name nr-reports-lambda
+npm run delete
 ```
+
+### Using the AWS Scheduler Lambda Function
+
+The New Relic Reports Scheduler [AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html)
+function is a key component of the end-to-end scheduled reporting solution
+provided by the [New Relic Reports Stack](#using-the-new-relic-reports-stack).
+The scheduler monitors the reports defined in an instance of the [New Relic Reports Builder](#using-the-report-builder)
+and automatically creates, updates, and deletes [AWS EventBridge Cron-based schedules](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html#cron-based)
+to trigger the [AWS Lambda function](#using-the-aws-lambda-function) to run each
+report based on the schedule defined for it in the [New Relic Reports Builder](#using-the-report-builder).
+
+**NOTE:** While the scheduler can be deployed as a Lambda function individually,
+the recommended way to deploy and run the scheduler is [using the New Relic Reports Stack](#using-the-new-relic-reports-stack)
+along with the [New Relic Reports Builder](#using-the-report-builder) for a complete
+end-to-end scheduled reporting solution.
+
+#### Preparing to work with the AWS Scheduler Lambda function
+
+Prior to working with the scheduler Lambda function you will need to perform the
+following steps.
+
+1. Create an [Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)
+   repository to host the [scheduler Lambda container image](#build-the-scheduler-lambda-container-image).
+1. Install the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+   on the build machine.
+1. Configure the AWS region used by the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+   in the [AWS CLI configuration file](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html#cli-configure-files-where)
+   or using the `AWS_REGION` [environment variable](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html).
+1. Configure [AWS credentials for programmatic access](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-authentication.html)
+   by the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html)
+   appropriately.
+1. Copy the file [`cf-params-sample.json`](./nr-reports-scheduler/deploy/cf-params-sample.json)
+   to a file named `cf-params.deploy.json` in the [`./nr-reports-scheduler/deploy`](./nr-reports-scheduler/deploy)
+   directory.
+1. Replace the `ParameterValue` for the `SchedulerECRImageRepo` parameter with the
+   URI of the [Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)
+   repository.
+1. Replace the `ParameterValue` for the `SchedulerECRImageTag` parameter with a
+   value to use to tag the image in the [Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)
+   repository.
+
+#### Build the Scheduler Lambda container image
+
+When deploying the scheduler Lambda function, the scheduler is designed to be
+packaged as a [Lambda container image](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html)
+and pushed to a repository hosted in [Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html).
+Whether deploying the scheduler Lambda function individually or deploying it as
+part of the [New Relic Reports Stack](#using-the-new-relic-reports-stack), the
+process to build and push the scheduler Lambda container image is the same.
+
+##### Building and pushing the scheduler Lambda container image
+
+A Dockerfile [`Dockerfile`](./nr-reports-scheduler/deploy/Dockerfile) is
+provided to build a Docker image that can be
+[deployed as a Lambda container image](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html).
+The image is built from an [AWS base image for Node.js](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html#nodejs-image-base).
+By default, [version 20](public.ecr.aws/lambda/nodejs:20) is used but this can
+be customized by specifying the `AWS_LAMBDA_VER` argument when building the
+image. The image automatically includes the [New Relic AWS Lambda Extension Layer](https://github.com/newrelic/newrelic-lambda-extension)
+corresponding to the version of the base image that is specified.
+
+The [`build.sh`](./deploy/lambda/build.sh) script is provided to simplify
+building the scheduler Lambda container image. It supports the following options.
+
+| Option | Description | Example |
+| --- | --- | --- |
+| `-t image-name` | The image name used to tag the image in your local Docker registry. Defaults to `nr-reports-scheduler` when the [`build.sh`](./deploy/lambda/build.sh) is run directly or `nr-reports-scheduler:$package_json_version` when run using `npm run build`. | `-t nr-reports-scheduler-test:3.2.0` |
+| `--full` | Download and include the latest [New Relic AWS Lambda Extension Layer](https://github.com/newrelic/newrelic-lambda-extension). Defaults to `false`. | `--full` |
+| `--push` | Push the image to the [ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html) repository specified in the `SchedulerECRImageRepo` parameter defined in the `deploy/cf-params.deploy.json` file. Defaults to `false`. | `--push` |
+| `-p prefix` | The prefix to use when looking up environment variables. This option should _always_ be specified with the value `SCHEDULER` when using the [`build.sh`](./deploy/lambda/build.sh) script directly. | `-p SCHEDULER` |
+
+You can either run the script directly or use the `npm run build` command
+while in the `./nr-reports-scheduler` directory. For example, once you have met
+the [prerequisites](#preparing-to-work-with-the-aws-scheduler-lambda-function)
+to build and push the scheduler Lambda container image, to perform a full build
+of the image using the default image name and version number and automatically
+push it to the [ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)
+repository specified in the `./deploy/cf-params.deploy.json` using the NPM
+script, run the following command.
+
+```bash
+npm run build -- --full --push
+```
+
+**NOTE:** While the build step _can_ be run individually, it can automatically
+be run when the scheduler Lambda function is [deployed](#deploy-the-scheduler-lambda-function)
+or [updated](#update-the-lambda-function).
+
+#### Deploy the Scheduler Lambda function
+
+The scheduler Lambda function is deployed and managed as a
+[CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html)
+using the provided [CloudFormation template](./nr-reports-scheduler/deploy/cf-template.yaml)
+and the CloudFormation parameters file `./nr-reports-scheduler/deploy/cf-params.deploy.yml`
+created when [preparing to work with the AWS Scheduler Lambda function](#preparing-to-work-with-the-aws-scheduler-lambda-function).
+
+##### Preparing to deploy or update the AWS scheduler Lambda function
+
+Prior to deploying or updating the scheduler Lambda function, you will need to perform the
+following steps.
+
+1. Perform all steps required to [work with the AWS scheduler Lambda function](#preparing-to-work-with-the-aws-scheduler-lambda-function).
+1. Identify or create a [function execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)
+   that the Lambda service will assume to invoke the function.
+1. Create the [scheduler Lambda secret](#the-scheduler-lambda-secret) with the
+   required key-value pairs.
+1. Optionally create an [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html)
+   secret in which to store the New Relic license key used by the
+   [New Relic AWS Lambda Extension](https://github.com/newrelic/newrelic-lambda-extension).
+
+   This secret should have a single key-value pair with the key `LicenseKey` and
+   your [New Relic License Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+   as the value. Replace the `ParameterValue` for the `NRLicenseKeySecret`
+   parameter in the `cf-params.deploy.json` file with the ARN of the secret.
+
+   **NOTE:** You may also choose to specify the [New Relic License Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+   as a Lambda environment variable by replacing the `ParameterValue` for the
+   `NRLicenseKey` parameter in the `cf-params.deploy.json` file with your
+   [New Relic License Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys).
+   However, this is not recommended for security purposes.
+
+Additionally, update the CloudFormation parameters file `./nr-reports-scheduler/deploy/cf-params.deploy.yml`
+created when [preparing to work with the AWS scheduler Lambda function](#preparing-to-work-with-the-aws-scheduler-lambda-function).
+Documentation for each parameter in the CloudFormation parameters file is
+provided inline in [the CloudFormation template](./nr-reports-scheduler/deploy/cf-template.yaml)
+as comments. For example, below is the documentation for the `ScheduleGroupName`
+parameter.
+
+```yaml
+  #
+  # The schedule group name of the schedule group the scheduler will use to
+  # create report schedules.
+  #
+  ScheduleGroupName:
+    Type: String
+    Description: The schedule group name of the schedule group the scheduler will use to create report schedules.
+    Default: ScheduleGroup
+```
+
+##### The scheduler Lambda secret
+
+The scheduler Lambda uses an [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html)
+secret to store the sensitive information that it needs to query the instance of
+the [New Relic Reports Builder](#using-the-report-builder) it is associated
+with. The secret must include the following key-value pairs.
+
+| Key | Value |
+| --- | --- |
+| `apiKey` | Your [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys) |
+| `sourceNerdletId` | The UUID of the [New Relic Reports Builder](#using-the-report-builder) to query |
+| `accountId` | The [New Relic account ID](https://docs.newrelic.com/docs/accounts/accounts-billing/account-structure/account-id/) where schedules will be stored. Multiple accounts IDs may be specified separated by commas. |
+
+**NOTE:**
+
+* The specified [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+  _must_ have access to the account that the nerdlet with the specified UUID is
+  deployed to. This account is determined by the account that the specified
+  [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+  is linked to (the account the key was created from).
+* The `accountId` value may contain multiple [New Relic account IDs](https://docs.newrelic.com/docs/accounts/accounts-billing/account-structure/account-id/)
+  separated by commas. The scheduler Lambda will query for schedules in each
+  account when it polls the associated instance of the [New Relic Reports Builder](#using-the-report-builder).
+  However, the specified user associated with the [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+  _must_ have access to each account in order for scheduler Lambda to query
+  each account successfully.
+* The [New Relic Reports Stack](#using-the-new-relic-reports-stack) will
+  automatically create the scheduler Lambda secret using the values specified
+  in the `nr-reports-stack/deploy/cf-params.deploy.json` when it is deployed.
+  When [deploying the scheduler Lambda](#deploy-the-scheduler-lambda-function)
+  separately, the scheduler Lambda secret must be [created manually](https://docs.aws.amazon.com/secretsmanager/latest/userguide/create_secret.html)
+  with the above key-value pairs.
+
+##### Deploying the scheduler Lambda function
+
+[The `deploy.sh` script](./deploy/lambda/deploy.sh) is used to deploy the
+[CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html)
+for the scheduler Lambda function. It supports the following options.
+
+| Option | Description | Example |
+| --- | --- | --- |
+| `-n stack-name` | The name to use for the [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html). Defaults to `nr-reports-scheduler`. | `-n nr-reports-scheduler-stack` |
+| `-t image-name` | The image name used to tag the image in your local Docker registry. Defaults to `nr-reports-scheduler` when the [`deploy.sh`](./deploy/lambda/deploy.sh) is run directly or `nr-reports-scheduler:$package_json_version` when run using `npm run deploy`. | `-t nr-reports-scheduler-test:3.2.0` |
+| `-p prefix` | The prefix to use when looking up environment variables. This option should _always_ be specified with the value `SCHEDULER` when using the [`deploy.sh`](./deploy/lambda/deploy.sh) script directly. | `-p SCHEDULER` |
+| `--no-build` | Do not invoke [the `build.sh` script](./deploy/lambda/build.sh) script before deploying. Defaults to `false`. | `--no-build` |
+
+[The `deploy.sh` script](./deploy/lambda/deploy.sh) will first invoke [the `build.sh` script](./deploy/lambda/build.sh)
+to build and push the scheduler Lambda container image as outlined in the
+section [Building and pushing the scheduler Lambda container image](#building-and-pushing-the-scheduler-lambda-container-image).
+[The `build.sh` script](./deploy/lambda/build.sh) will be invoked with the
+`--full` and `--push` flags. The `-t` option specified when the [`deploy.sh` script](./deploy/lambda/deploy.sh)
+was invoked will be passed through as well as the `-p` option.
+
+[The `deploy.sh` script](./deploy/lambda/deploy.sh) will then use the
+`aws cloudformation deploy` command to create the stack using
+[the CloudFormation template](./nr-reports-scheduler/deploy/cf-template.yaml)
+and the CloudFormation parameters file `./nr-reports-scheduler/deploy/cf-params.deploy.yml`.
+
+You can either run the script directly or use the `npm run deploy` command
+while in the `./nr-reports-scheduler` directory. For example, to build, push,
+and deploy the scheduler Lambda function using the NPM script using the default
+image name and version number and the default stack name, run the following
+command.
+
+```bash
+npm run deploy
+```
+
+#### Update the Lambda function
+
+[The `update.sh` script](./deploy/lambda/update.sh) is used to update the
+scheduler Lambda function to a new version of the [container image](#build-the-scheduler-lambda-container-image).
+It supports the following options.
+
+| Option | Description | Example |
+| --- | --- | --- |
+| `-n function-name` | The name of the function that was specified for the `SchedulerFunctionName` parameter in the CloudFormation parameters file when the scheduler Lambda function was [deployed](#deploy-the-scheduler-lambda-function). | `-n NewRelicReportScheduler` |
+| `-t image-name` | The image name used to tag the image in your local Docker registry. Defaults to `nr-reports-scheduler` when the [`update.sh`](./deploy/lambda/update.sh) is run directly or `nr-reports-scheduler:$package_json_version` when run using `npm run update`. Only used when the `--build` option is specified. | `-t nr-reports-scheduler-test:3.2.0` |
+| `-p prefix` | The prefix to use when looking up environment variables. This option should _always_ be specified with the value `SCHEDULER` when using the [`update.sh`](./deploy/lambda/update.sh) directly. | `-p SCHEDULER` |
+| `--build` | Invoke [the `build.sh` script](./deploy/lambda/build.sh) script before updating. Defaults to `false`. | `--build` |
+
+[The `update.sh` script](./deploy/lambda/update.sh) uses the
+`aws lambda update-function-code` command to notify the scheduler Lambda
+function with the name specified using the `-n` option that its image has been
+updated and that it needs to be refreshed. The `function-name` specified using
+the `-n` option should be the name of the function that was specified for the
+`SchedulerFunctionName` parameter in the CloudFormation parameters file when the
+scheduler Lambda function was [deployed](#deploy-the-scheduler-lambda-function).
+
+Additionally if the `--build` option is specified, [the `update.sh` script](./deploy/lambda/update.sh)
+will first invoke [the `build.sh` script](./deploy/lambda/build.sh) to build and
+push the scheduler Lambda container image as outlined in the section
+[Building and pushing the scheduler Lambda container image](#building-and-pushing-the-scheduler-lambda-container-image).
+[The `build.sh` script](./deploy/lambda/build.sh) will be invoked with the
+`--full` and `--push` flags. The `-t` option specified when the [`update.sh` script](./deploy/lambda/update.sh)
+was invoked will be passed through as well as the `-p` option.
+
+You can either run the script directly or use the `npm run update` command
+while in the `./nr-reports-scheduler` directory. For example, if the name of the
+function specified in the `SchedulerFunctionName` parameter when the scheduler
+Lambda function was [deployed](#deploy-the-scheduler-lambda-function) was
+`NewRelicReportScheduler`, to build, push, and update the scheduler Lambda
+function using the NPM script using the default image name and version number,
+run the following command.
+
+```bash
+npm run update -- -n NewRelicReportScheduler --build
+```
+
+**NOTE:** As some of the environment variables used by the scheduler Lambda
+function may contain secrets (license key, user API key, etc) and since the
+output from the `aws lambda update-function-code` command displays the value of
+all environment variables, the output of the command is intentionally not
+displayed.
+
+**NOTE:** When updating the scheduler Lambda function, you may need to increment
+the value of the `SchedulerECRImageTag` parameter specified in the
+`./nr-reports-scheduler/deploy/cf-params.deploy.json` file.
+
+#### Delete the Lambda function
+
+[The `delete.sh` script](./deploy/lambda/delete.sh) is used to delete the
+[CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html)
+for the scheduler Lambda function. It supports the following options.
+
+| Option | Description | Example |
+| --- | --- | --- |
+| `-n stack-name` | The name of the [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html). Defaults to `nr-reports-scheduler`. | `-n nr-reports-scheduler-stack` |
+
+You can either run the script directly or use the `npm run delete` command
+while in the `./nr-reports-scheduler` directory. For example, to delete the
+scheduler Lambda function using the NPM script using the default stack name, run
+the following command.
+
+```bash
+npm run delete
+```
+
+### Using the Report Builder
+
+
+### Using the New Relic Reports Stack
+
 
 ## Troubleshooting
 
