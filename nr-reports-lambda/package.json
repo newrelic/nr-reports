@@ -1,6 +1,6 @@
 {
   "name": "nr-reports-lambda",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "author": "sdewitt@newrelic.com",
   "description": "The New Relic Reports lambda runner.",
   "license": "Apache-2.0",
@@ -26,7 +26,7 @@
   "dependencies": {
     "chrome-aws-lambda": "^10.1.0",
     "nr-reports-core": "file:../nr-reports-core",
-    "puppeteer-core": "^13.7.0"
+    "puppeteer-core": "^24.1.1"
   },
   "devDependencies": {
     "change-case": "^4.1.2",

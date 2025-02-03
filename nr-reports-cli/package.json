@@ -1,6 +1,6 @@
 {
   "name": "nr-reports-cli",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "author": "sdewitt@newrelic.com",
   "description": "The New Relic Reports CLI runner.",
   "license": "Apache-2.0",
@@ -21,9 +21,9 @@
   },
   "homepage": "https://github.com/newrelic/nr-reports#readme",
   "dependencies": {
-    "newrelic": "^9.13.0",
+    "newrelic": "^12.11.3",
     "nr-reports-core": "file:../nr-reports-core",
-    "puppeteer": "^13.7.0",
+    "puppeteer": "^24.1.1",
     "yargs": "^17.7.1"
   }
 }
