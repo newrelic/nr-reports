@@ -42,8 +42,8 @@ One platform.
   * [Using the CRON image](#using-the-cron-image)
   * [Using the AWS Lambda function](#using-the-aws-lambda-function)
   * [Using the AWS Scheduler Lambda function](#using-the-aws-scheduler-lambda-function)
-  * [Using the Report Builder](#using-the-report-builder)
-  * [Using the New Relic Reports Stack](#using-the-new-relic-reports-stack)
+  * [Using the Reports Builder](#using-the-reports-builder)
+  * [Using the New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack)
 
 ## Overview
 
@@ -122,7 +122,7 @@ There are three ways to run reports.
 
    The recommended way to run reports is using the [New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack)
    along with the New Relic Reports Builder that together provide a full
-   scheduled reporting solution. See the section ["Using the New Relic Reports Stack"](#using-the-new-relic-reports-stack)
+   scheduled reporting solution. See the section ["Using the New Relic Reports AWS Stack"](#using-the-new-relic-reports-aws-stack)
    for more details.
 
 1. Packaged as a Docker image
@@ -711,7 +711,7 @@ reports:
   name: Example dashboard report
   dashboards:
   - DASHBOARD_GUID_1
-  publishConfigurations:
+  publishConfigs:
   - id: default
     name: Copy file
     channels:
@@ -775,7 +775,7 @@ expression. The schedule expression is meant for use by components which can
 manage (create, update, delete) schedules in an external scheduling system like
 [AWS EventBridge](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html).
 Currently, the [New Relic Reports Scheduler Lambda](#using-the-aws-scheduler-lambda-function)
-provided with the [New Relic Reports Stack](#using-the-new-relic-reports-stack)
+provided with the [New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack)
 is the only such component. To develop custom components which integrate with
 other scheduling mechanisms, see the [New Relic Reports Scheduler Lambda source](./nr-reports-scheduler/lambda.js)
 as an example.
@@ -834,7 +834,7 @@ reports:
   name: Example dashboard report
   dashboards:
   - DASHBOARD_GUID_1
-  publishConfigurations:
+  publishConfigs:
   - id: default
     name: Email dashboard PDF
     channels:
@@ -869,7 +869,7 @@ reports:
   dashboards:
   - DASHBOARD_GUID_1
   subject: Average transaction duration by application and URI
-  publishConfigurations:
+  publishConfigs:
   - id: default
     name: Email dashboard PDF
     channels:
@@ -1065,7 +1065,7 @@ reports:
   name: Example dashboard report
   dashboards:
   - DASHBOARD_GUID_1
-  publishConfigurations:
+  publishConfigs:
   - id: default
     name: Copy file
     channels:
@@ -1178,7 +1178,7 @@ reports:
   name: Example dashboard report
   dashboards:
   - DASHBOARD_GUID_1
-  publishConfigurations:
+  publishConfigs:
   - id: default
     name: Email dashboard PDF
     channels:
@@ -1200,7 +1200,7 @@ reports:
   name: Example dashboard report
   dashboards:
   - DASHBOARD_GUID_1
-  publishConfigurations:
+  publishConfigs:
   - id: default
     name: Email dashboard PDF
     channels:
@@ -1253,7 +1253,7 @@ reports:
   name: Example dashboard report
   dashboards:
   - DASHBOARD_GUID_1
-  publishConfigurations:
+  publishConfigs:
   - id: default
     name: Copy dashboard PDF to S3 bucket
     channels:
@@ -1313,7 +1313,7 @@ reports:
   accountIds:
   - 1234567
   timeout: 10
-  publishConfigurations:
+  publishConfigs:
   - id: slack
     name: Post to Slack
     channels:
@@ -1399,7 +1399,7 @@ reports:
   accountIds:
   - 1234567
   timeout: 10
-  publishConfigurations:
+  publishConfigs:
   - id: external-webhook
     name: Post to external webhook
     channels:
@@ -1426,10 +1426,10 @@ HTTP request. Up to 5 custom HTTP headers may be specified. Headers may be
 specified as [channel parameters](#channel-parameters) in the [manifest file](#manifest-file)
 or as environment variables. To specify the custom HTTP headers in the [manifest file](#manifest-file),
 use the parameter name `webhookHeaderN`, where the `N` is the number 1-5. For
-example, `webhookHeader1`, `webhookHeader2`, etc. To specify custom HTTP headers
-as environment variables, use the environment variable name `WEBHOOK_HEADER_N`,
-where `N` is the number 1-5. For example, `WEBHOOK_HEADER_1`,
-`WEBHOOK_HEADER_2`, etc.
+example, `webhookHeader1`, `webhookHeader2`, and so on. To specify custom HTTP
+headers as environment variables, use the environment variable name
+`WEBHOOK_HEADER_N`, where `N` is the number 1-5. For example,
+`WEBHOOK_HEADER_1`, `WEBHOOK_HEADER_2`, and so on.
 
 The value of each custom header must be specified using the format
 `header-name: value` where `header-name` is the name of the custom HTTP header
@@ -1508,7 +1508,7 @@ reports:
   name: Example dashboard report
   dashboards:
   - DASHBOARD_GUID_1
-  publishConfigurations:
+  publishConfigs:
   - id: default
     name: Copy file
     channels:
@@ -1538,7 +1538,7 @@ reports:
   accountIds:
   - 1234567
   timeout: 10
-  publishConfigurations:
+  publishConfigs:
   - id: slack
     name: Post to Slack
     channels:
@@ -1588,7 +1588,7 @@ The following properties are common to all report types.
 | --- | --- | --- | --- | --- |
 | id | The report identifier | string | Y | |
 | name | The report name | string | N | |
-| publishConfigurations | The list of [publish configurations](#publish-configurations) for the report | array | N | (see [publish configurations](#publish-configurations)) |
+| publishConfigs | The list of [publish configurations](#publish-configurations) for the report | array | N | (see [publish configurations](#publish-configurations)) |
 
 ##### Template Report Properties
 
@@ -2261,7 +2261,7 @@ by making a request to the endpoint.
 
 **NOTE:** While the reporting engine can be deployed as a Lambda function
 individually, the recommended way to deploy and run the reporting engine is
-[using the New Relic Reports Stack](#using-the-new-relic-reports-stack) along
+[using the New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack) along
 with the [New Relic Reports Builder](#using-the-report-builder) for a complete
 end-to-end scheduled reporting solution.
 
@@ -2310,7 +2310,7 @@ When deploying the reporting engine as a Lambda function, the engine is designed
 to be packaged as a [Lambda container image](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html)
 and pushed to a repository hosted in [Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html).
 Whether deploying the Lambda function individually or deploying it as part of
-the [New Relic Reports Stack](#using-the-new-relic-reports-stack), the process
+the [New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack), the process
 to build and push the Lambda container image is the same.
 
 ##### Building and pushing the Lambda container image
@@ -2348,6 +2348,28 @@ script, run the following command.
 
 ```bash
 npm run build -- --full --push
+```
+
+Upon successful completion, output similar to the following will be displayed.
+
+```
+Pushing image...
+
+The push refers to repository [12345.dkr.ecr.aws_region.amazonaws.com/example-repo-name/nr-reports-lambda]
+************: Pushed
+************: Pushed
+************: Pushed
+************: Pushed
+************: Pushed
+************: Pushed
+************: Layer already exists
+************: Layer already exists
+************: Layer already exists
+************: Layer already exists
+************: Layer already exists
+************: Layer already exists
+X.Y.Z: digest: sha256:**************************************************************** size: 2840
+Done.
 ```
 
 **NOTE:** While the build step _can_ be run individually, it can automatically
@@ -2465,6 +2487,17 @@ version number and the default stack name, run the following command.
 npm run deploy
 ```
 
+Upon successful completion, output similar to the following will be displayed.
+
+```
+Deploying stack nr-reports-lambda...
+
+Waiting for changeset to be created..
+Waiting for stack create/update to complete
+Successfully created/updated stack - nr-reports-lambda
+Done.
+```
+
 #### Update the Lambda function
 
 [The `update.sh` script](./deploy/lambda/update.sh) is used to update the
@@ -2506,9 +2539,10 @@ npm run update -- -n RunNewRelicReport --build
 ```
 
 **NOTE:** As some of the environment variables used by the Lambda function may
-contain secrets (license key, user API key, etc) and since the output from the
-`aws lambda update-function-code` command displays the value of all environment
-variables, the output of the command is intentionally not displayed.
+contain secrets (license key, user API key, and/or other sensitive data) and
+since the output from the `aws lambda update-function-code` command displays the
+value of all environment variables, _no_ output will be displayed after the
+`UPDATE` command header.
 
 **NOTE:** When updating the Lambda function, you may need to increment the value
 of the `RunnerECRImageTag` parameter specified in the
@@ -2533,18 +2567,26 @@ command.
 npm run delete
 ```
 
+Upon successful completion, output similar to the following will be displayed.
+
+```
+Deleting stack nr-reports-lambda...
+Waiting for stack delete to complete...
+Done.
+```
+
 ### Using the AWS Scheduler Lambda Function
 
 The New Relic Reports Scheduler [AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html)
 function is a key component of the end-to-end scheduled reporting solution
-provided by the [New Relic Reports Stack](#using-the-new-relic-reports-stack).
+provided by the [New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack).
 The scheduler monitors the reports defined in an instance of the [New Relic Reports Builder](#using-the-report-builder)
 and automatically creates, updates, and deletes [AWS EventBridge Cron-based schedules](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html#cron-based)
 to trigger the [AWS Lambda function](#using-the-aws-lambda-function) to run each
 report based on the schedule defined for it in the [New Relic Reports Builder](#using-the-report-builder).
 
 **NOTE:** While the scheduler can be deployed as a Lambda function individually,
-the recommended way to deploy and run the scheduler is [using the New Relic Reports Stack](#using-the-new-relic-reports-stack)
+the recommended way to deploy and run the scheduler is [using the New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack)
 along with the [New Relic Reports Builder](#using-the-report-builder) for a complete
 end-to-end scheduled reporting solution.
 
@@ -2579,7 +2621,7 @@ When deploying the scheduler Lambda function, the scheduler is designed to be
 packaged as a [Lambda container image](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html)
 and pushed to a repository hosted in [Amazon ECR](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html).
 Whether deploying the scheduler Lambda function individually or deploying it as
-part of the [New Relic Reports Stack](#using-the-new-relic-reports-stack), the
+part of the [New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack), the
 process to build and push the scheduler Lambda container image is the same.
 
 ##### Building and pushing the scheduler Lambda container image
@@ -2614,6 +2656,28 @@ script, run the following command.
 
 ```bash
 npm run build -- --full --push
+```
+
+Upon successful completion, output similar to the following will be displayed.
+
+```
+Pushing image...
+
+The push refers to repository [12345.dkr.ecr.aws_region.amazonaws.com/example-repo-name/nr-reports-scheduler]
+************: Pushed
+************: Pushed
+************: Pushed
+************: Pushed
+************: Pushed
+************: Pushed
+************: Layer already exists
+************: Layer already exists
+************: Layer already exists
+************: Layer already exists
+************: Layer already exists
+************: Layer already exists
+X.Y.Z: digest: sha256:**************************************************************** size: 2840
+Done.
 ```
 
 **NOTE:** While the build step _can_ be run individually, it can automatically
@@ -2681,15 +2745,15 @@ with. The secret must include the following key-value pairs.
 | Key | Value |
 | --- | --- |
 | `apiKey` | Your [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys) |
-| `sourceNerdletId` | The UUID of the [New Relic Reports Builder](#using-the-report-builder) to query |
+| `sourceNerdletId` | The Nerdpack ID of the [New Relic Reports Builder](#using-the-reports-builder) instance to query |
 | `accountId` | The [New Relic account ID](https://docs.newrelic.com/docs/accounts/accounts-billing/account-structure/account-id/) where schedules will be stored. Multiple accounts IDs may be specified separated by commas. |
 
 **NOTE:**
 
 * The specified [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
-  _must_ have access to the account that the nerdlet with the specified UUID is
-  deployed to. This account is determined by the account that the specified
-  [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+  _must_ have access to the account that the nerdpack with the specified
+  Nerdpack ID is deployed to. This account is determined by the account that the
+  specified [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
   is linked to (the account the key was created from).
 * The `accountId` value may contain multiple [New Relic account IDs](https://docs.newrelic.com/docs/accounts/accounts-billing/account-structure/account-id/)
   separated by commas. The scheduler Lambda will query for schedules in each
@@ -2697,7 +2761,7 @@ with. The secret must include the following key-value pairs.
   However, the specified user associated with the [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
   _must_ have access to each account in order for scheduler Lambda to query
   each account successfully.
-* The [New Relic Reports Stack](#using-the-new-relic-reports-stack) will
+* The [New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack) will
   automatically create the scheduler Lambda secret using the values specified
   in the `nr-reports-stack/deploy/cf-params.deploy.json` when it is deployed.
   When [deploying the scheduler Lambda](#deploy-the-scheduler-lambda-function)
@@ -2737,6 +2801,17 @@ command.
 
 ```bash
 npm run deploy
+```
+
+Upon successful completion, output similar to the following will be displayed.
+
+```
+Deploying stack nr-reports-scheduler...
+
+Waiting for changeset to be created..
+Waiting for stack create/update to complete
+Successfully created/updated stack - nr-reports-scheduler
+Done.
 ```
 
 #### Update the Lambda function
@@ -2781,10 +2856,10 @@ npm run update -- -n NewRelicReportScheduler --build
 ```
 
 **NOTE:** As some of the environment variables used by the scheduler Lambda
-function may contain secrets (license key, user API key, etc) and since the
-output from the `aws lambda update-function-code` command displays the value of
-all environment variables, the output of the command is intentionally not
-displayed.
+function may contain secrets (license key, user API key, and/or other sensitive
+data) and since the output from the `aws lambda update-function-code` command
+displays the value of all environment variables, _no_ output will be displayed
+after the `UPDATE` command header.
 
 **NOTE:** When updating the scheduler Lambda function, you may need to increment
 the value of the `SchedulerECRImageTag` parameter specified in the
@@ -2809,11 +2884,766 @@ the following command.
 npm run delete
 ```
 
-### Using the Report Builder
+Upon successful completion, output similar to the following will be displayed.
 
+```
+Deleting stack nr-reports-scheduler...
+Waiting for stack delete to complete...
+Done.
+```
 
-### Using the New Relic Reports Stack
+### Using the Reports Builder
 
+The New Relic Reports Builder is a custom [New Relic application](https://docs.newrelic.com/docs/new-relic-solutions/build-nr-ui/build-nr-app/)
+that is designed to work with the [New Relic Reports Scheduler Lambda](#using-the-aws-scheduler-lambda-function)
+to provide a full end-to-end scheduled reporting solution. It is built with the
+[New Relic One SDK](https://docs.newrelic.com/docs/new-relic-solutions/build-nr-ui/sdk-component/intro-to-sdk/)
+to provide a user interface running in the New Relic UI that allows you to
+build [dashboard](#dashboard-reports-1) and [query](#query-reports-1) reports
+and configure schedules and [channels](#channels) all without the need to
+manually build and maintain [manifest files](#manifest-file).
+
+#### Installing the New Relic Reports Builder
+
+The New Relic Reports Builder is installed and updated using the
+[New Relic One CLI](https://docs.newrelic.com/docs/new-relic-solutions/build-nr-ui/nr1-cli/nr1-common/).
+To install the New Relic Reports Builder, perform the following steps.
+
+1. Complete the setup steps in the ["Before you begin](https://docs.newrelic.com/docs/new-relic-solutions/tutorials/build-hello-world-app/#before-you-begin)
+   section of the ["Hello, world!" example](https://docs.newrelic.com/docs/new-relic-solutions/tutorials/build-hello-world-app/).
+1. Complete the setup steps in the ["Before you begin"](#before-you-begin) section.
+1. Open a terminal and execute the following commands, making sure to replace
+   `path/to/nr-reports` with the path to the directory where you cloned the
+   `nr-reports` repository.
+
+   ```bash
+   cd path/to/nr-reports
+   ```
+
+1. Ensure that you are using the correct profile by listing the profiles using
+   the command `nr1 profiles:list` and verifying that the desired profile has
+   the string `(default)` listed next to it. If it does not, set the desired
+   profile to the default using the following command, making sure to substitute
+   `<profile-name>` with the name of the desired profile.
+
+   ```bash
+   nr1 profiles:default -n <profile-name>
+   ```
+
+   Alternately, you can use the option `--profile=<profile-name>` in the `nr1`
+   commands listed below to specify the profile that the command should use,
+   for example, `nr1 nerdpack:publish --profile=<profile-name>`.
+
+1. Run the following commands
+
+   ```bash
+   cd nr-reports-builder-nerdpack
+   nr1 nerdpack:uuid -f -g
+   nr1 nerdpack:publish
+   ```
+
+1. Verify the Reports Builder installed successfully by looking for the success
+   output shown in the ["Publish your Nerdpack"](https://docs.newrelic.com/docs/new-relic-solutions/new-relic-one/build-nr-apps/publish/#publish-your-nerdpack)
+   section. At this time, it is **important** to note the Nerdpack's ID. The ID
+   will be displayed as the `<ID>` in the message
+   `Tagged <ID> version <version> as STABLE.` This value will be needed when
+   [preparing to work with the New Relic Reports AWS stack](#preparing-to-work-with-the-new-relic-reports-aws-stack).
+
+   If the `nerdpack:publish` command failed, perform the following steps.
+
+   1. Verify that you have completed the setup steps in the ["Before you begin"](https://docs.newrelic.com/docs/new-relic-solutions/tutorials/build-hello-world-app/#before-you-begin)
+      section of the ["Hello, World!" example](https://docs.newrelic.com/docs/new-relic-solutions/tutorials/build-hello-world-app/).
+   1. Verify that you have completed the setup steps in the ["Before you begin"](#before-you-begin) section
+   1. [Check your local profile](https://docs.newrelic.com/docs/new-relic-solutions/new-relic-one/build-nr-apps/publish/#check-your-local-profile)
+   1. [Reveal the Nerdpack information for the New Relic Reports Builder application](https://docs.newrelic.com/docs/new-relic-solutions/new-relic-one/build-nr-apps/publish/#reveal-your-published-nerdpack-information)
+   1. Review the section ["Resolve issues with accessing your published Nerdpack"](https://docs.newrelic.com/docs/new-relic-solutions/new-relic-one/build-nr-apps/publish/#resolve-issues-with-accessing-your-published-nerdpack)
+
+   If the problem persists, [contact New Relic support](https://docs.newrelic.com/docs/new-relic-solutions/solve-common-issues/find-help-get-support/).
+
+1. Setup access to the New Relic Reports Builder application by [subscribing accounts to the application](https://docs.newrelic.com/docs/new-relic-solutions/new-relic-one/build-nr-apps/subscribe/#subscribe-to-a-nerdpack).
+   To learn about what users on your account have the ability to subscribe, read
+   our [permissions documentation](https://docs.newrelic.com/docs/new-relic-solutions/tutorials/manage-app-permissions/).
+
+#### Accessing the New Relic Reports Builder
+
+Once the New Relic Reports Builder is published to the New Relic One platform
+and subscribed to the appropriate accounts, it can be accessed by performing the
+following steps.
+
+1. From within the New Relic UI, navigate to the "Apps" page.
+1. Expand the section labeled "Your apps" if it is not already expanded.
+1. Locate the application tile named "New Relic Reports Builder" and click on
+   it to launch the New Relic Reports Builder.
+1. Optionally select an account from the top right account picker.
+
+#### New Relic Reports Builder and New Relic accounts
+
+The New Relic Reports Builder stores reports, schedules, and channels at the
+account scope. This means that the reports, schedules, and channels accessible
+in the New Relic Reports Builder are dependent on the account selected in the
+top right account picker at any given time. If you do not see the expected
+reports, schedules, or channels, check that the desired account is selected in
+the top right account picker.
+
+#### Reports Builder Home Screen
+
+When the New Relic Reports Builder is launched, the Home screen is displayed.
+The Home screen has three tabs: the "Reports" tab, the "Schedules" tab, and the
+"Channels" tab. The "Reports" tab displays the [report list](#reports-builder-report-list),
+the "Schedules" tab displays the [schedule list](#reports-builder-schedule-list),
+and the "Channels" tab displays the [channel list](#reports-builder-channel-list).
+
+#### Reports Builder Report List
+
+The report list displays the list of all reports defined for the account
+currently selected in the top right account picker. Each item in the report list
+shows the following information.
+
+* The report name
+* The type of report (["Dashboard"](#dashboard-reports-1) or ["Query"](#query-reports-1))
+* A flag indicating whether or not the report is enabled
+* The last date and time the report was modified
+* The last date and time the report was run
+* A button with the ellipsis icon (`...`) to open the report context menu
+
+From this screen, the following actions are available.
+
+* To create a new report, click on the button labeled ["Create new report"](#reports-builder-edit-report-screen).
+* To [edit a report](#reports-builder-edit-report-screen), click on the report name.
+* To delete a report, click on the the ellipsis icon (`...`) at the end of the
+  row for that report in the report list to open the report context menu and
+  then click on "Delete".
+* To view the [history list](#reports-builder-report-history-list) for a report,
+  click on the the ellipsis icon (`...`) at the end of the row for that report
+  in the report list to open the report context menu and then click on
+  "View history".
+
+![New Relic Reports Builder report list](./nr-reports-builder-nerdpack/catalog/screenshots/report-list.png)
+
+#### Reports Builder Schedule List
+
+The schedule list displays the list of all schedules defined for the account
+currently selected in the top right account picker. Each schedule has a
+schedule field that defines the frequency at which associated reports run and a
+list of associated [channels](#channels) that define how [report outputs](#report-output)
+will be distributed.
+
+Like reports, schedules are defined at the account level. This allows schedules
+to be shared between reports so that different reports can run on the same
+schedule and be distributed to the channels associated with that schedule
+without the need to redefine the schedule for every report.
+
+Schedules can be created directly from the schedule list using the button in the
+top right labeled "Create new schedule" or when defining a report. All new
+schedules created while defining a report are automatically saved at the account
+level and will appear in the schedule list.
+
+The following information is shown for each schedule in the schedule list.
+
+* The schedule name
+* A short human-readable description of the schedule frequency, for example
+  "Every day at 12:00 AM UTC"
+* A flag indicating whether or not the schedule is enabled
+* The number of [channels](#channels) associated with the schedule
+* A button with the ellipsis icon (`...`) to open the schedule context menu
+
+To [edit a schedule](#reports-builder-edit-schedule-screen), click on the
+schedule name. To remove a schedule, click on the the ellipsis icon (`...`) at
+the end of the row for that schedule in the schedule list to open the schedule
+context menu and then click on "Delete".
+
+**NOTE:** Deleting a schedule will automatically remove the schedule from all
+reports it is associated with. There is no need to manually remove the schedule
+from all reports. Likewise, updating a schedule will automatically update the
+schedule for all reports it is associated with. Associated reports will
+automatically be rescheduled if the frequency in the schedule is changed and
+changes to the list of channels associated with the schedule or the settings of
+those channels will automatically be picked up on the next scheduled run.
+
+![New Relic Reports Builder schedule list](./nr-reports-builder-nerdpack/catalog/screenshots/schedule-list.png)
+
+#### Reports Builder Channel List
+
+The channel list displays the list of all channels defined for the account
+currently selected in the top right account picker. Each channel has a type and
+a set of fields specific to the type.
+
+Like reports and schedules, channels are defined at the account level. This
+allows channels to be shared between schedules so that different schedules can
+publish to the same channels without the need to redefine the channel for every
+schedule.
+
+Similar to schedules, channels can be created directly from the channel list
+using the button in the top right labeled "Create new channel" or when defining
+a schedule, whether directly or while defining a report. All new channels
+created will defining a schedule or report are automatically saved at the
+account level and will appear in the channel list.
+
+The following information is shown for each channel in the channel list.
+
+* The channel name
+* The channel type
+* A button with the ellipsis icon (`...`) to open the channel context menu
+
+To [edit a channel](#reports-builder-edit-channel-screen), click on the
+channel name. To remove a channel, click on the the ellipsis icon (`...`) at
+the end of the row for that channel in the channel list to open the channel
+context menu and then click on "Delete".
+
+**NOTE:** Deleting a channel will automatically remove the channel from all
+schedules it is associated with. There is no need to manually remove the channel
+from all schedules. Reports associated with schedules that use the channel will
+not be published to the channel on subsequent runs. Likewise, updating a channel
+will automatically update the channel for all schedules it is associated with.
+Reports associated with schedules that use the channel will pick up the changes
+to the channel on the next run.
+
+![New Relic Reports Builder channel list](./nr-reports-builder-nerdpack/catalog/screenshots/channel-list.png)
+
+#### Reports Builder Edit Report Screen
+
+The Edit Report Screen is used when creating or editing a report. It is accessed
+by clicking on a report name from the [report list](#reports-builder-report-list)
+and provides the following fields.
+
+* The report name text field
+
+  Use this field to enter the name of the report. There are no restrictions on
+  the characters that can be used in the report name and report names do not
+  need to be unique.
+
+* The report enabled checkbox
+
+  Use this checkbox to enable or disable an entire report. When disabled, the
+  report will not be run at the scheduled time(s).
+
+* The report type menu
+
+  Use this menu to select the type of report to be run. Both [dashboard](#dashboard-reports-1)
+  and [query](#query-reports-1) reports are supported. The type of report
+  selected will determine the fields shown below the menu.
+
+* The dashboard table
+
+  When the report type menu is set to ["Dashboard"](#dashboard-reports-1), a
+  table will be displayed that shows the title and GUID for each dashboard that
+  will be included in the report.
+
+  The dashboard table provides checkboxes at the beginning of each row as well
+  as one in the table header row. These checkboxes can be used to quickly
+  remove dashboards from reports without needing to open up the [dashboard picker](#reports-builder-dashboard-picker).
+  Simply select the appropriate checkboxes and click the button labeled "Remove"
+  that appears in the table header over top of the column label for the "GUID"
+  column.
+
+  Additionally, below the table, a button labeled "Select dashboards" is
+  provided that opens the [dashboard picker](#reports-builder-dashboard-picker)
+  which is used to choose the dashboards that will be included in the report.
+
+* The query account picker and NRQL query fields
+
+  When the report type menu is set to ["Query"](#query-reports-1), the query
+  account picker field and the NRQL query field are displayed.
+
+  The query account picker field is used to select up to 5 accounts to use when
+  the query in the NRQL query field is run. When more than one account is
+  selected, a [multi-account query](#multi-account-queries) will be run using
+  the [cross account](#cross-account-queries) query mode. To select accounts,
+  click anywhere in the field and use the checkboxes to select the desired
+  accounts from the popup menu.
+
+  The NRQL query field is used to enter the NRQL query to run. Note that this
+  field does _not_ have the same capabilities as the [query builder](https://docs.newrelic.com/docs/query-your-data/explore-query-data/query-builder/introduction-query-builder/).
+  It has some basic syntax highlighting capabilities but does not have features
+  such as autocompletion and does not recognize all NRQL query syntax. For this
+  reason, it is recommended to develop your query in the [query builder](https://docs.newrelic.com/docs/query-your-data/explore-query-data/query-builder/introduction-query-builder/)
+  and copy and paste it into the NRQL query field.
+
+* The schedule table
+
+  The schedule table displays the list of schedules associated with the report.
+  For each schedule in the list, the same information is shown as in the
+  [schedule list](#reports-builder-schedule-list).
+
+  Below the table, a button labeled "Add schedule" is provided that opens
+  the [Edit Schedule Screen](#reports-builder-edit-schedule-screen) which is
+  used to create and edit schedules.
+
+  To [edit a schedule](#reports-builder-edit-schedule-screen), click on the
+  schedule name. To add a schedule to the report, click on the button labeled
+  "Add schedule". To remove a schedule from the report, click on the the
+  ellipsis icon (`...`) at the end of the row for that schedule in the schedule
+  list to open the schedule context menu and then click on "Delete".
+
+  **NOTE:** When a schedule is removed from the report, it is _not_ removed from
+  the account. It is only disassociated with the report. To permanently delete a
+  schedule, navigate to the [schedule list](#reports-builder-schedule-list) and
+  use the schedule context menu for the schedule.
+
+The Edit Report Screen also displays the report history in a collapsible panel
+on the right side of the screen. This panel shows the same information as the
+[report history list](#reports-builder-report-history-list).
+
+From this screen, the following actions are available.
+
+* To save the report, including changes to any schedules and channels made
+  through the Edit Report Screen, and return to the [report list](#reports-builder-report-list),
+  click on the button labeled "Save".
+* To discard changes, including changes to any schedules and channels made
+  through the edit report form, and return to the [report list](#reports-builder-report-list),
+  click on the button labeled "Cancel".
+
+![New Relic Reports Builder Edit Report Screen](./nr-reports-builder-nerdpack/catalog/screenshots/edit-report-screen.png)
+
+#### Reports Builder Edit Schedule Screen
+
+The Edit Schedule Screen is used when creating or editing a schedule. It is
+accessed by clicking on a schedule name from the schedule table when [editing a report](#reports-builder-edit-report-screen)
+or by clicking on a schedule name from the [schedule list](#reports-builder-schedule-list).
+The Edit Schedule Screen provides the following fields.
+
+* The new schedule mode choice
+
+  This field only appears when adding a new schedule to a report, that is, when
+  clicking the "Add schedule" button from the [Edit Report Screen](#reports-builder-edit-report-screen)
+  and when there is at least one other schedule defined in the account. Use this
+  field to choose between creating a new schedule or using an existing one.
+
+  When "Use an existing schedule" is selected, the only other field that is
+  displayed is the schedule selector menu. Otherwise, the remaining fields
+  listed below are displayed.
+
+  **NOTE:** When editing a schedule that has already been added to the report by
+  clicking on the schedule name from the [Edit Report Screen](#reports-builder-edit-report-screen),
+  this field will not be displayed, even if the new schedule was just added and
+  the report has not yet been saved.
+
+* The schedule selector menu
+
+  The schedule selector menu is displayed when adding a new schedule to a report
+  and the new schedule mode choice is set to "Use an existing schedule". The
+  menu displays the list of existing schedules in the account. Use this menu to
+  select an existing schedule to add to the report.
+
+* The schedule name text field
+
+  Use this field to enter the name of the schedule. There are no restrictions on
+  the characters that can be used in the schedule name and schedule names do not
+  need to be unique.
+
+* The schedule enabled checkbox
+
+  Use this checkbox to enable or disable the schedule. When disabled, reports
+  associated with the schedule will not be run on the schedule defined in the
+  schedule field.
+
+* The schedule field
+
+  The schedule field is used to define the frequency at which reports associated
+  with this schedule will run. The schedule field displays a human-readable
+  description of the schedule, for example,
+  "Run this report every day on minute 0 of the hour 12 AM UTC", and a button
+  labeled "Edit schedule" that is used to open the [schedule picker](#reports-builder-schedule-picker).
+
+* The channel table
+
+  The channel table displays the list of channels associated with the schedule.
+  For each channel in the list, the same information is shown as in the
+  [channel list](#reports-builder-channel-list).
+
+  Below the table, a button labeled "Add channel" is provided that opens
+  the [Edit Channel Screen](#reports-builder-edit-channel-screen) which is used
+  to create and edit schedules.
+
+  To [edit a channel](#reports-builder-edit-channel-screen), click on the
+  channel name. To add a channel to the schedule, click on the button labeled
+  "Add channel". To remove a chanel from the schedule, click on the the
+  ellipsis icon (`...`) at the end of the row for that channel in the channel
+  list to open the channel context menu and then click on "Delete".
+
+  **NOTE:** When a channel is removed from the schedule, it is _not_ removed
+  from the account. It is only disassociated with the schedule. To permanently
+  delete a channel, navigate to the [channel list](#reports-builder-channel-list)
+  and use the channel context menu.
+
+From this screen, the following actions are available.
+
+* To save the schedule, including changes to any channels made through the edit
+  schedule screen, click on the button labeled "Save" (or "OK" when editing the
+  schedule through a report). Control will be returned to the [Edit Report Screen](#reports-builder-edit-report-screen)
+  if the schedule was being edited through a report or to the [schedule list](#reports-builder-schedule-list).
+* To discard changes, including changes to any channels made through the edit
+  schedule screen, click on the button labeled "Cancel". Control will be
+  returned to the [Edit Report Screen](#reports-builder-edit-report-screen) if
+  the schedule was being edited through a report or to the [schedule list](#reports-builder-schedule-list).
+
+![New Relic Reports Builder Edit Schedule Screen](./nr-reports-builder-nerdpack/catalog/screenshots/edit-schedule-screen.png)
+
+#### Reports Builder Edit Channel Screen
+
+The Edit Channel Screen is used when creating or editing a channel. It is
+accessed by clicking on a channel name from the channel table when [editing a schedule](#reports-builder-edit-schedule-screen)
+or by clicking on a schedule name from the [channel list](#reports-builder-channel-list).
+The Edit Channel Screen provides the following fields.
+
+* The new channel mode choice
+
+  This field only appears when adding a new channel to a schedule, that is, when
+  clicking the "Add channel" button from the [Edit Schedule Screen](#reports-builder-edit-schedule-screen)
+  and when there is at least one other channel defined in the account. Use this
+  field to choose between creating a new channel or using an existing one.
+
+  When "Use an existing channel" is selected, the only other field that is
+  displayed is the channel selector menu. Otherwise, the channel name field,
+  the channel type field, and the set of fields particular to the channel type
+  are displayed.
+
+  **NOTE:** When editing a channel that has already been added to the report by
+  clicking on the channel name from the [Edit Schedule Screen](#reports-builder-edit-schedule-screen),
+  this field will not be displayed, even if the new channel was just added and
+  the schedule has not yet been saved.
+
+* The channel selector menu
+
+  The channel selector menu is displayed when adding a new channel to a schedule
+  and the new channel mode choice is set to "Use an existing schedule". The
+  menu displays the list of existing channels in the account. Use this menu to
+  select an existing channel to add to the schedule.
+
+* The channel name text field
+
+  Use this field to enter the name of the channel. There are no restrictions on
+  the characters that can be used in the channel name and channel names do not
+  need to be unique.
+
+* The channel type menu
+
+  Use this menu to select the channel type from the list of supported channel
+  types. The remaining set of fields displayed on the screen are determined by
+  the type selected.
+
+  **NOTE:** As of v3.4.0, the only channel type supported by the Reports Builder
+  is the [email channel type](#email-channel).
+
+From this screen, the following actions are available.
+
+* To save the channel, click on the button labeled "Save" (or "OK" when editing
+  the channel through a schedule). Control will be returned to the [Edit Schedule Screen](#reports-builder-edit-schedule-screen)
+  if the channel was being edited through a schedule or to the [channel list](#reports-builder-channel-list).
+* To discard changes, click on the button labeled "Cancel". Control will be
+  returned to the [Edit Schedule Screen](#reports-builder-edit-schedule-screen)
+  if the channel was being edited through a schedule or to the [channel list](#reports-builder-channel-list).
+
+##### Reports Builder email channel type fields
+
+The following fields are displayed on the [Edit Channel Screen](#reports-builder-edit-channel-screen)
+when "Email" is selected in the channel type menu.
+
+* The email format choice
+
+  Use the email format choice to select the format of the email message, either
+  "HTML" or "Text".
+
+* Attach query report as CSV checkbox
+
+  Use this checkbox to specify that results from query reports that are
+  published using this channel should be included in CSV format as a file
+  attachment on the email message. This checkbox is checked by default. When
+  unchecked, query results from query reports that are published using this
+  channel will only be included in HTML format in the body of the email message.
+
+* Maximum number of query results field
+
+  Use this field to indicate the maximum number of results that should be
+  included in the HTML table in the body of the email message for query reports
+  that are published using this channel.
+
+* Email subject field
+
+  Use this field to enter the subject line of the email.
+
+* Email "To" field
+
+  Use this field to enter the list of recipients that should receive the email.
+  Multiple email addresses can be specified separated by commas.
+
+* Email "Cc" field
+
+  Use this field to enter the list of recipients that should receive a copy of
+  the email. Multiple email addresses can be specified separated by commas.
+
+* Email message field
+
+  Use this field to specify the body of the message.
+
+  **NOTE:** The email message field is an email template that will be processed
+  using the templating engine as discussed in the [Email channel](#email-channel)
+  section. However, as of v3.0.0, template reports and components which use the
+  templating engine have been **_deprecated_** due to the potential security
+  issues involved with running user defined templates. Email template processing
+  will be replaced with a more secure mechanism in future releases. Therefore,
+  it is recommended to avoid using [template parameters](./docs/TEMPLATES.md#template-parameters)
+  in the email message field at this time.
+
+![New Relic Reports Builder Edit Channel Screen](./nr-reports-builder-nerdpack/catalog/screenshots/edit-channel-screen.png)
+
+#### Reports Builder Report History List
+
+The history list for a report shows the 100 most recent runs of the report in
+the past month. It is accessible from the report context menu on the [Edit Report Screen](#reports-builder-edit-report-screen).
+
+For each run, the date and time of the run is displayed as well as the status of
+the run (whether the run was successful or failed) and the name of the schedule
+that triggered the report.
+
+**NOTE:** Despite the wording of the label "Report outputs published for the
+following schedules", a run is only ever triggered by a single schedule.
+
+![New Relic Reports Builder report history list](./nr-reports-builder-nerdpack/catalog/screenshots/history-list.png)
+
+#### Reports Builder Dashboard Picker
+
+The dashboard picker is used to select dashboards to include in a [dasboard report](#dashboard-reports-1).
+It is displayed when "Dashboard" is selected in the report type menu on the [Edit Report Screen](#reports-builder-edit-report-screen)
+and the "Select dashboards" button is clicked.
+
+The dashboard picker displays a search box at the top followed by a list of
+dashboards that match the search filter. By default, the search filter is empty
+and all accessible dashboards are displayed.
+
+Each item in the list actually represents a unique dashboard
+[_page_](https://docs.newrelic.com/docs/query-your-data/explore-query-data/dashboards/manage-your-dashboard/#add-pages),
+even for single-page dashboards. This is because the New Relic platform does not
+support exporting PDF snapshots of multi-page dashboards. The name of the
+dashboard in the list has the form `<dashboard-name> / <page-name>` and is
+preceded by a checkbox that indicates whether the dashboard will be included
+in the report or not.
+
+To search the list of dashboards, enter a search string in the search box and
+click on the search icon. To clear the search string, click on the `X` icon.
+
+To save the current selection of dashboards, click the button labeled "OK". The
+dashboard table will be updated to reflect the selected dashboards.
+
+To discard changes, click on the button labeled "Cancel".
+
+![New Relic Reports Builder dashboard picker](./nr-reports-builder-nerdpack/catalog/screenshots/dashboard-picker.png)
+
+#### Reports Builder Schedule Picker
+
+The schedule picker is used to configure the schedule frequency in a schedule.
+It is displayed when "Edit schedule" is clicked on the [Edit Schedule Screen](#reports-builder-edit-schedule-screen).
+
+The schedule picker supports building the schedule frequency in two ways: basic
+and manual.
+
+In basic mode, the schedule picker displays the following fields that can be
+used to create basic schedule frequencies without the need to understand
+[quartz CRON syntax](https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html).
+
+* The frequency field
+
+  Use this field to choose between a "Daily", "Weekly", or "Monthly" schedule.
+
+* The period field
+
+  Use this field to further refine the frequency when the frequency selected in
+  the frequency field is "Daily" or "Weekly".
+
+  When the frequency field is set to "Daily", the period field can be set to
+  "Everyday", "Weekdays" or "Weekends".
+
+  When the frequency field is set to "Weekly", the period field displays a
+  checkbox for each day of the week. Use the checkboxes to select the days of
+  the week on which to run the schedule.
+
+* The day of week and week of month fields
+
+  The "Day of week" and "Week of month" fields are displayed when the frequency
+  field is set to "Monthly". Use these fields to pick a specific day of the week
+  and week of the month that the schedule should run, for example, "Sunday" on
+  "Week two" of the month.
+
+* The time fields
+
+  The time fields are used to select the hour(s), minute(s), AM/PM, and timezone
+  at which to run the schedule.
+
+  The hour field can be set to "Every hour" or a specific hour of the day. When
+  "Every hour" is selected the AM/PM menu and the timezone menu are disabled.
+  When a specific hour is selected, the AM/PM menu and the timezone menu are
+  enabled.
+
+  The minute field can be set to "Every minute" or a specific minute of the
+  hour, in five minute increments (00, 05, 10, and so on).
+
+  Use the AM/PM menu when a specific hour of the day is selected to indicate
+  whether the selected hour is in the AM or PM.
+
+  Use the timezone menu when a specific hour of the day is selected to indicate
+  the timezone in which to interpret the hour.
+
+In manual mode, the schedule picker displays a field that can be used to enter
+a six-field CRON expression following [Quartz CRON syntax](https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html).
+This allows for much more advanced schedule frequencies but requires some
+knowledge of the [Quartz CRON syntax](https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html).
+
+To save the current schedule frequency, click the button labeled "OK". The
+schedule field will be updated to reflect the new schedule frequency.
+
+To discard changes, click on the button labeled "Cancel".
+
+**NOTE:** If the schedule frequency is built in basic mode, the Reports Builder
+will generate human-readable descriptions of the schedule frequency in the UI,
+for example, "Run this report every day on minute 0 of the hour 12 AM UTC". If the
+schedule frequency is built in manual mode, the Reports Builder will display a
+message indicating that the expression is custom followed by the CRON
+expression, for example "This report will run as specified by the custom CRON
+expression "*/5 * * * ? *"".
+
+![New Relic Reports Builder schedule picker](./nr-reports-builder-nerdpack/catalog/screenshots/schedule-picker.png)
+
+### Using the New Relic Reports AWS Stack
+
+The New Relic Reports AWS Stack is a [CloudFormation Stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html)
+that creates all the resources necessary to schedule and run reports defined in
+an instance of the [New Relic Reports Builder](#using-the-reports-builder).
+Used together, these two components implement a full end-to-end scheduled
+reporting solution built on AWS and New Relic.
+
+The stack creates the following resources.
+
+* The [scheduler lambda secret](#the-scheduler-lambda-secret)
+* An [AWS EventBridge Schedule Group](https://docs.aws.amazon.com/scheduler/latest/UserGuide/managing-schedule-group.html)
+  to contain the schedule to run the [AWS Scheduler Lambda function](#using-the-aws-scheduler-lambda-function)
+  and the schedules created to run reports
+* The [AWS Lambda function](#using-the-aws-lambda-function)
+* A [Lamba execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)
+  that allows the [AWS Lambda function](#using-the-aws-lambda-function) to read
+  the [scheduler Lambda secret](#the-scheduler-lambda-secret) and optionally a
+  secret containing your New Relic license key
+* The [AWS Scheduler Lambda function](#using-the-aws-scheduler-lambda-function)
+* A [Lamba execution role](https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html)
+  that allows the [AWS Scheduler Lambda function](#using-the-aws-scheduler-lambda-function)
+  to read the [scheduler Lambda secret](#the-scheduler-lambda-secret) and
+  optionally a secret containing your New Relic license key, to list all
+  EventBridge schedules, and to create, read, update, delete EventBridge
+  schedules in the created schedule group.
+* An [IAM role](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html)
+  that allows the [AWS EventBridge Scheduler](https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html)
+  to invoke both the [AWS Lambda function](#using-the-aws-lambda-function) and
+  the [AWS Scheduler Lambda function](#using-the-aws-scheduler-lambda-function).
+* An [AWS EventBridge Schedule](https://docs.aws.amazon.com/scheduler/latest/UserGuide/managing-schedule.html)
+  that will invoke the [AWS Scheduler Lambda function](#using-the-aws-scheduler-lambda-function)
+  every 5 minutes to poll the associated instance of the [New Relic Reports Builder](#using-the-reports-builder).
+
+#### Preparing to work with the New Relic Reports AWS Stack
+
+Prior to working with the New Relic Reports AWS Stack you will need to perform the
+following steps.
+
+1. Perform all steps required to [work with the AWS Lambda function](#preparing-to-work-with-the-aws-lambda-function).
+1. [Build and push the AWS Lambda container image](#building-and-pushing-the-lambda-container-image)
+1. Perform all steps required to [work with the AWS Scheduler Lambda function](#preparing-to-work-with-the-aws-scheduler-lambda-function).
+1. [Build and push the AWS Scheduler Lambda container image](#building-and-pushing-the-scheduler-lambda-container-image)
+1. [Install the Reports Builder](#installing-the-new-relic-reports-builder),
+   making sure to note the Nerdpack ID.
+1. Copy the file [`cf-params-sample.json`](./nr-reports-stack/deploy/cf-params-sample.json)
+   to a file named `cf-params.deploy.json` in the [`./nr-reports-stack/deploy`](./nr-reports-stack/deploy)
+   directory and update all values using the documentation provided inline in
+   the [the CloudFormation template](./nr-reports-stack/deploy/cf-template.yaml).
+
+   Make sure to provide values for the parameters `UserApiKey`,
+   `NerdletPackageId`, and `NerdletAccountId` parameters. Replace the
+   `ParameterValues` for these keys with the values described in the section
+   ["The scheduler Lambda secret"](#the-scheduler-lambda-secret), making sure to
+   use the Nerdpack ID noted in the previous step.
+
+1. Optionally create an [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html)
+   secret in which to store the New Relic license key used by the
+   [New Relic AWS Lambda Extension](https://github.com/newrelic/newrelic-lambda-extension).
+
+   This secret should have a single key-value pair with the key `LicenseKey` and
+   your [New Relic License Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+   as the value. Replace the `ParameterValue` for the `NRLicenseKeySecret`
+   parameter in the `cf-params.deploy.json` file with the ARN of the secret.
+
+   **NOTE:** You may also choose to specify the [New Relic License Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys)
+   as a Lambda environment variable by replacing the `ParameterValue` for the
+   `NRLicenseKey` parameter in the `cf-params.deploy.json` file with your
+   [New Relic License Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys).
+   However, this is not recommended for security purposes.
+
+#### Deploy the AWS Stack
+
+[The `deploy.sh` script](./deploy/lambda/deploy.sh) is used to deploy the New
+Relic Reports AWS [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html)
+It supports the following options.
+
+| Option | Description | Example |
+| --- | --- | --- |
+| `-n stack-name` | The name to use for the [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html). Defaults to `nr-reports-stack`. | `-n nr-reports-stack-test` |
+| `-t image-name` | Unused when deploying the AWS Stack | N/a |
+| `-p prefix` | Unused when deploying the AWS Stack | N/a |
+| `--no-build` | Must _always_ be specified when deploying the AWS Stack. | `--no-build` |
+
+[The `deploy.sh` script](./deploy/lambda/deploy.sh) will use the
+`aws cloudformation deploy` command to create the stack using
+[the CloudFormation template](./nr-reports-stack/deploy/cf-template.yaml)
+and the CloudFormation parameters file `./nr-reports-stack/deploy/cf-params.deploy.yml`.
+Because the [the CloudFormation template](./nr-reports-stack/deploy/cf-template.yaml)
+creates IAM resources, the special capability [`CAPABILITY_NAMED_IAM`](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-template.html#using-iam-capabilities)
+needs to be passed to the `aws cloudformation deploy` command. This can be done
+using the `AWS_CF_DEPLOY_OPTS` environment variable and can be set directly on
+the command line.
+
+For example, to deploy the stack using the default stack name while in the
+`./nr-reports-stack` directory, run the following command.
+
+```bash
+AWS_CF_DEPLOY_OPTS="--capabilities CAPABILITY_NAMED_IAM" ../deploy/lambda/deploy.sh --no-build
+```
+
+Upon successful completion, output similar to the following will be displayed.
+
+```
+Deploying stack nr-reports-stack...
+
+Waiting for changeset to be created..
+Waiting for stack create/update to complete
+Successfully created/updated stack - nr-reports-stack
+Done.
+```
+
+**NOTE:** As mentioned above, the `--no-build` option _must_ be specified. This
+tells the [the `deploy.sh` script](./deploy/lambda/deploy.sh) that there is no
+code to build and to skip the build and push steps.
+
+#### Delete the AWS Stack
+
+[The `delete.sh` script](./deploy/lambda/delete.sh) is used to delete the
+[CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html).
+It supports the following options.
+
+| Option | Description | Example |
+| --- | --- | --- |
+| `-n stack-name` | The name of the [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html). Defaults to `nr-reports-stack`. | `-n nr-reports-stack-test` |
+
+For example, to delete the [CloudFormation stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html)
+using the default stack name while in the `./nr-reports-stack` directory, run
+the following command.
+
+```bash
+../deploy/lambda/delete.sh
+```
+
+Upon successful completion, output similar to the following will be displayed.
+
+```
+Deleting stack nr-reports-stack...
+Waiting for stack delete to complete...
+Done.
+```
 
 ## Troubleshooting
 
@@ -2833,7 +3663,7 @@ you can find the agent configuration file at [`nr-reports-cli/newrelic.js`](./nr
 If you plan to use [environment variables](https://docs.newrelic.com/docs/apm/agents/nodejs-agent/installation-configuration/nodejs-agent-configuration/#environment)
 (recommended), refer to the appropriate documentation for setting
 environment variables for your runtime environment (shell versus local Docker
-image versus container service, etc).
+image versus container service versus other environments).
 
 To enable serverless monitoring for AWS Lambda, refer to our
 [official documentation](https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/enable-lambda-monitoring/enable-aws-lambda-monitoring/)
