@@ -9,7 +9,7 @@
       "dashboards": [
         "DASHBOARD_GUID_1"
       ],
-      "publishConfigurations": [
+      "publishConfigs": [
         {
           "id": "default",
           "name": "Copy file",
@@ -56,7 +56,7 @@
       "query": "SELECT average(duration) as 'Duration' FROM Transaction FACET appName as 'Application Name', request.uri",
       "accountIds": [1234567],
       "timeout": 10,
-      "publishConfigurations": [
+      "publishConfigs": [
         {
           "id": "slack",
           "name": "Post to Slack",

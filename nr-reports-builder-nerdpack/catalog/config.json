@@ -1,0 +1,19 @@
+{
+  "tagline": "Build scheduled dashboard and query reports",
+  "details": "New Relic Reports Builder is used to build reports for use with New Relic Reports.",
+  "categoryTerms": [],
+  "keywords": ["scheduled", "reports", "report", "dashboard", "query", "nrql"],
+  "repository": "https://github.com/newrelic/nr-reports",
+  "whatsNew": "Update documentation for New Relic Reports Builder and New Relic Reports AWS Stack and added catalog assets",
+  "support": {
+    "email": {
+      "address": "opensource+nr-reports@newrelic.com"
+    },
+    "issues": {
+      "url": "https://github.com/newrelic/nr-reports/issues"
+    },
+    "community": {
+      "url": "https://discuss.newrelic.com/"
+    }
+  }
+}

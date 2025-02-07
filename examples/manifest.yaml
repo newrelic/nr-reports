@@ -5,7 +5,7 @@ reports:
   name: Example dashboard report
   dashboards:
   - DASHBOARD_GUID_1
-  publishConfigurations:
+  publishConfigs:
   - id: default
     name: Copy file
     channels:
@@ -35,7 +35,7 @@ reports:
   accountIds:
   - 1234567
   timeout: 10
-  publishConfigurations:
+  publishConfigs:
   - id: slack
     name: Post to Slack
     channels:
