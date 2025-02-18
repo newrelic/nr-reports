@@ -1,6 +1,6 @@
 {
   "name": "nr-reports-lambda",
-  "version": "3.4.0",
+  "version": "3.5.0",
   "author": "sdewitt@newrelic.com",
   "description": "The New Relic Reports lambda runner.",
   "license": "Apache-2.0",
