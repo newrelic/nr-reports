@@ -3,8 +3,16 @@
 const fetch = require('node-fetch'),
   { createLogger, logTrace } = require('./logger'),
   {
+    NEW_RELIC_REGION_KEY,
+    NEW_RELIC_REGION_VAR,
+    NEW_RELIC_REGION_US,
+    NEW_RELIC_REGION_EU,
+    DEFAULT_NEW_RELIC_REGION,
+  } = require('./constants'),
+  {
     ENDPOINTS,
     getNested,
+    getOption,
     raiseForStatus,
     nonDestructiveMerge,
   } = require('./util')
@@ -42,7 +50,19 @@ function nrqlResults(metadata) {
 
 class NerdgraphClient {
   url(options) {
-    return ENDPOINTS.GRAPHQL[(options.region || 'US').toUpperCase()]
+    const region = getOption(
+      options,
+      NEW_RELIC_REGION_KEY,
+      NEW_RELIC_REGION_VAR,
+      DEFAULT_NEW_RELIC_REGION,
+    ).toUpperCase()
+
+    if (region !== NEW_RELIC_REGION_US && region !== NEW_RELIC_REGION_EU) {
+      logger.error(`Invalid region ${region} specified`)
+      throw new ApiError(`Invalid region ${region} specified`)
+    }
+
+    return ENDPOINTS.GRAPHQL[region]
   }
 
   headers(apiKey, headers = {}) {

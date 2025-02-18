@@ -212,6 +212,13 @@ cd path/to/nr-reports
 export NEW_RELIC_API_KEY="[YOUR USER KEY]"
 ```
 
+**NOTE:** To use an account located in the EU [datacenter](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/choose-your-data-center/),
+additionally execute the following command.
+
+```bash
+export NEW_RELIC_REGION="EU"
+```
+
 ### Run a template report
 
 **NOTE:** As of v3.0.0, template reports have been **_deprecated_** due to the
@@ -1664,6 +1671,13 @@ You should _not_ do this with the `NEW_RELIC_ACCOUNT_ID` environment variable
 when running [using the AWS Lambda function](#using-the-aws-lambda-function)
 as this value is also used by the New Relic Lambda extension.
 
+Additionally, the engine uses the following environment variables.
+
+| Environment Variable | Description | Required | Default |
+| --- | --- |
+| `NEW_RELIC_API_KEY` | A New Relic [User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/) | Y | N/a |
+| `NEW_RELIC_REGION` | A New Relic [datacenter](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/choose-your-data-center/) region identifier. One of `US` or `EU`. | N | `US` |
+
 ### Using the CLI
 
 The New Relic Reports CLI runs reports using the New Relic Reports engine. It is
@@ -1815,6 +1829,25 @@ nr-reports-cli/bin/nr-reports.sh -q <nrql-query> -a <account-id> [-c <channel-id
 
   Don't launch Chromium in headless mode. Use only for testing purposes when
   rendering a template report with `-n`.
+
+#### Preparing to use the CLI
+
+Prior to working with the CLI you will need to perform the following steps
+to configure the terminal session where the CLI will be run.
+
+1. Set the environment variable named `NEW_RELIC_API_KEY` to your
+   [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/)
+   by executing the following command.
+
+   ```bash
+   export NEW_RELIC_API_KEY="[YOUR USER KEY]"
+   ```
+1. Optionally to use the `EU` [datacenter](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/choose-your-data-center/)
+   execute the following command.
+
+   ```bash
+   export NEW_RELIC_REGION="EU"
+   ```
 
 #### CLI Examples
 
@@ -2004,6 +2037,13 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     nr-reports -n hello-world.html
 ```
 
+**NOTE:** To use an account located in the EU [datacenter](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/choose-your-data-center/),
+additionally add the following option.
+
+```bash
+    -e NEW_RELIC_REGION=EU
+```
+
 ##### Running a report using the default manifest file with the CLI image
 
 The example below uses the default [manifest file](#manifest-file) located at
@@ -2020,6 +2060,13 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     -e EMAIL_SMTP_SECURE='true or false' \
     -v /path/to/.aws:/home/pptruser/.aws \
     nr-reports
+```
+
+**NOTE:** To use an account located in the EU [datacenter](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/choose-your-data-center/),
+additionally add the following option.
+
+```bash
+    -e NEW_RELIC_REGION=EU
 ```
 
 ##### Running a report using a custom manifest file with the CLI image
@@ -2039,6 +2086,13 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     -e EMAIL_SMTP_SECURE='true or false' \
     -v /path/to/.aws:/home/pptruser/.aws \
     nr-reports -f include/custom-manifest.json
+```
+
+**NOTE:** To use an account located in the EU [datacenter](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/choose-your-data-center/),
+additionally add the following option.
+
+```bash
+    -e NEW_RELIC_REGION=EU
 ```
 
 ### Using the CRON image
@@ -2155,6 +2209,13 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     nr-reports-cron
 ```
 
+**NOTE:** To use an account located in the EU [datacenter](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/choose-your-data-center/),
+additionally add the following option.
+
+```bash
+    -e NEW_RELIC_REGION=EU
+```
+
 ##### Running a report using a template name with the CRON image - Variation 2
 
 This example runs a simple [template report](#template-reports) that does not
@@ -2186,6 +2247,13 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     -e S3_DEST_BUCKET='[A_S3_BUCKET_NAME]' \
     -v /path/to/.aws:/home/pptruser/.aws \
     nr-reports-cron
+```
+
+**NOTE:** To use an account located in the EU [datacenter](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/choose-your-data-center/),
+additionally add the following option.
+
+```bash
+    -e NEW_RELIC_REGION=EU
 ```
 
 ##### Running a report using a default manifest file with the CRON image
@@ -2223,6 +2291,13 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     nr-reports-cron
 ```
 
+**NOTE:** To use an account located in the EU [datacenter](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/choose-your-data-center/),
+additionally add the following option.
+
+```bash
+    -e NEW_RELIC_REGION=EU
+```
+
 ##### Running a report using a custom manifest file with the CRON image - Variation 2
 
 This example runs reports using a custom [manifest file](#manifest-file) located
@@ -2248,6 +2323,13 @@ docker run --rm -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
     -e EMAIL_SMTP_SECURE='true or false' \
     -v /path/to/.aws:/home/pptruser/.aws \
     nr-reports-cron
+```
+
+**NOTE:** To use an account located in the EU [datacenter](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/choose-your-data-center/),
+additionally add the following option.
+
+```bash
+    -e NEW_RELIC_REGION=EU
 ```
 
 ### Using the AWS Lambda function

@@ -90,7 +90,7 @@ Parameters:
   NRLicenseKeySecret:
     Type: String
     Description: ID (name or ARN) of an AWS Secrets Manager secret containing your New Relic license key.
-    AllowedPattern: '[a-zA-Z0-9/_+=\.@\-]*'
+    AllowedPattern: '(^$)|(^arn:(aws[a-zA-Z-]*)?:secretsmanager:.+:\d{12}:secret:[a-zA-Z0-9/_+=\.@\-]+$)'
     Default: ''
   #
   # Log level for the New Relic AWS lambda extension. Defaults to 'INFO'.
@@ -105,6 +105,16 @@ Parameters:
     AllowedValues:
       - INFO
       - DEBUG
+  #
+  # New Relic Region. May be US or EU.
+  #
+  NRRegion:
+    Type: String
+    Description: New Relic region.
+    AllowedValues:
+      - US
+      - EU
+    Default: US
   #
   # Region used for AWS API calls to RDS, S3, and Secrets Manager. Defaults to
   # 'us-east-1'.
@@ -170,6 +180,9 @@ Parameters:
       - VERBOSE
       - DEBUG
 
+Conditions:
+  IsRegionEU: !Equals [!Ref "NRRegion", "EU"]
+
 Resources:
 
   #
@@ -196,6 +209,9 @@ Resources:
           NEW_RELIC_EXTENSION_SEND_FUNCTION_LOGS: true
           NEW_RELIC_EXTENSION_LOG_LEVEL: !Ref NRLogLevel
           NEW_RELIC_ACCOUNT_ID: !Ref NRAccountId
+          NEW_RELIC_HOST: !If [IsRegionEU, 'collector.eu.newrelic.com', 'collector.newrelic.com']
+          NEW_RELIC_LOG_ENDPOINT: !If [IsRegionEU, 'https://log-api.eu.newrelic.com/log/v1', 'https://log-api.newrelic.com/log/v1']
+          NEW_RELIC_TELEMETRY_ENDPOINT: !If [IsRegionEU, 'https://cloud-collector.eu01.nr-data.net/aws/lambda/v1', 'https://cloud-collector.newrelic.com/aws/lambda/v1']
           #
           # By default the extension will read the license key from a secret
           # named NEW_RELIC_LICENSE_KEY which is setup when you install the
@@ -217,3 +233,4 @@ Resources:
           REPORTS_LAMBDA_ARN: !Ref ReportsLambdaArn
           REPORTS_LAMBDA_ROLE_ARN: !Ref ReportsLambdaRoleArn
           LOG_LEVEL: !Ref LogLevel
+          NEW_RELIC_REGION: !Ref NRRegion
