@@ -36,6 +36,10 @@
         "ParameterValue": "INFO"
     },
     {
+        "ParameterKey": "NRRegion",
+        "ParameterValue": "US"
+    },
+    {
         "ParameterKey": "SecretName",
         "ParameterValue": "MyNewRelicReportsSecret"
     },
