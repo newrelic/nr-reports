@@ -1,0 +1,81 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.palantir.git-version' version '3.1.0'
+}
+
+version cleanGitVersion(gitVersion())
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    gradlePluginPortal()
+}
+
+dependencies {
+    // https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.2'
+    // https://mvnrepository.com/artifact/org.quartz-scheduler/quartz
+    implementation 'org.quartz-scheduler:quartz:2.5.0'
+    // https://mvnrepository.com/artifact/com.google.code.gson/gson
+    implementation 'com.google.code.gson:gson:2.12.1'
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+application {
+    mainClass = 'com.newrelic.labs.reports.ReportScheduler'
+    applicationDefaultJvmArgs = ['-Djava.util.logging.config.file=conf/logging.properties']
+}
+
+distributions {
+    main {
+        contents {
+            into('conf') {
+                from 'conf/logging.properties'
+            }
+            into('logs') {
+                from 'logs'
+            }
+        }
+    }
+}
+
+def static cleanGitVersion(String version) {
+    def index = version.lastIndexOf(".dirty")
+    def ver = version
+
+    if (index > 0) {
+        ver = version.substring(0, index)
+    }
+
+    return ver
+}
+
+def getDockerVersion() {
+    def ver = project.version.toString()
+
+    if (ver.isEmpty()) {
+        return ver
+    }
+
+    if (ver[0].equalsIgnoreCase("v") && ver.length() > 1) {
+        ver = ver.substring(1)
+    }
+
+    return ver
+}
+
+tasks.register('buildDocker', Exec) {
+    dependsOn assembleDist
+    executable 'docker'
+    workingDir projectDir.getParentFile()
+    args 'build',
+            '-t',
+            project.name,
+            '-t',
+            project.name + ":" + getDockerVersion(),
+            '-f',
+            new File(projectDir, 'Dockerfile').getCanonicalPath(),
+            '.'
+}

@@ -1,6 +1,6 @@
 {
   "name": "nr-reports-builder",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "author": "sdewitt@newrelic.com",
   "description": "Nerdpack for building scheduled reports.",
   "license": "Apache-2.0",

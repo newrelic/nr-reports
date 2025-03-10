@@ -42,30 +42,42 @@ One platform.
   * [Using the CRON image](#using-the-cron-image)
   * [Using the AWS Lambda function](#using-the-aws-lambda-function)
   * [Using the AWS Scheduler Lambda function](#using-the-aws-scheduler-lambda-function)
+  * [Using the Java Scheduler](#using-the-java-scheduler)
   * [Using the Reports Builder](#using-the-reports-builder)
   * [Using the New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack)
 
 ## Overview
 
 New Relic Reports is a scheduled reporting solution for use with New Relic. It
-consists of two separate components: a reporting engine for generating and
-delivering reports and a New Relic One application for building reports.
+consists of several components.
 
-The New Relic Reports engine can be run from the command line as a [Node.js](https://nodejs.org/en)
-application, run using a [Docker](https://www.docker.com/) image, or run as an
-[AWS Lambda function](https://aws.amazon.com/lambda/). See the section
-[Running Reports](#running-reports) for more details.
-
-The New Relic Reports Builder is a [New Relic One application ](https://docs.newrelic.com/docs/new-relic-solutions/build-nr-ui/build-nr-app/)
-that can be run from directly within the New Relic One platform. It provides a
-user interface for defining [dashboard](#dashboard-reports) and [query](#query-reports)
-reports and schedules that specify when reports should be run together with the
-email settings used to send the reports.
-
-When used together with the provided [New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack),
-a scheduling component is also provided that automates the process of running
-and delivering reports on specific schedules, providing a full end-to-end
-reporting solution.
+* A reporting engine providing capabilities for generating different types of
+  reports and delivering reports via different channels that can be run from the
+  [command line](#using-the-cli) as a [Node.js](https://nodejs.org/en)
+  application, a [Docker](https://www.docker.com/)
+  [image](#using-the-cli-image), or an [AWS Lambda function](#using-the-aws-lambda-function).
+  See the section ["Running Reports"](#running-reports) for more details.
+* The [Reports Builder](#using-the-reports-builder), a New Relic One application
+  that provides a simple user interface for building reports from within the New
+  Relic platform.
+* The [Java Scheduler](#using-the-java-scheduler), a [Java](https://www.oracle.com/java/)
+  application that works with the [CLI](#using-the-cli) and the [Reports Builder](#using-the-reports-builder)
+  to provide a full end-to-end scheduled reporting solution that can be run as a
+  [Docker image](#using-the-java-scheduler-image) or anywhere that [Java](https://www.oracle.com/java/)
+  and [Node.js](https://nodejs.org/en) can be run.
+* The [AWS Scheduler Lambda function](#using-the-aws-scheduler-lambda-function),
+  an [AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html)
+  function that works with [AWS Lambda function](#using-the-aws-lambda-function)
+  to run reports defined in the [Reports Builder](#using-the-reports-builder) on
+  the specified schedules.
+* The [New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack), an
+  [AWS CloudFormation Stack](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacks.html)
+  that can be used to deploy the [AWS Lambda function](#using-the-aws-lambda-function),
+  the [AWS Scheduler Lambda function](#using-the-aws-scheduler-lambda-function),
+  and the supporting resources to provide a full end-to-end scheduled reporting
+  solution within [AWS](https://aws.amazon.com/) utilizing
+  [AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html) and
+  [AWS EventBridge](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html).
 
 ### Report Generation
 
@@ -116,21 +128,14 @@ supported.
 
 ### Running Reports
 
-There are three ways to run reports.
-
-1. As part of the [New Relic Reports AWS Stack](./nr-reports-scheduler/deploy/cf-template.yaml) (recommended)
-
-   The recommended way to run reports is using the [New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack)
-   along with the New Relic Reports Builder that together provide a full
-   scheduled reporting solution. See the section ["Using the New Relic Reports AWS Stack"](#using-the-new-relic-reports-aws-stack)
-   for more details.
+There are several ways to run reports using the reporting engine.
 
 1. Packaged as a Docker image
 
    `Dockerfile`s are provided to package the reporting engine, along with your
-   [manifest files](#manifest-file) as a docker image that runs reports on a
-   schedule using `CRON` or as a docker image with a CLI based `ENTRYPOINT`
-   that can be run via external scheduled task mechanisms such as
+   [manifest files](#manifest-file) as a docker image that runs all reports on
+   the same schedule using `CRON` or as a Docker image with a CLI based
+   `ENTRYPOINT` that can be run via external scheduled task mechanisms such as
    [AWS ECS Scheduled Tasks](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/scheduled_tasks.html).
    Both of these can be used in conjuction with the appropriate environment
    variables to run reports built using the New Relic Reports builder to provide
@@ -149,27 +154,53 @@ There are three ways to run reports.
    downloading the repository and installing dependencies. This is useful
    primarily for testing and debugging reports.
 
+**NOTE:** The mechanisms listed are used purely to execute reports using the
+reporting engine. They do not interact with the [Reports Builder](#using-the-reports-builder)
+and do not include any scheduling functionality (except for the basic scheduling
+supported by the [CRON](#using-the-cron-image) image). Reports must be manually
+defined using [manifest files](#manifest-file), [CLI options](#cli-options),
+[engine options](#engine-options), or environment variables.
+
 ## Prerequisites
+
+To run reports locally using the [CLI](#using-the-cli), you will need the
+following.
+
+* Node >= 14.0.0
+* A terminal application that supports Bash scripts
+
+To build and deploy the [CLI image](#using-the-cli-image) or the [CRON based image](#using-the-cron-image),
+you will need the following.
+
+* [Docker](https://www.docker.com/)
+* A [Docker](https://www.docker.com/) repository
+
+To build and deploy the [Java Scheduler image](#using-the-java-scheduler-image),
+you will need the following.
+
+* [Docker](https://www.docker.com/)
+* A [Docker](https://www.docker.com/) repository
+
+To run the [Java Scheduler](#using-the-standalone-java-scheduler-application) as
+a standalone Java application, you will need the following.
+
+* Node >= 14.0.0
+* Java >= 21.0.0
+* A terminal application that supports Bash scripts
 
 To build and deploy the [New Relic Reports AWS Stack](./nr-reports-scheduler/deploy/cf-template.yaml)
 or the Lambda based images, you will need the following.
 
-* Docker
+* [Docker](https://www.docker.com/)
 * An ECS repository
 * The AWS CLI
 * AWS credentials
 
-To build and deploy CRON based images, you will need the following.
+In addition, each [channel](#channels) type has it's own prerequisites as
+follows.
 
-* Docker
-* A Docker repository
-
-To develop reports and run them locally, you will need the following.
-
-* Node >= 14.0.0
-* A terminal application that supports Bash scripts
-* Your favorite IDE
-* For the [email channel](#email-channel), SMTP server settings (for testing locally try [Mailhog](https://github.com/mailhog/MailHog))
+* For the [email channel](#email-channel), SMTP server settings (for testing
+  locally try [Mailhog](https://github.com/mailhog/MailHog))
 * For the [S3 channel](#s3-channel), AWS credentials and an S3 bucket
 * For the [Slack channel](#slack-channel), an [Incoming Webhook](https://api.slack.com/messaging/webhooks)
   URL.
@@ -2972,6 +3003,161 @@ Upon successful completion, output similar to the following will be displayed.
 Deleting stack nr-reports-scheduler...
 Waiting for stack delete to complete...
 Done.
+```
+
+### Using the Java Scheduler
+
+The Java Scheduler is a [Java](https://www.oracle.com/java/) application that
+monitors reports defined in an instance of the [New Relic Reports Builder](#using-the-reports-builder)
+and automatically creates, updates, and deletes [Quartz](https://www.quartz-scheduler.org/)
+jobs to trigger the [CLI](#using-the-cli) to run each report based on the
+schedule defined for it in the [New Relic Reports Builder](#using-the-reports-builder).
+
+The Java Scheduler can be run as a [Docker](https://www.docker.com/) image built
+using the provided [`Dockerfile`](./nr-reports-quartz-scheduler/Dockerfile) or
+as a standalone [Java](https://www.oracle.com/java/) application anywhere that
+[Java](https://www.oracle.com/java/) and [Node.js](https://nodejs.org/en)
+(required to run the [CLI](#using-the-cli)) can be run.
+
+#### Working with the Java Scheduler
+
+The Java Scheduler is configured via environment variables. The following
+environment variables must be set regardless of whether the application is run
+[using the Java Scheduler image](#using-the-java-scheduler-image) or as a
+[standalone Java application](#running-the-standalone-java-scheduler-application).
+
+| Key | Value |
+| --- | --- |
+| `NEW_RELIC_API_KEY` | Your [New Relic User API key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys) |
+| `NEW_RELIC_LICENSE_KEY` | Your [New Relic License Key](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/#overview-keys) |
+| `SOURCE_NERDLET_ID` | The Nerdpack ID of the [New Relic Reports Builder](#using-the-reports-builder) instance to query |
+| `REPORT_ACCOUNT_IDS` | The [New Relic account ID(s)](https://docs.newrelic.com/docs/accounts/accounts-billing/account-structure/account-id/) where schedules will be stored. Multiple accounts IDs may be specified separated by commas. |
+
+**NOTE:** The Nerdpack ID specified for the `SOURCE_NERDLET_ID` environment
+variable should be the value noted when verifying the Reports Builder installed
+successfully while [installing the New Relic Reports Builder](#installing-the-new-relic-reports-builder).
+
+Optionally, the following environment variables may be set.
+
+| Key | Value | Default |
+| --- | --- | --- |
+| `LOG_LEVEL` | A supported [java.util.logging.Level](https://docs.oracle.com/en/java/javase/21/docs/api/java.logging/java/util/logging/Level.html) | `INFO` |
+| `SYNC_SCHEDULE` | A [Quartz CRON expression](https://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html#format) for the interval at which to synchronize report definitions with the associated instance of the [New Relic Reports Builder](#using-the-reports-builder) | `0 */5 * * * ?` |
+| `NEW_RELIC_REGION` | A New Relic [datacenter](https://docs.newrelic.com/docs/accounts/accounts-billing/account-setup/choose-your-data-center/) region identifier. One of `US` or `EU`. | `US` |
+| `NODE_CMD` | The command used to run [Node](https://nodejs.org/en) | `node` |
+| `REPORTS_HOME` | The path to the `nr-reports` root directory (typically the directory where you cloned the `nr-reports` repository) | `..` |
+| `MANIFEST_DIR` | The path to the directory where downloaded manifest stub files should be stored | `conf` |
+
+In addition, any environment variables that can be used by the reporting engine
+(such as [engine options](#engine-options) or [channel parameters](#channel-parameters))
+should be specified in the environment where the scheduler is launched.
+
+**NOTE:** If the `LOG_LEVEL` environment variable is set to `FINE`, the [CLI](#using-the-cli)
+will be run in verbose mode when it is run by the Java Scheduler application. If
+it is set to `FINEST`, the [CLI](#using-the-cli) will be run in debug mode when
+it is run by the Java Scheduler application.
+
+**NOTE:** The `NODE_CMD`, `REPORTS_HOME`, and `MANIFEST_DIR` environment
+variables should not be set when [running the Java Scheduler image](#using-the-java-scheduler-image).
+
+#### Using the Java Scheduler image
+
+A [`Dockerfile`](./nr-reports-quartz-scheduler/Dockerfile) is provided to build
+a Docker image that can run the Java Scheduler application. The image is built
+from the [Amazon Corretto](https://aws.amazon.com/corretto/)
+[21 headless base image for Amazon Linux 2023](https://github.com/corretto/corretto-docker/blob/89bc34902ac1a084562a2c6e7b02190eff3613bb/21/headless/al2023/Dockerfile)
+The image includes the [Node 20 binary distribution for Amazon Linux 2023](https://github.com/nodesource/distributions?tab=readme-ov-file#amazon-linux-versions)
+from [Nodesource](https://nodesource.com/).
+
+##### Building the Java Scheduler image
+
+To build the Java Scheduler image using the provided [`Dockerfile`](./nr-reports-quartz-scheduler/Dockerfile),
+open a terminal that supports Bash scripts and execute the following commands,
+making sure to replace `path/to/nr-reports` with the path to the directory
+where you cloned the `nr-reports` repository.
+
+```bash
+cd path/to/nr-reports/nr-reports-quartz-scheduler
+./gradlew buildDocker
+```
+
+The result is an image that will be tagged with the following tags.
+
+* `nr-reports-quartz-scheduler:latest`
+* `nr-reports-quartz-scheduler:$VERSION`
+
+`$VERSION` will be the latest `git` tag minus the leading `v`. For example, if
+the latest `git` tag is `v3.5.0`, the image tag will be
+`nr-reports-quartz-scheduler:3.5.0`.
+
+##### Running the Java Scheduler image via the Docker CLI
+
+The following example shows how you can run the Java Scheduler image using the
+[`docker` CLI](https://docs.docker.com/reference/cli/docker/). To run the Java
+Scheduler image using a container service such as [ECS](https://docs.aws.amazon.com/ecs/),
+see the appropriate documentation for the container service.
+
+```bash
+docker run --rm \
+    --name nr-reports-quartz-scheduler \
+    -e NEW_RELIC_API_KEY='[YOUR_USER_API_KEY]' \
+    -e NEW_RELIC_LICENSE_KEY='[YOUR_LICENSE_KEY]' \
+    -e SOURCE_NERDLET_ID='[YOUR_NERDPACK_INSTANCE_ID]' \
+    -e REPORT_ACCOUNT_IDS='12345,56789' \
+    -e EMAIL_SMTP_SERVER='[YOUR_SMTP_SERVER]' \
+    -e EMAIL_SMTP_PORT=[YOUR_SMTP_SERVER_PORT] \
+    -e EMAIL_SMTP_SECURE='true' \
+    nr-reports-quartz-scheduler
+```
+
+In this example, note how the environment variables meant to be used by the
+Java Scheduler application and the environment variables meant to be used by the
+reporting engine are all specified in the same way. This is because the
+environment used by the Java Scheduler is inherited by the [CLI](#using-the-cli)
+process created to run reports. This is the case whether the Java Scheduler is
+run using the Java Scheduler image or
+[using the standalone Java Scheduler application](#using-the-standalone-java-scheduler-application).
+
+#### Using the standalone Java Scheduler application
+
+The Java Scheduler can also be run as a standalone Java application anywhere
+that [Java](https://www.oracle.com/java/) and [Node.js](https://nodejs.org/en)
+can be run.
+
+##### Preparing to run the standalone Java Scheduler application
+
+Prior to running the standalone Java Scheduler application, perform the
+following steps.
+
+1. Ensure that you have met all [prerequisites](#prerequisites) listed to run
+   the Java Scheduler.
+1. Ensure that the `java` command can be resolved from the command line or that
+   the `JAVA_HOME` environment variable is set in the environment where the
+   application will be run.
+1. Ensure that the required environment variables listed in the section
+   ["Working with the Java Scheduler"](#working-with-the-java-scheduler)
+   are set in the environment where the application will be run.
+1. Set any optional environment variables listed in the section
+   ["Working with the Java Scheduler"](#working-with-the-java-scheduler)
+   as necessary in the environment where the application will be run, or ensure
+   that the defaults are appropriate. In particular, ensure that the command
+   identified by the `NODE_CMD` environment variable can be resolved from the
+   command line, and that the path identified by the `REPORTS_HOME` environment
+   variable points to the `nr-reports` root directory (typically the directory
+   where you cloned the `nr-reports` repository).
+1. Set any environment variables meant to be used by the reporting engine
+   as necessary in the environment where the application will be run.
+
+##### Running the standalone Java Scheduler application
+
+To run the standalone Java Scheduler application, open a terminal that supports
+Bash scripts and execute the following commands, making sure to replace
+`path/to/nr-reports` with the path to the directory where you cloned the
+`nr-reports` repository.
+
+```bash
+cd path/to/nr-reports/nr-reports-quartz-scheduler
+./gradlew run
 ```
 
 ### Using the Reports Builder
