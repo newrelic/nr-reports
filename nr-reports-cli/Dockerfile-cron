@@ -1,4 +1,4 @@
-FROM alpine:3.18
+FROM alpine:3
 
 # Build args
 ARG CLI_ARGS
