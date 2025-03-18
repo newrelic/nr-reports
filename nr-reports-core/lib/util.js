@@ -5,9 +5,22 @@ const fs = require('fs'),
   path = require('path'),
   YAML = require('yaml'),
   { stringify } = require('csv-stringify'),
-  showdown = require('showdown'),
+  { parse } = require('csv-parse/sync'),
   { createLogger, logTrace } = require('./logger'),
-  { DEFAULT_PUBLISH_CONFIG_ID, DEFAULT_MANIFEST_ID } = require('./constants')
+  {
+    DEFAULT_PUBLISH_CONFIG_ID,
+    DEFAULT_MANIFEST_ID,
+    FORMATTER_REPORT_ID_KEY,
+    FORMATTER_REPORT_NAME_KEY,
+    FORMATTER_PUBLISH_CONFIG_ID_KEY,
+    FORMATTER_PUBLISH_CONFIG_NAME_KEY,
+    FORMATTER_CHANNEL_ID_KEY,
+    FORMATTER_CHANNEL_NAME_KEY,
+    FORMATTER_TIMESTAMP_KEY,
+    FORMATTER_DATETIME_KEY,
+    FORMATTER_RESULTS_KEY,
+    FORMATTER_RESULTS_CSV_FORMATTED,
+  } = require('./constants')
 
 const logger = createLogger('util'),
   ENDPOINTS = {
@@ -17,20 +30,9 @@ const logger = createLogger('util'),
     },
   },
   DEFAULT_CONCURRENCY = 4,
-  { access, mkdtemp, readFile, rmdir, unlink } = fs.promises,
-  markdownConverter = new showdown.Converter({
-    ghCompatibleHeaderId: true,
-    strikethrough: true,
-    tables: true,
-    tablesHeaderId: true,
-    tasklists: true,
-    openLinksInNewWindow: true,
-    backslashEscapesHTMLTags: true,
-  }),
+  { access, mkdtemp, readFile, rm, unlink } = fs.promises,
   SIMPLE_VAR_REGEX = /[{][{]\s*([a-zA-Z_$][a-zA-Z0-9$_]*)\s*[}][}]/ug,
   ENV_VAR_NAME_INVALID_CHAR_REGEX = /[^a-zA-Z0-9_]+/ug
-
-markdownConverter.setFlavor('github')
 
 function isUndefined(val) {
   return typeof val === 'undefined'
@@ -136,12 +138,24 @@ function getEnvNs(
   return getEnv(envName, defaultValue)
 }
 
-function getOption(options, optionName, envName = null, defaultValue = null) {
+function getOption(
+  options,
+  optionName,
+  envName = null,
+  defaultValue = null,
+  allowNull = true,
+) {
   if (options) {
     const type = typeof options[optionName]
 
     if (type !== 'undefined') {
-      return type === 'string' ? options[optionName].trim() : options[optionName]
+      if (type === 'string') {
+        return options[optionName].trim()
+      }
+
+      if (options[optionName] !== null || allowNull) {
+        return options[optionName]
+      }
     }
   }
 
@@ -221,7 +235,7 @@ async function withTempDir(fn) {
         await access(tempDir, fs.constants.F_OK)
 
         logger.debug(`Removing temporary directory ${tempDir}...`)
-        await rmdir(tempDir, { recursive: true })
+        await rm(tempDir, { recursive: true })
       }
     } catch (err) {
       logger.error(err)
@@ -278,11 +292,7 @@ function normalizeManifestHelper(manifest, defaultChannelType, channelDefaults) 
 
     const reportName = report.name || report.id
 
-    if (report.templateName) {
-      if (!report.parameters) {
-        report.parameters = {}
-      }
-    } else if (report.dashboards) {
+    if (report.dashboards) {
       report.combinePdfs = typeof report.combinePdfs !== 'undefined' ? (
         report.combinePdfs
       ) : false
@@ -385,12 +395,6 @@ function splitStringAndTrim(str, delimiter = ',') {
   return str.split(delimiter).map(s => s.trim())
 }
 
-function shouldRender(report) {
-  return report.templateName && (
-    typeof report.render === 'undefined' || report.render
-  )
-}
-
 function pad(number, length) {
   let str = `${number}`
 
@@ -399,6 +403,22 @@ function pad(number, length) {
   }
 
   return str
+}
+
+/* @NONNLS this is not bidrectional aware */
+function padString(str, length, padChar = ' ', moreChar = '\u2026') {
+  let out = str
+  const count = out.length
+
+  if (count >= length) {
+    return out.substring(0, length - 1) + moreChar
+  }
+
+  for (let index = count; index < length; index += 1) {
+    out += padChar
+  }
+
+  return out
 }
 
 function trimStringAndLower(input, defaultValue = null) {
@@ -542,6 +562,60 @@ function buildCsv(columns, rows) {
   })
 }
 
+function formatCsv(
+  text,
+  colLength = 20,
+  padChar = ' ',
+  moreChar = '\u2026',
+) {
+  const records = parse(text, {
+    columns: true,
+    skip_empty_lines: true,
+  })
+  let out = ''
+
+  if (records.length === 0) {
+    return out
+  }
+
+  let jindex = 0,
+    sep = ''
+
+  for (const key in records[0]) {
+    if (jindex == 0) {
+      out += '|'
+      sep += '|'
+    }
+
+    out += ' ' + padString(key, colLength, padChar, moreChar) + ' |'
+    sep += ' ' + padString('', colLength, '-', moreChar) + ' |'
+
+    jindex += 1
+  }
+
+  out += `\n${sep}\n`
+
+  for (let index = 0; index < records.length; index += 1) {
+    const record = records[index]
+
+    jindex = 0
+
+    for (const key in record) {
+      if (jindex == 0) {
+        out += '|'
+      }
+
+      out += ' ' + padString(record[key], colLength, padChar, moreChar) + ' |'
+
+      jindex += 1
+    }
+
+    out += '\n'
+  }
+
+  return out
+}
+
 function buildHtml(columns, rows, maxRows = null) {
   const r = maxRows === null ? rows : rows.slice(0, maxRows)
 
@@ -662,20 +736,78 @@ function doAsyncWork(items, max, fn, args, cb) {
   })
 }
 
-function markdownToHtml(text) {
-  return markdownConverter.makeHtml(text)
-}
 
 function format(str, replacements) {
   return str.replace(
     SIMPLE_VAR_REGEX,
     (_, key) => {
       if (replacements[key]) {
+        if (typeof replacements[key] === 'function') {
+          return replacements[key]()
+        }
         return replacements[key]
       }
       return key
     },
   )
+}
+
+function collectPrimitiveProps(obj, m) {
+  for (const prop of Object.getOwnPropertyNames(obj)) {
+    const type = typeof obj[prop]
+
+    if (type === 'string' || type === 'number' || type === 'boolean') {
+      m[prop] = obj[prop]
+    }
+  }
+}
+
+function channelFormatter(
+  context,
+  report,
+  publishConfig,
+  channelConfig,
+  results = null,
+  replacements = {},
+) {
+  const m = {
+    [FORMATTER_REPORT_ID_KEY]: report.id,
+    [FORMATTER_REPORT_NAME_KEY]: report.name,
+    [FORMATTER_PUBLISH_CONFIG_ID_KEY]: publishConfig.id,
+    [FORMATTER_PUBLISH_CONFIG_NAME_KEY]: publishConfig.name,
+    [FORMATTER_CHANNEL_ID_KEY]: channelConfig.id,
+    [FORMATTER_CHANNEL_NAME_KEY]: channelConfig.name,
+    [FORMATTER_TIMESTAMP_KEY]: new Date().getTime(),
+    [FORMATTER_DATETIME_KEY]: getFormattedDateTime(),
+    ...replacements,
+  }
+
+  collectPrimitiveProps(report, m)
+  collectPrimitiveProps(publishConfig, m)
+  collectPrimitiveProps(channelConfig, m)
+
+  if (channelConfig.contextVars) {
+    channelConfig.contextVars.forEach(
+      key => (
+        m[key] = context.get(context, key)
+      ),
+    )
+  }
+
+  if (channelConfig.envVars) {
+    channelConfig.envVars.forEach(
+      key => (
+        m[key] = getEnvNs(context, key)
+      ),
+    )
+  }
+
+  if (results) {
+    m[FORMATTER_RESULTS_KEY] = results
+    m[FORMATTER_RESULTS_CSV_FORMATTED] = () => formatCsv(results)
+  }
+
+  return str => format(str, m)
 }
 
 module.exports = {
@@ -701,7 +833,6 @@ module.exports = {
   toBoolean,
   withTempDir,
   withTempFile,
-  shouldRender,
   toString,
   toNumber,
   toDate,
@@ -713,6 +844,6 @@ module.exports = {
   requireAccountIds,
   trimStringAndLower,
   doAsyncWork,
-  markdownToHtml,
   format,
+  channelFormatter,
 }

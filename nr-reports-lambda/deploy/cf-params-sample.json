@@ -52,18 +52,6 @@
         "ParameterValue": "manifest.json"
     },
     {
-        "ParameterKey": "TemplateName",
-        "ParameterValue": "hello-world.html"
-    },
-    {
-        "ParameterKey": "TemplatePath",
-        "ParameterValue": "/var/db/extra-templates:common-templates"
-    },
-    {
-        "ParameterKey": "ValuesFile",
-        "ParameterValue": "values.json"
-    },
-    {
         "ParameterKey": "DashboardIDs",
         "ParameterValue": "AABBCC445566:FFEEDD112233"
     },

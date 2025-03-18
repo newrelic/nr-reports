@@ -25,12 +25,7 @@ const path = require('path'),
     REPORT_IDS_OPTION,
     REPORT_IDS_VAR,
     DEFAULT_MANIFEST_FILE_NAME,
-    TEMPLATE_NAME_OPTION,
-    TEMPLATE_NAME_VAR,
-    VALUES_FILE_PATH_OPTION,
-    VALUES_FILE_PATH_VAR,
     OUTPUT_FILE_NAME_OPTION,
-    NO_RENDER_OPTION,
     DASHBOARD_IDS_OPTION,
     DASHBOARD_IDS_VAR,
     DEFAULT_DASHBOARD_REPORT_ID,
@@ -97,7 +92,6 @@ function prepareManifest(
   options,
   data,
   defaultChannelType,
-  params,
   extras,
 ) {
   const manifest = normalizeManifest(
@@ -128,18 +122,6 @@ function prepareManifest(
 
     return enabled
   }).map(report => {
-    if (report.templateName) {
-      if (params && params[report.id]) {
-        return {
-          ...report,
-          parameters: {
-            ...report.parameters,
-            ...params[report.id],
-          },
-          ...extras,
-        }
-      }
-    }
 
     if (extras) {
       return { ...report, ...extras }
@@ -156,14 +138,12 @@ async function loadManifest(
   fileLoader,
   manifestFile,
   defaultChannelType,
-  params,
   extras,
 ) {
   return prepareManifest(
     options,
     parseJaml(manifestFile, await fileLoader(manifestFile)),
     defaultChannelType,
-    params,
     extras,
   )
 }
@@ -171,7 +151,6 @@ async function loadManifest(
 async function loadManifestFromNerdstorage(
   context,
   options,
-  params,
   nerdletPackageId,
 ) {
   const accountId = requireAccountId(context),
@@ -202,14 +181,12 @@ async function loadManifestFromNerdstorage(
     options,
     doc,
     context.defaultChannelType,
-    params,
   )
 }
 
 async function discoverReportsHelper(
   context,
   options,
-  params,
   fileLoader,
   defaultChannelType,
   extras,
@@ -229,76 +206,8 @@ async function discoverReportsHelper(
       fileLoader,
       manifestFile,
       defaultChannelType,
-      params,
       extras,
     )
-  }
-
-  const templateName = getOption(
-    options,
-    TEMPLATE_NAME_OPTION,
-    TEMPLATE_NAME_VAR,
-  )
-
-  // Name of template file
-  if (templateName) {
-    logger.trace(`Found template name ${templateName}.`)
-
-    const valuesFile = getOption(
-        options,
-        VALUES_FILE_PATH_OPTION,
-        VALUES_FILE_PATH_VAR,
-      ),
-      channels = getChannels(defaultChannelType, options),
-      reportId = path.parse(templateName).name,
-      outputFileName = getOption(options, OUTPUT_FILE_NAME_OPTION),
-      noRender = getOption(options, NO_RENDER_OPTION, null, false)
-
-    if (valuesFile) {
-
-      const valuesFileParams = parseJaml(
-        valuesFile,
-        await fileLoader(valuesFile),
-      )
-
-      return {
-        config: {},
-        variables: {},
-        reports: [{
-          id: reportId,
-          templateName,
-          render: !noRender,
-          outputFileName,
-          parameters: { ...valuesFileParams, ...params },
-          publishConfigs: [
-            {
-              id: DEFAULT_PUBLISH_CONFIG_ID,
-              channels,
-            },
-          ],
-          ...extras,
-        }],
-      }
-    }
-
-    return {
-      config: {},
-      variables: {},
-      reports: [{
-        id: reportId,
-        templateName,
-        render: !noRender,
-        outputFileName,
-        parameters: params || {},
-        publishConfigs: [
-          {
-            id: DEFAULT_PUBLISH_CONFIG_ID,
-            channels,
-          },
-        ],
-        ...extras,
-      }],
-    }
   }
 
   const dashboards = getOption(
@@ -370,12 +279,11 @@ async function discoverReportsHelper(
     async filePath => await loadFile(filePath),
     DEFAULT_MANIFEST_FILE_PATH,
     defaultChannelType,
-    params,
     extras,
   )
 }
 
-async function discoverReports(context, options, params) {
+async function discoverReports(context, options) {
   if (Array.isArray(options)) {
     logger.trace('Options object is an array of reports.')
 
@@ -383,7 +291,6 @@ async function discoverReports(context, options, params) {
       {},
       options,
       context.defaultChannelType,
-      params,
     )
   }
 
@@ -399,7 +306,6 @@ async function discoverReports(context, options, params) {
     return await discoverReportsHelper(
       context,
       options,
-      params,
       async filePath => await getS3ObjectAsString(sourceBucket, filePath),
       's3',
       { S3Bucket: sourceBucket },
@@ -412,6 +318,8 @@ async function discoverReports(context, options, params) {
     context.secrets,
     SOURCE_NERDLET_ID_OPTION,
     SOURCE_NERDLET_ID_VAR,
+    null,
+    false,
   )
 
   if (sourceNerdletId) {
@@ -420,7 +328,6 @@ async function discoverReports(context, options, params) {
     return await loadManifestFromNerdstorage(
       context,
       options,
-      params,
       sourceNerdletId,
     )
   }
@@ -430,7 +337,6 @@ async function discoverReports(context, options, params) {
   return await discoverReportsHelper(
     context,
     options,
-    params,
     async filePath => await loadFile(filePath),
     context.defaultChannelType,
   )

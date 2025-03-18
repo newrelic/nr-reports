@@ -31,7 +31,7 @@ export default function EmailChannelForm({
   onChangeQueryResultsHtmlMaxRows,
   onChangeTo,
   onChangeCc,
-  onChangeTemplate,
+  onChangeBody,
 }) {
   const { formState } = useContext(FormContext),
     {
@@ -40,7 +40,7 @@ export default function EmailChannelForm({
       emailAttachOutput,
       emailTo,
       emailCc,
-      emailTemplate,
+      emailBody,
       emailQueryResultsHtmlMaxRows,
       validations,
     } = formState
@@ -133,6 +133,7 @@ export default function EmailChannelForm({
             value={emailSubject}
             onChange={onChangeSubject}
             invalid={validations?.emailSubject}
+            info={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_INFO_BODY}
           />
         </Validation>
       </StackItem>
@@ -171,11 +172,12 @@ export default function EmailChannelForm({
       <StackItem>
         <MultilineTextField
           rows={10}
-          label={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_LABEL_TEMPLATE}
-          name={SYMBOLS.EMAIL_CHANNEL_FIELDS.TEMPLATE}
-          placeholder={UI_CONTENT.EMAIL_CHANNEL_FORM.TEMPLATE_FIELD_PLACEHOLDER}
-          value={emailTemplate}
-          onChange={onChangeTemplate}
+          label={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_LABEL_BODY}
+          name={SYMBOLS.EMAIL_CHANNEL_FIELDS.BODY}
+          placeholder={UI_CONTENT.EMAIL_CHANNEL_FORM.BODY_FIELD_PLACEHOLDER}
+          value={emailBody}
+          onChange={onChangeBody}
+          info={UI_CONTENT.EMAIL_CHANNEL_FORM.FIELD_INFO_BODY}
         />
       </StackItem>
     </Stack>

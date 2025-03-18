@@ -61,12 +61,26 @@ if [ $BUILD -eq 1 ]; then
     $SCRIPT_DIR/build.sh -t "$IMAGE_NAME" $FULL_ARG --build-type $BUILD_TYPE $PREFIX_ARG
 fi
 
+args=()
+
+if [ -n "$NEW_RELIC_API_KEY" ]; then
+    args+=("-e" "USER_API_KEY=$NEW_RELIC_API_KEY")
+fi
+
+if [ -n "$NEW_RELIC_LICENSE_KEY" ]; then
+    args+=("-e" "NEW_RELIC_LICENSE_KEY=$NEW_RELIC_LICENSE_KEY")
+fi
+
 if [ -z "$AWS_ACCESS_KEY_ID" ]; then
     AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
 fi
 
 if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
     AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
+fi
+
+if [ -n "$AWS_SESSION_TOKEN" ]; then
+    args+=("-e" "AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN")
 fi
 
 if [ -f "$APP_DIR/deploy/.docker-run.$BUILD_TYPE" ]; then
@@ -94,15 +108,16 @@ println "Lambda handler:                          $LAMBDA_HANDLER"
 println "%s\n" "--------------------------------------------------------------------------------"
 
 docker run -a stdout -t --name lambda --rm \
-    -p 9000:8080 \
+    -p 41014:8080 \
     -e AWS_REGION=$AWS_REGION \
     -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
     -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
     -e NEW_RELIC_LOG_SERVER_HOST=localhost \
     -e NEW_RELIC_LAMBDA_HANDLER=$LAMBDA_HANDLER \
-    -e LOG_LEVEL=debug \
     "${DOCKER_RUN_ARGS[@]}" \
     "${CFENV_ARGS[@]}" \
     "${USER_CFENV_ARGS[@]}" \
+    -e LOG_LEVEL=debug \
+    "${args[@]}" \
     --platform=linux/amd64 \
     $IMAGE_NAME | tr -s "\r" "\n"

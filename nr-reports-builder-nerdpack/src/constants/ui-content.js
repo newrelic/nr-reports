@@ -180,7 +180,20 @@ export const UI_CONTENT = {
     FIELD_LABEL_FORMAT: 'Format',
     FIELD_LABEL_DELIVERY_METHOD: 'Delivery method',
     FIELD_LABEL_SUBJECT: 'Subject',
-    FIELD_LABEL_TEMPLATE: 'Message template',
+    FIELD_LABEL_BODY: 'Message body',
+    FIELD_INFO_BODY: `Placeholders can be used in this field using the syntax
+{{ NAME }}. The following placeholders are available:
+
+REPORT_NAME: Name of the report that triggered the email
+PUBLISH_CONFIG_NAME: Name of the schedule that triggered the email
+CHANNEL_NAME: Name of this channel
+TIMESTAMP: Timestamp, in milliseconds, the email was triggered
+DATETIME: Formatted date and time the email was triggered
+EMAIL_FROM: Email address of the sender
+EMAIL_TO: Email addresses of the recipients
+EMAIL_CC: Email addresses of copy recipients
+EMAIL_SUBJECT: Email subject
+`,
     FIELD_LABEL_TO: 'To',
     FIELD_LABEL_QUERY_RESULTS_HTML_MAX_ROWS: 'Number of results in email body',
     FORMAT_LABEL_HTML: 'HTML',
@@ -189,8 +202,8 @@ export const UI_CONTENT = {
     QUERY_OPTIONS_HEADING: 'Query Report Options',
     QUERY_RESULTS_HTML_MAX_ROWS_FIELD_PLACEHOLDER: '25',
     QUERY_RESULTS_HTML_MAX_ROWS_INPUT_NAME: 'emailQueryResultsHtmlMaxRows',
-    SUBJECT_FIELD_PLACEHOLDER: 'This week\'s performance report',
-    TEMPLATE_FIELD_PLACEHOLDER: `Please find attached the performance dashboards for report {{name}}.`,
+    SUBJECT_FIELD_PLACEHOLDER: '{{ REPORT_NAME }}',
+    BODY_FIELD_PLACEHOLDER: `Please find attached the performance dashboards for report {{ REPORT_NAME }}.`,
     TO_FIELD_PLACEHOLDER: `jan@newrelic.com\nsam@newrelic.com`,
   },
   NRQL_EDITOR: {

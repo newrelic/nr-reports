@@ -1,13 +1,28 @@
 'use strict'
 
 const fetch = require('node-fetch'),
-  { raiseForStatus, getEnvNs } = require('../util'),
-  { SLACK_WEBHOOK_URL } = require('../constants'),
+  {
+    getOption,
+    raiseForStatus,
+    getEnvNs,
+    channelFormatter,
+  } = require('../util'),
+  {
+    SLACK_WEBHOOK_URL,
+    SLACK_MESSAGE_KEY,
+  } = require('../constants'),
   { createLogger, logTrace } = require('../logger')
 
 const logger = createLogger('slack'),
   MRKDWN_ESCAPE_REGEX = /(\\&)|(\\<)|(\\>)/gui,
-  MRKDWN_ESCAPE_REPLACEMENTS = ['&amp;', '&lt;', '&gt;']
+  MRKDWN_ESCAPE_REPLACEMENTS = ['&amp;', '&lt;', '&gt;'],
+  MESSAGE = `
+{{ REPORT_NAME }}
+
+\`\`\`
+{{ RESULTS_CSV_FORMATTED }}
+\`\`\`
+`
 
 function escapeMrkdwn(str) {
   return str.replace(
@@ -22,6 +37,30 @@ function escapeMrkdwn(str) {
     },
   )
 }
+
+function formatText(
+  context,
+  report,
+  publishConfig,
+  channelConfig,
+  output,
+) {
+  const message = getOption(
+    channelConfig,
+    SLACK_MESSAGE_KEY,
+    null,
+    MESSAGE,
+  )
+
+  return channelFormatter(
+    context,
+    report,
+    publishConfig,
+    channelConfig,
+    output,
+  )(message)
+}
+
 
 function buildHeaders(headers = {}) {
   return {
@@ -63,7 +102,13 @@ async function post(webhookUrl, message, options = { headers: {} }) {
   return responseText
 }
 
-async function buildMessage(context, report, channelConfig, output) {
+async function buildMessage(
+  context,
+  report,
+  publishConfig,
+  channelConfig,
+  output,
+) {
 
   if (channelConfig.passThrough) {
     return await output.render(context, report, channelConfig)
@@ -75,10 +120,16 @@ async function buildMessage(context, report, channelConfig, output) {
    */
   return JSON.stringify({
     text: escapeMrkdwn(
-      await output.render(
+      formatText(
         context,
         report,
+        publishConfig,
         channelConfig,
+        await output.render(
+          context,
+          report,
+          channelConfig,
+        ),
       ),
     ),
   })
@@ -123,6 +174,7 @@ async function postToSlack(
     await buildMessage(
       context,
       report,
+      publishConfig,
       channelConfig,
       output,
     ),

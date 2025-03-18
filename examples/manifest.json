@@ -64,7 +64,8 @@
             {
               "id": "post-slack",
               "name": "Post query results to Slack",
-              "type": "slack"
+              "type": "slack",
+              "message": "{{ REPORT_NAME }}\n\nResults from the average transaction duration query.\n\n{{ RESULTS_CSV_FORMATTED }}"
             }
           ]
         },

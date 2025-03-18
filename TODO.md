@@ -21,10 +21,10 @@
 - [X] Add Pino
 - [X] Add New Relic agent support to CLI
 - [X] Add slack channel channel
-- [ ] Push reports to nerdstorage, generic nerdlet to show reports in nerdstorage
+- [X] Push reports to nerdstorage, generic nerdlet to show reports in nerdstorage
 - ~~[ ] Rename channels to destinations~~
 - [X] Honor template path when rendering email templates
-- [ ] Send report summary custom events
+- [X] Send report summary custom events
 - [X] Switch from `Promise.all` to custom concurrent promise handler
 - [ ] Add support for output filename from env var and
 - [X] Document `outputFilename`
@@ -33,7 +33,7 @@
 - [ ] Add variable substitution support to queries
 - [ ] Support global GraphQL/NRQL timeout in `config` section
 - [ ] Support global concurrency setting in `config`  section
-- [ ] Support global template engine setting in `config` section
+- [ ] ~~Support global template engine setting in `config` section~~
 - [ ] Allow reports to throw exceptions rather than return null and
   use try/catch in engine.
 - [ ] Run reports concurrently
@@ -45,13 +45,13 @@
 - [X] Add slack Webhook destination
 - [ ] Add slack API destination (`postMessage`)
 - [ ] Add Google Drive destination
-- [ ] Inline templates in YML
+- [ ] ~~Inline templates in YML~~
 - [X] Multiple email to
-- [ ] Can't include html inside nrql or chart tag
-- [ ] Run reports on different schedules
+- ~~[ ] Can't include html inside nrql or chart tag~~
+- [X] Run reports on different schedules
 - [ ] Central repo/db for reports w/ polling to discover new reports
-- [ ] UI to create reports and push to central repo/db
-- [ ] Since using a template engine can potentially have security holes, provide
+- [X] UI to create reports and push to central repo/db
+- [X] Since using a template engine can potentially have security holes, provide
       a way to build email templates programatically without a template
 
 ## Medium
@@ -66,10 +66,10 @@
 - [ ] CronJob Kubernetes
 - [ ] Add commit hooks to lint
 - [ ] Add CHANGELOG
-- [ ] Add entity search extension
-- [ ] Add generic graphql extension
-- [ ] Development preview support
-- [ ] Remove dependency on puppeteer from core?
+- [ ] ~~Add entity search extension~~
+- [ ] ~~Add generic graphql extension~~
+- [ ] ~~Development preview support~~
+- [ ] ~~Remove dependency on puppeteer from core?~~
 - [ ] Support other email transporters
 - [ ] Add ability to specify channel params at CLI using ;key=value
 - [ ] Can discovery/everything be refactored so that logic is all encapsulated

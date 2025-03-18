@@ -75,8 +75,8 @@ export default function ChannelForm({
     handleChangeEmailCc = useCallback(e => {
       updateFormState({ emailCc: e.target.value })
     }, [formState]),
-    handleChangeEmailTemplate = useCallback(e => {
-      updateFormState({ emailTemplate: e.target.value })
+    handleChangeEmailBody = useCallback(e => {
+      updateFormState({ emailBody: e.target.value })
     }, [formState]),
     handleChangeSlackWebhookUrl = useCallback(e => {
       updateFormState({ slackWebhookUrl: e.target.value })
@@ -175,7 +175,7 @@ export default function ChannelForm({
                   onChangeQueryResultsHtmlMaxRows={handleChangeQueryResultsHtmlMaxRows}
                   onChangeTo={handleChangeEmailTo}
                   onChangeCc={handleChangeEmailCc}
-                  onChangeTemplate={handleChangeEmailTemplate}
+                  onChangeBody={handleChangeEmailBody}
                 />
               )
             }

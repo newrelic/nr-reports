@@ -1,9 +1,11 @@
 'use strict'
 
 const {
-  template: templateRenderer,
-  query: queryRenderer,
-} = require('./renderers')
+    toString,
+  } = require('./util'),
+  {
+    query: queryRenderer,
+  } = require('./renderers')
 
 function getExtension(context, defaultExtension = null) {
   const fileExtension = context.get('fileExtension', 'FILE_EXTENSION')
@@ -31,9 +33,9 @@ function getOutputFileName(context, report, defaultExtension = null) {
 }
 
 class Output {
-  constructor(data, renderer = templateRenderer) {
+  constructor(data, renderer = null) {
     this.data = data
-    this.renderer = renderer
+    this.renderer = renderer || (() => toString(this.data))
   }
 
   isFile() {
