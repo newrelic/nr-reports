@@ -10,7 +10,7 @@ export const SYMBOLS = {
     PASS_THROUGH: 'passThrough',
     TO: 'to',
     CC: 'cc',
-    TEMPLATE: 'emailTemplate',
+    BODY: 'body',
   },
   EMAIL_FORMATS: {
     HTML: 'html',

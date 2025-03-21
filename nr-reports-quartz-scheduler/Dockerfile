@@ -9,8 +9,6 @@ ENV PATH=/opt/node-v20.18.3-linux-x64/bin:$PATH
 ADD nr-reports-quartz-scheduler/build/distributions/nr-reports-quartz-scheduler-*.tar /app
 COPY nr-reports-cli/ /app/nr-reports-cli/
 COPY nr-reports-core/ /app/nr-reports-core
-COPY templates/ /app/nr-reports-cli/templates/
-COPY include/ /app/nr-reports-cli/include/
 
 # see https://github.com/nodesource/distributions?tab=readme-ov-file#amazon-linux-versions
 # note: we install findutils below for the gradle application plugin scripts

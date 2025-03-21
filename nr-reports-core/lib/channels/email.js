@@ -11,6 +11,7 @@ const fs = require('fs'),
     withTempFile,
     trimStringAndLower,
     getEnvNs,
+    channelFormatter,
   } = require('../util'),
   {
     EMAIL_SMTP_SERVER_KEY,
@@ -25,23 +26,60 @@ const fs = require('fs'),
     EMAIL_TO_VAR,
     EMAIL_CC_VAR,
     EMAIL_SUBJECT_VAR,
-    EMAIL_TEMPLATE_VAR,
     EMAIL_SMTP_PORT_DEFAULT,
-    EMAIL_TEMPLATE_DEFAULT,
-    EMAIL_ATTACHMENTS_TEMPLATE_DEFAULT,
     EMAIL_FROM_KEY,
     EMAIL_TO_KEY,
     EMAIL_CC_KEY,
     EMAIL_SUBJECT_KEY,
-    EMAIL_TEMPLATE_NAME_KEY,
-    EMAIL_TEMPLATE_KEY,
+    EMAIL_BODY_KEY,
+    EMAIL_FORMATTER_FROM_KEY,
+    EMAIL_FORMATTER_TO_KEY,
+    EMAIL_FORMATTER_CC_KEY,
+    EMAIL_FORMATTER_SUBJECT_KEY,
     OUTPUT_FORMAT_HTML,
   } = require('../constants'),
-  { FileOutput } = require('../output'),
-  { renderTemplate } = require('../template-engines')
+  { FileOutput } = require('../output')
 
 const logger = createLogger('email'),
-  { writeFile } = fs.promises
+  { writeFile } = fs.promises,
+  EMAIL_BODY = `
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+  <main>
+    <h1>{{ REPORT_NAME }}</h1>
+    <div>
+      {{ RESULTS }}
+    </div>
+  </main>
+</body>
+
+</html>
+`,
+  EMAIL_ATTACHMENTS_BODY = `
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+  <main>
+    <h1>{{ REPORT_NAME }}</h1>
+    <p>See attached reports.</p>
+  </main>
+</body>
+
+</html>`
+
 
 function createSmtpTransport(context) {
   const server = context.getWithEnvNs(
@@ -73,44 +111,75 @@ function createSmtpTransport(context) {
   return nodemailer.createTransport(smtpConfig)
 }
 
-async function renderEmailTemplate(
+function formatText(
   context,
+  message,
   report,
+  publishConfig,
   channelConfig,
-  defaultTemplate = null,
+  renderResult,
+  text,
 ) {
-  const emailTemplate = getOption(channelConfig, EMAIL_TEMPLATE_KEY)
-
-  if (emailTemplate) {
-    return await renderTemplate(context, report, null, emailTemplate)
+  const replacements = {
+    [EMAIL_FORMATTER_FROM_KEY]: message.from,
+    [EMAIL_FORMATTER_TO_KEY]: message.to,
+    [EMAIL_FORMATTER_CC_KEY]: message.cc,
+    [EMAIL_FORMATTER_SUBJECT_KEY]: message.subject || '',
   }
 
-  const emailTemplateName = getOption(
-    channelConfig,
-    EMAIL_TEMPLATE_NAME_KEY,
-    EMAIL_TEMPLATE_VAR,
-    defaultTemplate,
-  )
-
-  return await renderTemplate(
+  return channelFormatter(
     context,
     report,
-    emailTemplateName,
+    publishConfig,
+    channelConfig,
+    renderResult,
+    replacements,
+  )(text)
+}
+
+function formatBody(
+  context,
+  message,
+  report,
+  publishConfig,
+  channelConfig,
+  renderResult,
+  defaultBody,
+) {
+  const body = getOption(channelConfig, EMAIL_BODY_KEY)
+
+  return formatText(
+    context,
+    message,
+    report,
+    publishConfig,
+    channelConfig,
+    renderResult,
+    body || defaultBody,
   )
 }
 
-async function makeMessage(context, report) {
+async function makeMessage(
+  context,
+  report,
+  publishConfig,
+  channelConfig,
+) {
   const message = {
     from: context.get(EMAIL_FROM_KEY, EMAIL_FROM_VAR),
     to: context.get(EMAIL_TO_KEY, EMAIL_TO_VAR),
     cc: context.get(EMAIL_CC_KEY, EMAIL_CC_VAR),
-    subject: await renderTemplate(
-      context,
-      report,
-      null,
-      context.get(EMAIL_SUBJECT_KEY, EMAIL_SUBJECT_VAR, ''),
-    ),
   }
+
+  message.subject = formatText(
+    context,
+    message,
+    report,
+    publishConfig,
+    channelConfig,
+    null,
+    context.get(EMAIL_SUBJECT_KEY, EMAIL_SUBJECT_VAR, ''),
+  )
 
   return message
 }
@@ -162,6 +231,7 @@ async function sendMailWithBody(
 async function sendMailWithAttachments(
   context,
   report,
+  publishConfig,
   channelConfig,
   output,
   message,
@@ -175,20 +245,22 @@ async function sendMailWithAttachments(
 
   /*
    * Send the message with the passed body or, if no body is specified,
-   * render the body from the template specified in the channel config,
-   * environment variable, or using the default,
-   * `email/message-attachments.html`.
+   * format the body specified in the channel config or use the default
+   * attachments body.
    */
   await sendMailWithBody(
     context,
     channelConfig,
     message,
     body || (
-      await renderEmailTemplate(
+      formatBody(
         context,
+        message,
         report,
+        publishConfig,
         channelConfig,
-        EMAIL_ATTACHMENTS_TEMPLATE_DEFAULT,
+        null,
+        EMAIL_ATTACHMENTS_BODY,
       )
     ),
   )
@@ -197,6 +269,7 @@ async function sendMailWithAttachments(
 async function renderOutputAndSendMailWithAttachments(
   context,
   report,
+  publishConfig,
   channelConfig,
   output,
   message,
@@ -224,6 +297,7 @@ async function renderOutputAndSendMailWithAttachments(
     await sendMailWithAttachments(
       context,
       report,
+      publishConfig,
       channelConfig,
       new FileOutput([tempFile]),
       message,
@@ -235,6 +309,7 @@ async function renderOutputAndSendMailWithAttachments(
 async function sendMail(
   context,
   report,
+  publishConfig,
   channelConfig,
   output,
   message,
@@ -245,12 +320,13 @@ async function sendMail(
    * If `attachOutput` was specified, the output data will first be rendered.
    * The data will then be written to a temp file. The _body_ of the email will
    * be built as it would as if a file was passed directly by calling
-   * `sendMessageWithAttachments`.
+   * `sendMailWithAttachments`.
    */
   if (channelConfig.attachOutput) {
     await renderOutputAndSendMailWithAttachments(
       context,
       report,
+      publishConfig,
       channelConfig,
       output,
       message,
@@ -267,7 +343,7 @@ async function sendMail(
     return
   }
 
-  const text = await output.render(
+  const renderResult = await output.render(
     context,
     report,
     channelConfig,
@@ -275,23 +351,25 @@ async function sendMail(
   )
 
   /*
-   * If no email template was specified, the email body will be rendered using
-   * the default email template or, if the `passThrough` property is set in the
-   * channel configuration, the email body will be set directly from the
-   * rendered output.
+   * If the `passThrough` property is set in the channel configuration, the
+   * email body will be set to the render result.
    *
-   * Otherwise, the email body will be rendered using the template.
+   * Otherwise, the email body will be formatted using the body specified in the
+   * channel config or the default body.
    */
   await sendMailWithBody(
     context,
     channelConfig,
     message,
-    channelConfig.passThrough ? text : (
-      await renderEmailTemplate(
-        context.context({ result: text }),
+    channelConfig.passThrough ? renderResult : (
+      formatBody(
+        context,
+        message,
         report,
+        publishConfig,
         channelConfig,
-        EMAIL_TEMPLATE_DEFAULT,
+        renderResult,
+        EMAIL_BODY,
       )
     ),
   )
@@ -308,19 +386,26 @@ async function sendEmail(
 ) {
 
   /*
-   * Initialize the message object from context/report settings.
+   * Initialize the message object from the settings in the context, report,
+   * publishConfig, and channelConfig.
    */
-  const message = await makeMessage(context, report)
+  const message = await makeMessage(
+    context,
+    report,
+    publishConfig,
+    channelConfig,
+  )
 
   /*
    * If the output is a file, send an email with the file as an attachment.
-   * In this case, the email body will be built from a template and the file
-   * will be attached to it.
+   * In this case, the email body will be built by formatting the body specified
+   * in the channel config or the default attachments body.
    */
   if (output.isFile()) {
     await sendMailWithAttachments(
       context,
       report,
+      publishConfig,
       channelConfig,
       output,
       message,
@@ -329,12 +414,15 @@ async function sendEmail(
   }
 
   /*
-   * Otherwise, an email will be sent with a body generated by rendering a
-   * template. The output will be passed to the template.
+   * Otherwise, an email will be sent with a body built by passing through the
+   * rendered output result, using the body specified in the channel config, or
+   * using the default attachments body (when attachOutput is true) or the
+   * default body.
    */
   await sendMail(
     context,
     report,
+    publishConfig,
     channelConfig,
     output,
     message,

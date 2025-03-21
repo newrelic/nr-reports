@@ -2,8 +2,7 @@
 
 const fetch = require('node-fetch'),
   {
-    format,
-    getFormattedDateTime,
+    channelFormatter,
     raiseForStatus,
     splitStringAndTrim,
     getEnvNs,
@@ -17,61 +16,11 @@ const fetch = require('node-fetch'),
     WEBHOOK_HTTP_BASIC_PASS_VAR,
     WEBHOOK_HEADER_KEY,
     WEBHOOK_HEADER_VAR,
-    WEBHOOK_PAYLOAD_REPORT_ID_KEY,
-    WEBHOOK_PAYLOAD_REPORT_NAME_KEY,
-    WEBHOOK_PAYLOAD_PUBLISH_CONFIG_ID_KEY,
-    WEBHOOK_PAYLOAD_PUBLISH_CONFIG_NAME_KEY,
-    WEBHOOK_PAYLOAD_CHANNEL_ID_KEY,
-    WEBHOOK_PAYLOAD_CHANNEL_NAME_KEY,
-    WEBHOOK_PAYLOAD_TIMESTAMP_KEY,
-    WEBHOOK_PAYLOAD_DATETIME_KEY,
-    WEBHOOK_PAYLOAD_RESULTS_KEY,
     WEBHOOK_HTTP_METHOD_DEFAULT,
   } = require('../constants'),
   { createLogger } = require('../logger')
 
 const logger = createLogger('webhook')
-
-function getReplacements(
-  context,
-  report,
-  publishConfig,
-  channelConfig,
-  output = null,
-) {
-  const m = {
-    [WEBHOOK_PAYLOAD_REPORT_ID_KEY]: report.id,
-    [WEBHOOK_PAYLOAD_REPORT_NAME_KEY]: report.name,
-    [WEBHOOK_PAYLOAD_PUBLISH_CONFIG_ID_KEY]: publishConfig.id,
-    [WEBHOOK_PAYLOAD_PUBLISH_CONFIG_NAME_KEY]: publishConfig.name,
-    [WEBHOOK_PAYLOAD_CHANNEL_ID_KEY]: channelConfig.id,
-    [WEBHOOK_PAYLOAD_CHANNEL_NAME_KEY]: channelConfig.name,
-    [WEBHOOK_PAYLOAD_TIMESTAMP_KEY]: new Date().getTime(),
-    [WEBHOOK_PAYLOAD_DATETIME_KEY]: getFormattedDateTime(),
-  }
-
-  if (channelConfig.contextVars) {
-    channelConfig.contextVars.forEach(
-      key => (
-        m[key] = context.get(context, key)
-      ),
-    )
-  }
-
-  if (channelConfig.envVars) {
-    channelConfig.envVars.forEach(
-      key => (
-        m[key] = getEnvNs(context, key)
-      ),
-    )
-  }
-
-  if (output) {
-    m[WEBHOOK_PAYLOAD_RESULTS_KEY] = output
-  }
-
-  return m
-}
 
 function buildHeaders(
   context,
@@ -82,7 +31,7 @@ function buildHeaders(
   const httpHeaders = {
       'Content-Type': 'application/json',
     },
-    replacements = getReplacements(
+    format = channelFormatter(
       context,
       report,
       publishConfig,
@@ -111,7 +60,7 @@ function buildHeaders(
           value = kv[1]
 
         if (key.length > 0 && value.length > 0) {
-          httpHeaders[key] = format(value, replacements)
+          httpHeaders[key] = format(value)
         }
       }
     }
@@ -168,22 +117,19 @@ async function buildMessage(
    * Build the JSON payload to post to the webhook URL.
    */
 
-  return format(
-    channelConfig.payload,
-    getReplacements(
-      context,
-      report,
-      publishConfig,
-      channelConfig,
-      JSON.stringify(
-        await output.render(
-          context,
-          report,
-          channelConfig,
-        ),
+  return channelFormatter(
+    context,
+    report,
+    publishConfig,
+    channelConfig,
+    JSON.stringify(
+      await output.render(
+        context,
+        report,
+        channelConfig,
       ),
     ),
-  )
+  )(channelConfig.payload)
 }
 
 async function invokeWebhook(

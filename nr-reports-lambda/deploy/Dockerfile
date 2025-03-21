@@ -10,14 +10,12 @@ ADD nr-reports-lambda/deploy/newrelic-lambda-extension-layer.tgz /opt
 # Copy function code
 COPY nr-reports-core ${LAMBDA_TASK_ROOT}/nr-reports-core/
 COPY nr-reports-lambda ${LAMBDA_TASK_ROOT}/nr-reports-lambda/
-COPY templates ${LAMBDA_TASK_ROOT}/templates/
-COPY include ${LAMBDA_TASK_ROOT}/include
 
 # Install production dependencies
 RUN cd ${LAMBDA_TASK_ROOT}/nr-reports-core && \
     npm i --omit=dev && \
     cd ${LAMBDA_TASK_ROOT}/nr-reports-lambda && \
-    npm i --omit=dev --legacy-peer-deps
+    npm i --omit=dev
 
 # Set the CMD to the New Relic lambda wrapper handler function
 CMD [ "newrelic-lambda-wrapper.handler" ]

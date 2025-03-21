@@ -113,7 +113,7 @@ function formStateFromChannel(
     formState.emailSubject = channel.subject
     formState.emailTo = channel.to ? channel.to.replaceAll(/\s*,\s*/ug,"\n") : ''
     formState.emailCc = channel.cc ? channel.cc.replaceAll(/\s*,\s*/ug,',') : ''
-    formState.emailTemplate = channel.emailTemplate || ''
+    formState.emailBody = channel.body || ''
     formState.emailQueryResultsHtmlMaxRows = (
       typeof channel.queryResultsHtmlMaxRows !== 'undefined' ? (
         channel.queryResultsHtmlMaxRows
@@ -147,7 +147,7 @@ function channelFromFormState(formState) {
     channel.subject = formState.emailSubject
     channel.to = formState.emailTo ? formState.emailTo.replaceAll(/\s*\n+\s*/ug,',') : ''
     channel.cc = formState.emailCc ? formState.emailCc.replaceAll(/\s*\n+\s*/ug,',') : ''
-    channel.emailTemplate = formState.emailTemplate || ''
+    channel.body = formState.emailBody || ''
     channel.queryResultsHtmlMaxRows = Number(formState.emailQueryResultsHtmlMaxRows)
   } else if (formState.type === SYMBOLS.CHANNEL_TYPES.SLACK) {
     channel.type = SYMBOLS.CHANNEL_TYPES.SLACK

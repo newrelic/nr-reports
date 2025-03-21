@@ -133,7 +133,3 @@ dist
 .cfenv*
 cf-params.json
 cf-params.*.json
-
-# Local templates and manifests
-include/*
-!include/.keep

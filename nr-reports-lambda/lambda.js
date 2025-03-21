@@ -4,18 +4,17 @@
 // eslint-disable-next-line node/no-missing-require
 const newrelic = require('newrelic')
 
-const chromium = require('chrome-aws-lambda'),
-  {
-    rootLogger,
-    setLogLevel,
-    Engine,
-    getEnv,
-    getSecretValue,
-    getSecretAsJson,
-    trimStringAndLower,
-    DEFAULT_LOG_LEVEL,
-    CORE_CONSTANTS,
-  } = require('nr-reports-core')
+const {
+  rootLogger,
+  setLogLevel,
+  Engine,
+  getEnv,
+  getSecretValue,
+  getSecretAsJson,
+  trimStringAndLower,
+  DEFAULT_LOG_LEVEL,
+  CORE_CONSTANTS,
+} = require('nr-reports-core')
 
 const logger = rootLogger,
   { SECRET_NAME_VAR } = CORE_CONSTANTS
@@ -133,7 +132,6 @@ async function handler(event) {
   const payload = event.body || event,
     {
       options,
-      ...params
     } = payload,
     runnerId = getEnv('APP_NAME', 'nr-reports-lambda'),
     runnerVersion = getEnv('APP_VERSION', '<unknown>')
@@ -145,24 +143,10 @@ async function handler(event) {
       runnerVersion,
       await getSecretData(options),
       's3',
-      {
-        getPuppetArgs: async () => ({
-          args: chromium.args,
-          defaultViewport: chromium.defaultViewport,
-          executablePath: await chromium.executablePath,
-          headless: chromium.headless,
-          ignoreHTTPSErrors: true,
-        }),
-        openChrome: async puppetArgs => (
-          await chromium.puppeteer.launch(puppetArgs)
-        ),
-        closeChrome: async browser => (
-          await browser.close()
-        ),
-      },
+      {},
     )
 
-    await engine.run(options, params)
+    await engine.run(options)
 
     logger.trace('Recording job status...')
 

@@ -42,6 +42,12 @@ reports:
     - id: post-slack
       name: Post query results to Slack
       type: slack
+      message: |
+        {{ REPORT_NAME }}
+
+        Results from the average transaction duration query.
+
+        {{ RESULTS_CSV_FORMATTED }}
   - id: external-webhook
     name: Post to external webhook
     channels:

@@ -44,7 +44,7 @@ export function newChannel() {
     subject: '',
     to: '',
     cc: '',
-    emailTemplate: '',
+    body: '',
   }
 }
 

@@ -8,11 +8,10 @@ ROOT_DIR="$(dirname $(dirname ${SCRIPT_DIR}))"
 
 usage() {
   BASE=$(basename "$0")
-  echo "usage: $BASE --cron-entry cron-entry --image-repo image-repo --image-tag image-tag"
+  echo "usage: $BASE --image-repo image-repo --image-tag image-tag"
   exit
 }
 
-CRON_ENTRY=""
 IMAGE_REPO=""
 IMAGE_TAG="latest"
 PARAMS=""
@@ -21,17 +20,6 @@ while (( "$#" )); do
   case "$1" in
     --help)
       usage
-      ;;
-    --cron-entry)
-      set -o noglob
-      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
-        CRON_ENTRY=$2
-        shift 2
-      else
-        echo "Error: Argument for $1 is missing" >&2
-        exit 1
-      fi
-      set +o noglob
       ;;
     --image-repo)
       if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
@@ -82,7 +70,6 @@ eval set -- "$PARAMS"
 echo "------------------------------------"
 echo "Root directory: $ROOT_DIR"
 echo "------------------------------------"
-echo "CRON entry:                  $CRON_ENTRY"
 echo "Image repository:            $IMAGE_REPO"
 echo "Image tag:                   $IMAGE_TAG"
 echo "------------------------------------"
