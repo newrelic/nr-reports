@@ -22,19 +22,19 @@ async function render(
   const { columns, rows } = output.data
 
   /*
-    * If the output does not contain `columns` and `rows` properties, then
-    * the query generator passed the raw graphql through. All we can do is turn
-    * the graphql response into JSON.
-    */
+   * If the output does not contain `columns` and `rows` properties, then
+   * the query generator passed the raw graphql through. All we can do is turn
+   * the graphql response into JSON.
+   */
   if (!columns && !rows) {
     return JSON.stringify(output.data)
   }
 
   /*
-    * Columns and rows were set by the query generator. Use the output format
-    * specified in preferredOutputFormat or the channel configuration to
-    * determine what to generate.
-    */
+   * Columns and rows were set by the query generator. Use the output format
+   * specified in preferredOutputFormat or the channel configuration to
+   * determine what to generate.
+   */
 
   const outputFormat = getOption(
     channelConfig,
