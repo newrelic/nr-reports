@@ -128,6 +128,12 @@ Parameters:
   # Name of an AWS Secrets Manager secret containing the customer secret
   # data.
   #
+  # NOTE: The Secret value must be a JSON string of key/value pairs. Binary
+  # secrets are not supported.
+  #
+  # See https://github.com/newrelic/nr-reports?tab=readme-ov-file#the-scheduler-lambda-secret
+  # for more details.
+  #
   SecretName:
     Type: String
     Description: ID (name or ARN) of a Secret containing the customer secret data.

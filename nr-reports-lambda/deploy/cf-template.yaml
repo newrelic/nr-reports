@@ -126,8 +126,14 @@ Parameters:
   #  Default: 'us-east-1'
   #
   # Name of an AWS Secrets Manager secret containing the customer secret
-  # data. This is only required when using the hosted stack. It should not be
-  # set otherwise.
+  # data. This is only required when used in conjuction with the New Relic AWS
+  # Reports Stack. It should not be set otherwise.
+  #
+  # NOTE: The Secret value must be a JSON string of key/value pairs. Binary
+  # secrets are not supported.
+  #
+  # See https://github.com/newrelic/nr-reports?tab=readme-ov-file#the-scheduler-lambda-secret
+  # for more details.
   #
   SecretName:
     Type: String
@@ -150,6 +156,9 @@ Parameters:
   # key used for GraphQL Nerdstorage queries and mutations. By default, the
   # secret must contain a 'UserApiKey' property for the API key. A different key
   # can be specified by the UserApiKeySecretKey parameter.
+  #
+  # NOTE: The Secret value must be a JSON string of key/value pairs. Binary
+  # secrets are not supported.
   #
   UserApiKeySecret:
     Type: String

@@ -17,7 +17,9 @@
   },
   "homepage": "https://github.com/newrelic/nr-reports#readme",
   "dependencies": {
-    "aws-sdk": "^2.1692.0",
+    "@aws-sdk/client-s3": "^3.758.0",
+    "@aws-sdk/client-scheduler": "^3.758.0",
+    "@aws-sdk/client-secrets-manager": "^3.758.0",
     "csv-parse": "^5.6.0",
     "csv-stringify": "^6.3.0",
     "node-fetch": "^2.7.0",
