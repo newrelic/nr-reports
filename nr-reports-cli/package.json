@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/newrelic/nr-reports#readme",
   "dependencies": {
-    "newrelic": "^12.11.3",
+    "newrelic": "^12.16.1",
     "nr-reports-core": "file:../nr-reports-core",
     "puppeteer": "^24.1.1",
     "yargs": "^17.7.1"
