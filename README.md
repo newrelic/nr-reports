@@ -19,6 +19,13 @@
 New Relic Reports is a full scheduled report solution for use with the New Relic
 One platform.
 
+## **_V3 EOL Notice_**
+
+The v3.x.x version of New Relic Reports will end-of-life on June 30th, 2025.
+As of March 27th, 2025, only security vulnerabilities will be applied to the
+[`release/v3`](https://github.com/newrelic/nr-reports/tree/release/v3) branch.
+No new features or bug fixes will be applied to this branch.
+
 ## Table of Contents
 
 * [Overview](#overview)
