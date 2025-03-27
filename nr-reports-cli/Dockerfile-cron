@@ -1,4 +1,4 @@
-FROM alpine:3.18
+FROM alpine:3
 
 # Build args
 ARG CLI_ARGS
@@ -50,4 +50,4 @@ RUN addgroup -S pptruser && adduser -S -g pptruser pptruser \
     npm install --production
 
 # Container entry
-CMD /usr/sbin/crond -f -l 8 && tail -f /var/log/cron.log
+CMD ["/usr/sbin/crond", "-f", "-l", "8"]
