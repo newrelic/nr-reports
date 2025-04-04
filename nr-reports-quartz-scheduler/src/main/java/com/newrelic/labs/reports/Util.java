@@ -43,6 +43,9 @@ public class Util {
 		Logger.getLogger(Util.class.getName());
 	private static final Util INSTANCE = new Util();
 
+	private static final String REPORTS_BUILDER_NERDPACK_ID =
+		"c7c1d343-e073-41d5-9b2b-5987f403aec1";
+
 	private Util() {}
 
 	public static Util getInstance() {
@@ -128,10 +131,12 @@ public class Util {
 			throw new SyncException("missing api key");
 		}
 
-		String nerdletPackageId = getenv("SOURCE_NERDLET_ID");
+		String nerdletPackageId = REPORTS_BUILDER_NERDPACK_ID;
+		String sourceNerdletId = getenv("SOURCE_NERDLET_ID");
 
-		if (nerdletPackageId == null || nerdletPackageId.isEmpty()) {
-			throw new SyncException("missing source nerdlet ID");
+		if (sourceNerdletId != null && !sourceNerdletId.isEmpty()) {
+			LOGGER.finest("Using a custom nerdpack ID for sourceNerdletId");
+			nerdletPackageId = sourceNerdletId;
 		}
 
 		String region = getenv("NEW_RELIC_REGION");

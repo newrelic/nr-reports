@@ -17,7 +17,7 @@ const {
 } = require('nr-reports-core')
 
 const logger = rootLogger,
-  { SECRET_NAME_VAR } = CORE_CONSTANTS
+  { SECRET_NAME_VAR, REPORTS_BUILDER_NERDPACK_ID } = CORE_CONSTANTS
 
 function configureLogger() {
   const logLevel = trimStringAndLower(getEnv('LOG_LEVEL', DEFAULT_LOG_LEVEL))
@@ -97,10 +97,21 @@ async function getSecretData(options) {
 
   delete options.accountId
 
+  let sourceNerdletId = REPORTS_BUILDER_NERDPACK_ID
+
+  if (secret.sourceNerdletId) {
+    const val = secret.sourceNerdletId.trim()
+
+    if (val !== '') {
+      logger.debug('Using a custom nerdpack ID for sourceNerdletId')
+      sourceNerdletId = val
+    }
+  }
+
   return makeSecretData(
     secret.apiKey,
     accountId,
-    secret.sourceNerdletId,
+    sourceNerdletId,
   )
 }
 

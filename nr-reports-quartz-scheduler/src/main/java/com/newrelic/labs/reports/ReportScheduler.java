@@ -25,6 +25,26 @@ public class ReportScheduler {
 		this.util = util;
 	}
 
+	public void bootstrapAccount(
+		NerdgraphClient client,
+		String scheduleGroupName,
+		String accountId
+	) {
+		try {
+			this.util.downloadManifest(client, accountId);
+
+			// Intentionally specify 0 for lastPolledDate to force a refresh
+			this.util.hup(accountId, 0, scheduleGroupName);
+		} catch (SyncException | IOException e) {
+			LOGGER.log(
+				Level.WARNING,
+				"failed to bootstrap account " + accountId +
+					"; processing will continue with other accounts",
+				e
+			);
+		}
+	}
+
 	public void bootstrap() throws SyncException, IOException {
 		LOGGER.info("bootstrapping");
 
@@ -45,10 +65,7 @@ public class ReportScheduler {
 		String scheduleGroupName = this.util.getScheduleGroupName();
 
 		for (String accountId : accountIds) {
-			this.util.downloadManifest(client, accountId);
-
-			// Intentionally specify 0 for lastPolledDate to force a refresh
-			this.util.hup(accountId, 0, scheduleGroupName);
+			bootstrapAccount(client, scheduleGroupName, accountId);
 		}
 	}
 

@@ -181,10 +181,19 @@ Parameters:
   #
   # New Relic nerdlet ID where report data will be stored.
   #
+  # **NOTE:** As of v4.1.0, customers should use the New Relic Reports Builder
+  # app available in the New Relic catalog and leave this parameter empty (the
+  # default). Customers preferring to manually deploy their own instance of the
+  # app will need to provide a value for this parameter that specifies the
+  # Nerdpack ID of their instance. See the section "Using the Reports Builder"
+  # in the documentation (https://github.com/newrelic/nr-reports?tab=readme-ov-file#using-the-reports-builder)
+  # for more details.
+  #
   NerdletPackageId:
     Type: String
     Description: New Relic nerdlet ID where report data will be stored.
-    AllowedPattern: '[a-zA-Z0-9\-]+'
+    AllowedPattern: '[a-zA-Z0-9\-]*'
+    Default: ''
   #
   # New Relic account ID used for Nerdstorage queries.
   #
