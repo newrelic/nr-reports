@@ -59,7 +59,8 @@ const QUERY_RESULTS_FORMAT_KEY = 'queryResultsFormat',
   QUERY_RESULTS_HTML_MAX_ROWS_DEFAULT = 25
 
 // Nerdstorage constants
-const MANIFESTS_COLLECTION_NAME = 'manifests'
+const MANIFESTS_COLLECTION_NAME = 'manifests',
+  REPORTS_BUILDER_NERDPACK_ID = 'c7c1d343-e073-41d5-9b2b-5987f403aec1'
 
 // Formatter constants
 const FORMATTER_REPORT_ID_KEY = 'REPORT_ID',
@@ -185,6 +186,7 @@ module.exports = {
 
   // Nerdstorage constants
   MANIFESTS_COLLECTION_NAME,
+  REPORTS_BUILDER_NERDPACK_ID,
 
   // Formatters constants
   FORMATTER_REPORT_ID_KEY,

@@ -20,7 +20,7 @@ const {
   { poll } = require('./lib/scheduler')
 
 const logger = rootLogger,
-  { SECRET_NAME_VAR } = CORE_CONSTANTS
+  { SECRET_NAME_VAR, REPORTS_BUILDER_NERDPACK_ID } = CORE_CONSTANTS
 
 function configureLogger() {
   const logLevel = trimStringAndLower(getEnv('LOG_LEVEL', DEFAULT_LOG_LEVEL))
@@ -47,8 +47,15 @@ function makeSecretData(secret) {
     throw Error('No account ID found')
   }
 
-  if (!secret.sourceNerdletId) {
-    throw Error('No nerdlet ID found')
+  let sourceNerdletId = REPORTS_BUILDER_NERDPACK_ID
+
+  if (secret.sourceNerdletId) {
+    const val = secret.sourceNerdletId.trim()
+
+    if (val !== '') {
+      logger.debug('Using a custom nerdpack ID for sourceNerdletId')
+      sourceNerdletId = val
+    }
   }
 
   // This is done so we don't accidentally expose the secrets
@@ -64,7 +71,7 @@ function makeSecretData(secret) {
       return secret.accountId
     },
     get sourceNerdletId() {
-      return secret.sourceNerdletId
+      return sourceNerdletId
     },
   }
 }

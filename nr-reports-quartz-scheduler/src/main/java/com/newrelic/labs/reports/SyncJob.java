@@ -68,7 +68,16 @@ public class SyncJob implements Job {
 			NerdgraphClient client = this.util.createNerdgraphClient(this.util);
 
 			for (String accountId : accountIds) {
-				pollAccount(client, accountId);
+				try {
+					pollAccount(client, accountId);
+				} catch (SyncException e) {
+					LOGGER.log(
+						Level.WARNING,
+						"failed to poll account " + accountId +
+							"; processing will continue with other accounts",
+						e
+					);
+				}
 			}
 		} catch (SyncException e) {
 			LOGGER.log(Level.SEVERE, "sync failed", e);

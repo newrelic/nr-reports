@@ -1,6 +1,6 @@
 {
   "name": "nr-reports-core",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "author": "sdewitt@newrelic.com",
   "description": "The New Relic Reports core engine.",
   "license": "Apache-2.0",
