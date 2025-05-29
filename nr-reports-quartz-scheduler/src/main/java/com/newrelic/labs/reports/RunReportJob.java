@@ -39,12 +39,14 @@ public class RunReportJob implements Job {
 				throw new RunReportException("missing api key");
 			}
 
-			String nerdletPackageId = this.util.getenv(
+			String nerdletPackageId = Util.REPORTS_BUILDER_NERDPACK_ID;
+			String sourceNerdletId = this.util.getenv(
 				"SOURCE_NERDLET_ID"
 			);
 
-			if (nerdletPackageId == null || nerdletPackageId.isEmpty()) {
-				throw new RunReportException("missing source nerdlet ID");
+			if (sourceNerdletId != null && !sourceNerdletId.isEmpty()) {
+				LOGGER.finest("Using a custom nerdpack ID for sourceNerdletId");
+				nerdletPackageId = sourceNerdletId;
 			}
 
 			String region = this.util.getenv(
