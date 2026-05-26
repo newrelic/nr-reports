@@ -21,6 +21,7 @@ One platform.
 
 ## Table of Contents
 
+* [Important Updates](#important-updates)
 * [Overview](#overview)
 * [Using This Document](#using-this-document)
 * [Quickstart](#quickstart)
@@ -47,6 +48,22 @@ One platform.
   * [Using the Java Scheduler](#using-the-java-scheduler)
   * [Using the Reports Builder](#using-the-reports-builder)
   * [Using the New Relic Reports AWS Stack](#using-the-new-relic-reports-aws-stack)
+  * [Upgrading](#upgrading)
+
+## Important Updates
+
+* As of v4.2.0 of New Relic Reports, the minimum required Node.js version has
+  been raised to 22.0.0. This runtime upgrade was necessary to adopt dependency
+  updates that resolve critical security vulnerabilities. Consequently, all
+  versions of New Relic Reports prior to v4.2.0 should be upgraded immediately.
+  This affects all components of New Relic Reports including any standalone
+  deployments of the [CLI](#using-the-cli) and
+  [Java Scheduler](#using-the-java-scheduler) as well as
+  [CLI images](#using-the-cli-image), [AWS Lambda function images](#using-the-aws-lambda-function),
+  [AWS Scheduler Lambda function images](#using-the-aws-scheduler-lambda-function),
+  and [Java Scheduler images](#using-the-java-scheduler-image). Refer to the
+  ["Upgrading"](#upgrading) section for instructions on how to upgrade your
+  New Relic Reports installations.
 
 ## Overview
 
@@ -116,8 +133,16 @@ schedule and run reports.
 To run reports locally using the [CLI](#using-the-cli), you will need the
 following.
 
-* Node >= 20.0.0
+* Node >= 22.0.0
 * A terminal application that supports Bash scripts
+
+**NOTE:** As of v4.2.0 of New Relic Reports, the minimum required Node.js
+version has been raised to 22.0.0. This runtime upgrade was necessary to adopt
+dependency updates that resolve critical security vulnerabilities. Consequently,
+v4.1.0 of all components of New Relic Reports, including the
+[CLI](#using-the-cli), has been deprecated and should no longer be used. See
+the ["Upgrading"](#upgrading) section for details on upgrading your standalone
+[CLI](#using-the-cli) installations.
 
 To build and deploy the [CLI image](#using-the-cli-image) you will need the
 following.
@@ -134,9 +159,19 @@ you will need the following.
 To run the [Java Scheduler](#using-the-standalone-java-scheduler-application) as
 a standalone Java application, you will need the following.
 
-* Node >= 20.0.0
+* Node >= 22.0.0
 * Java >= 21.0.0
 * A terminal application that supports Bash scripts
+
+**NOTE:** As of v4.2.0 of New Relic Reports, the minimum required Node.js
+version has been raised to 22.0.0. This runtime upgrade was necessary to adopt
+dependency updates that resolve critical security vulnerabilities. Consequently,
+v4.1.0 of all components of New Relic Reports, including the [CLI](#using-the-cli)
+(used by the scheduler) and the [Java Scheduler](#using-the-standalone-java-scheduler-application)
+itself, has been deprecated and should no longer be used. See the
+["Upgrading"](#upgrading) section for details on upgrading your standalone
+[Java Scheduler](#using-the-standalone-java-scheduler-application)
+installations.
 
 To build and deploy the [New Relic Reports AWS Stack](./nr-reports-scheduler/deploy/cf-template.yaml)
 or the Lambda based images, you will need the following.
@@ -2007,10 +2042,17 @@ A Dockerfile [`Dockerfile`](./nr-reports-lambda/deploy/Dockerfile) is
 provided to build a Docker image that can be
 [deployed as a Lambda container image](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html).
 The image is built from an [AWS base image for Node.js](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html#nodejs-image-base).
-By default, [version 20](public.ecr.aws/lambda/nodejs:20) is used but this can
-be customized by specifying the `AWS_LAMBDA_VER` argument when building the
-image. The image automatically includes the [New Relic AWS Lambda Extension Layer](https://github.com/newrelic/newrelic-lambda-extension)
+By default, version 22 is used but this can be customized by specifying the
+`AWS_LAMBDA_VER` argument when building the image. The image automatically
+includes the [New Relic AWS Lambda Extension Layer](https://github.com/newrelic/newrelic-lambda-extension)
 corresponding to the version of the base image that is specified.
+
+**NOTE:** As of v4.2.0 of New Relic Reports, the minimum required Node.js
+version has been raised to 22.0.0. This runtime upgrade was necessary to adopt
+dependency updates that resolve critical security vulnerabilities. Consequently,
+versions of [AWS base images for Node.js](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html#nodejs-image-base)
+less than 22 should not be used. See the ["Upgrading"](#upgrading) section for
+details on upgrading your [AWS Lambda functions](#using-the-aws-lambda-function).
 
 The [`build.sh`](./deploy/lambda/build.sh) script is provided to simplify
 building the Lambda container image. It supports the following options.
@@ -2315,10 +2357,18 @@ A Dockerfile [`Dockerfile`](./nr-reports-scheduler/deploy/Dockerfile) is
 provided to build a Docker image that can be
 [deployed as a Lambda container image](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html).
 The image is built from an [AWS base image for Node.js](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html#nodejs-image-base).
-By default, [version 20](public.ecr.aws/lambda/nodejs:20) is used but this can
-be customized by specifying the `AWS_LAMBDA_VER` argument when building the
-image. The image automatically includes the [New Relic AWS Lambda Extension Layer](https://github.com/newrelic/newrelic-lambda-extension)
+By default, version 22 is used but this can be customized by specifying the
+`AWS_LAMBDA_VER` argument when building the image. The image automatically
+includes the [New Relic AWS Lambda Extension Layer](https://github.com/newrelic/newrelic-lambda-extension)
 corresponding to the version of the base image that is specified.
+
+**NOTE:** As of v4.2.0 of New Relic Reports, the minimum required Node.js
+version has been raised to 22.0.0. This runtime upgrade was necessary to adopt
+dependency updates that resolve critical security vulnerabilities. Consequently,
+versions of [AWS base images for Node.js](https://docs.aws.amazon.com/lambda/latest/dg/nodejs-image.html#nodejs-image-base)
+less than 22 should not be used. See the ["Upgrading"](#upgrading) section for
+details on upgrading your [AWS Scheduler Lambda functions](#using-the-aws-lambda-function)
+to the latest version.
 
 The [`build.sh`](./deploy/lambda/build.sh) script is provided to simplify
 building the scheduler Lambda container image. It supports the following options.
@@ -2638,8 +2688,15 @@ A [`Dockerfile`](./nr-reports-quartz-scheduler/Dockerfile) is provided to build
 a Docker image that can run the Java Scheduler application. The image is built
 from the [Amazon Corretto](https://aws.amazon.com/corretto/)
 [21 headless base image for Amazon Linux 2023](https://github.com/corretto/corretto-docker/blob/89bc34902ac1a084562a2c6e7b02190eff3613bb/21/headless/al2023/Dockerfile)
-The image includes the [Node 20 binary distribution for Amazon Linux 2023](https://github.com/nodesource/distributions?tab=readme-ov-file#amazon-linux-versions)
-from [Nodesource](https://nodesource.com/).
+The image includes the Node 22 binary distribution for Amazon Linux 2023 from
+[Nodesource](https://nodesource.com/).
+
+**NOTE:** As of v4.2.0 of New Relic Reports, the minimum required Node.js
+version has been raised to 22.0.0. This runtime upgrade was necessary to adopt
+dependency updates that resolve critical security vulnerabilities. Consequently,
+Node binary distributions less than version 22 should not be used. See the
+["Upgrading"](#upgrading) section for details on upgrading your
+[Java Scheduler images](#using-the-java-scheduler-image) to the latest version.
 
 ##### Building the Java Scheduler image
 
@@ -2900,6 +2957,45 @@ Deleting stack nr-reports-stack...
 Waiting for stack delete to complete...
 Done.
 ```
+
+### Upgrading
+
+New Relic recommends that you update New Relic Reports components regularly and
+at a minimum every 3 months. Refer to the instructions below to update the
+relevant components:
+
+- To upgrade standalone [CLI](#using-the-cli) deployments, update your local
+  copy of this repository by pulling the latest version from GitHub.
+- To upgrade standalone [Java Scheduler](#using-the-java-scheduler)
+  deployments, first update your local copy of this repository by pulling the
+  latest version from GitHub. Then, run `./gradlew clean` to remove the existing
+  build assets. Finally, stop any running instances of the scheduler and restart
+  them by running `./gradlew run`.
+- To upgrade [CLI images](#using-the-cli-image), first update your local copy of
+  this repository by pulling the latest version from GitHub. Then, follow the
+  procedure to [build the CLI image](#building-the-cli-image). Finally, if
+  necessary, push to your remote container registries and restart all running
+  containers.
+- To upgrade [AWS Lambda functions](#using-the-aws-lambda-function), first
+  update your local copy of this repository by pulling the latest version from
+  GitHub. Then, follow the procedure to
+  [update the Lambda function](#update-the-lambda-function). Make sure to
+  specify the appropriate function name with the `-n` option and to include the
+  `--build` option to rebuild the [AWS Lambda container image](#build-the-lambda-container-image).
+- To upgrade
+  [AWS Scheduler Lambda functions](#using-the-aws-scheduler-lambda-function),
+  first update your local copy of this repository by pulling the latest version
+  from GitHub. Then, follow the procedure to
+  [update the Scheduler Lambda function](#update-the-lambda-function-1). Make
+  sure to specify the appropriate function name with the `-n` option and to
+  include the `--build` option to rebuild the
+  [AWS Scheduler Lambda container image](#build-the-scheduler-lambda-container-image).
+- To upgrade [Java Scheduler images](#using-the-java-scheduler-image), first
+  update your local copy of this repository by pulling the latest version from
+  GitHub. Then, follow the procedure to
+  [build the Java Scheduler image](#building-the-java-scheduler-image). Finally,
+  if necessary, push to your remote container registries and restart all running
+  containers.
 
 ## Troubleshooting
 
