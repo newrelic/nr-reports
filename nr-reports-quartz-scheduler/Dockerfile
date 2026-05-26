@@ -4,7 +4,6 @@ ENV LOG_LEVEL=INFO
 ENV NEW_RELIC_REGION=US
 ENV SCHEDULE_GROUP_NAME=schedules
 ENV REPORTS_HOME=/app
-ENV PATH=/opt/node-v20.18.3-linux-x64/bin:$PATH
 
 ADD nr-reports-quartz-scheduler/build/distributions/nr-reports-quartz-scheduler-*.tar /app
 COPY nr-reports-cli/ /app/nr-reports-cli/
@@ -12,7 +11,7 @@ COPY nr-reports-core/ /app/nr-reports-core
 
 # see https://github.com/nodesource/distributions?tab=readme-ov-file#amazon-linux-versions
 # note: we install findutils below for the gradle application plugin scripts
-RUN curl -fsSL https://rpm.nodesource.com/setup_20.x -o nodesource_setup.sh && \
+RUN curl -fsSL https://rpm.nodesource.com/setup_22.x -o nodesource_setup.sh && \
     bash nodesource_setup.sh && \
     yum install -y findutils nodejs && \
     cd /app/nr-reports-core && \

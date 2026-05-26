@@ -55,9 +55,9 @@ if [ $PUSH -eq 1 ]; then
     fi
 fi
 
-AWS_LAMBDA_VER=${AWS_LAMBDA_VER:-20}
-NEW_RELIC_LAYER_NAME=${NEW_RELIC_LAYER_NAME:-NewRelicNodeJS20X}
-NEW_RELIC_LAYER_VER=${NEW_RELIC_LAYER_VER:-49}
+AWS_LAMBDA_VER=${AWS_LAMBDA_VER:-22}
+NEW_RELIC_LAYER_NAME=${NEW_RELIC_LAYER_NAME:-NewRelicNodeJS22X}
+NEW_RELIC_LAYER_VER=${NEW_RELIC_LAYER_VER:-82}
 
 println "\n%s" "-- BUILD -----------------------------------------------------------------------"
 println "Root directory:                          $ROOT_DIR"

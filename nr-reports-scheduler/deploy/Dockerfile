@@ -1,5 +1,5 @@
 # Build arguments
-ARG AWS_LAMBDA_VER=20
+ARG AWS_LAMBDA_VER=22
 
 # Base image
 FROM public.ecr.aws/lambda/nodejs:${AWS_LAMBDA_VER}
