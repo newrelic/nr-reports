@@ -27,8 +27,6 @@ const logger = createLogger('aws-util'),
   schedulerClient = new SchedulerClient({})
 
 async function getSecretAsJson(secretName) {
-  logger.trace(`Retrieving secret ${secretName}...`)
-
   const response = await secretsManagerClient.send(
     new GetSecretValueCommand({
       SecretId: secretName,
@@ -36,8 +34,6 @@ async function getSecretAsJson(secretName) {
   )
 
   if (response.SecretBinary) {
-    logger.trace(`No SecretString in secret ${secretName}. Found SecretBinary...`)
-
     // We only support string-based secrets at this time because it is unclear
     // from the API docs if the data in the returned UInt8Array is base64
     // encoded or not and whether or not it is expected to be JSON.
@@ -45,10 +41,6 @@ async function getSecretAsJson(secretName) {
   }
 
   if (response.SecretString) {
-    logger.trace(
-      `Found SecretString in secret ${secretName}. Parsing secret value as JSON...`,
-    )
-
     return JSON.parse(response.SecretString)
   }
 
@@ -56,8 +48,6 @@ async function getSecretAsJson(secretName) {
 }
 
 async function getSecretValue(secretName, secretKey) {
-  logger.trace(`Retrieving secret value for secret ${secretName} with key ${secretKey}...`)
-
   const secretObj = await getSecretAsJson(secretName)
 
   return secretObj[secretKey]
