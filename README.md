@@ -19,6 +19,8 @@
 New Relic Reports is a full scheduled report solution for use with the New Relic
 One platform.
 
+## New Relic Reports has been DEPRECATED. To send email reports, use [Scheduled Search](https://docs.newrelic.com/docs/nrql/using-nrql/schedule-nrql-searches/) and [Workflow Actions](https://docs.newrelic.com/docs/workflow-automation/setup-and-configure/actions-catalog/newrelic/notification/newrelic-notification-sendemail/).
+
 ## Table of Contents
 
 * [Important Updates](#important-updates)
